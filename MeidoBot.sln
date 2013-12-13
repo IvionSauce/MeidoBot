@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoBot", "MeidoBot\MeidoBot.csproj", "{6353030E-9800-40EC-988D-C1013D138D7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoCommon", "MeidoCommon\MeidoCommon.csproj", "{C38EB78F-07A7-4279-BC29-F2645394C402}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.ActiveCfg = Debug|x86
+		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.Build.0 = Debug|x86
+		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.ActiveCfg = Release|x86
+		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.Build.0 = Release|x86
+		{C38EB78F-07A7-4279-BC29-F2645394C402}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C38EB78F-07A7-4279-BC29-F2645394C402}.Debug|x86.Build.0 = Debug|Any CPU
+		{C38EB78F-07A7-4279-BC29-F2645394C402}.Release|x86.ActiveCfg = Release|Any CPU
+		{C38EB78F-07A7-4279-BC29-F2645394C402}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = MeidoBot\MeidoBot.csproj
+	EndGlobalSection
+EndGlobal
