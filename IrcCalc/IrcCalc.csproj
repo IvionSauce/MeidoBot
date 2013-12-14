@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C38EB78F-07A7-4279-BC29-F2645394C402}</ProjectGuid>
+    <ProjectGuid>{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>MeidoCommon</RootNamespace>
-    <AssemblyName>MeidoCommon</AssemblyName>
+    <RootNamespace>IrcCalc</RootNamespace>
+    <AssemblyName>IrcCalc</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -30,9 +30,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="MeidoCommon.cs" />
+    <Compile Include="Calculation.cs" />
+    <Compile Include="IrcCalc.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
+      <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
+      <Name>MeidoCommon</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

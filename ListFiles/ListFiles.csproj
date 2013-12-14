@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C38EB78F-07A7-4279-BC29-F2645394C402}</ProjectGuid>
+    <ProjectGuid>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>MeidoCommon</RootNamespace>
-    <AssemblyName>MeidoCommon</AssemblyName>
+    <RootNamespace>ListFiles</RootNamespace>
+    <AssemblyName>ListFiles</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -30,9 +30,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="MeidoCommon.cs" />
+    <Compile Include="ListFiles.cs" />
   </ItemGroup>
 </Project>

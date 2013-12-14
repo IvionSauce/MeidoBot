@@ -30,7 +30,7 @@ namespace MeidoBot
             // Create catalog and add our plugin-directory to it.
             var catalog = new AggregateCatalog();
             // catalog.Catalogs.Add(new AssemblyCatalog(typeof(PluginManager).Assembly));
-            catalog.Catalogs.Add(new DirectoryCatalog("plugins"));
+            catalog.Catalogs.Add(new DirectoryCatalog("."));
 
             // Put it in a container and compose/import the plugins into the IEnumerable pluginContainer field above.
             var container = new CompositionContainer(catalog);

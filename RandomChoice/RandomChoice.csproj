@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C38EB78F-07A7-4279-BC29-F2645394C402}</ProjectGuid>
+    <ProjectGuid>{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>MeidoCommon</RootNamespace>
-    <AssemblyName>MeidoCommon</AssemblyName>
+    <RootNamespace>RandomChoice</RootNamespace>
+    <AssemblyName>RandomChoice</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -30,9 +30,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="MeidoCommon.cs" />
+    <Compile Include="RandomChoice.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
+      <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
+      <Name>MeidoCommon</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

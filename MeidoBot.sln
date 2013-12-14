@@ -1,9 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoCommon", "MeidoCommon\MeidoCommon.csproj", "{C38EB78F-07A7-4279-BC29-F2645394C402}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoBot", "MeidoBot\MeidoBot.csproj", "{6353030E-9800-40EC-988D-C1013D138D7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoCommon", "MeidoCommon\MeidoCommon.csproj", "{C38EB78F-07A7-4279-BC29-F2645394C402}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NyaaSpam", "NyaaSpam\NyaaSpam.csproj", "{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListFiles", "ListFiles\ListFiles.csproj", "{E5A36F53-3202-453E-BA3D-550D81F2BE25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RandomChoice", "RandomChoice\RandomChoice.csproj", "{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrcCalc", "IrcCalc\IrcCalc.csproj", "{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrcVoting", "IrcVoting\IrcVoting.csproj", "{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiscUtils", "MiscUtils\MiscUtils.csproj", "{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,14 +23,38 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Debug|x86.Build.0 = Debug|Any CPU
+		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Release|x86.ActiveCfg = Release|Any CPU
+		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Release|x86.Build.0 = Release|Any CPU
+		{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}.Debug|x86.Build.0 = Debug|Any CPU
+		{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}.Release|x86.ActiveCfg = Release|Any CPU
+		{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}.Release|x86.Build.0 = Release|Any CPU
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.ActiveCfg = Debug|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.Build.0 = Debug|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.ActiveCfg = Release|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.Build.0 = Release|x86
+		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Debug|x86.Build.0 = Debug|Any CPU
+		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Release|x86.ActiveCfg = Release|Any CPU
+		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Release|x86.Build.0 = Release|Any CPU
 		{C38EB78F-07A7-4279-BC29-F2645394C402}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{C38EB78F-07A7-4279-BC29-F2645394C402}.Debug|x86.Build.0 = Debug|Any CPU
 		{C38EB78F-07A7-4279-BC29-F2645394C402}.Release|x86.ActiveCfg = Release|Any CPU
 		{C38EB78F-07A7-4279-BC29-F2645394C402}.Release|x86.Build.0 = Release|Any CPU
+		{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}.Debug|x86.Build.0 = Debug|Any CPU
+		{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}.Release|x86.ActiveCfg = Release|Any CPU
+		{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}.Release|x86.Build.0 = Release|Any CPU
+		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Debug|x86.Build.0 = Debug|Any CPU
+		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Release|x86.ActiveCfg = Release|Any CPU
+		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Release|x86.Build.0 = Release|Any CPU
+		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Debug|x86.Build.0 = Debug|Any CPU
+		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Release|x86.ActiveCfg = Release|Any CPU
+		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = MeidoBot\MeidoBot.csproj
