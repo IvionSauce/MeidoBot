@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>ListFiles</RootNamespace>
-    <AssemblyName>ListFiles</AssemblyName>
+    <RootNamespace>IvionSoft</RootNamespace>
+    <AssemblyName>IvionSoft</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -31,9 +31,12 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="ListFiles.cs" />
+    <Compile Include="DomainLists.cs" />
+    <Compile Include="XmlConfig.cs" />
   </ItemGroup>
 </Project>

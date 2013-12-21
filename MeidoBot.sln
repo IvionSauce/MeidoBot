@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeidoBot", "MeidoBot\MeidoB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NyaaSpam", "NyaaSpam\NyaaSpam.csproj", "{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListFiles", "ListFiles\ListFiles.csproj", "{E5A36F53-3202-453E-BA3D-550D81F2BE25}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RandomChoice", "RandomChoice\RandomChoice.csproj", "{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrcCalc", "IrcCalc\IrcCalc.csproj", "{CE3C0DDF-66D3-4E23-9FF5-EBF0AB491657}"
@@ -16,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrcVoting", "IrcVoting\IrcVoting.csproj", "{4C720B4C-6BE3-41BD-AF64-A1FE09A29370}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiscUtils", "MiscUtils\MiscUtils.csproj", "{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IvionSoft", "IvionSoft\IvionSoft.csproj", "{E5A36F53-3202-453E-BA3D-550D81F2BE25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

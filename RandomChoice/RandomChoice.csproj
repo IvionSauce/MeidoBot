@@ -31,6 +31,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -40,6 +42,10 @@
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
       <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
       <Name>MeidoCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
+      <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
+      <Name>IvionSoft</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

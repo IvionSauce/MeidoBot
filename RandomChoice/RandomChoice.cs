@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Xml.Linq;
+using IvionSoft;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -14,7 +16,7 @@ public class IrcRandom : IMeidoHook
 
     public string Description
     {
-        get { return "RandomChoice v0.93"; }
+        get { return "RandomChoice v0.95"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -38,6 +40,9 @@ public class IrcRandom : IMeidoHook
     [ImportingConstructor]
     public IrcRandom(IIrcComm ircComm)
     {
+        var conf = new Config("RandomChoice.xml");
+        RandomChoice.LaunchChoices = conf.LaunchChoices.ToArray();
+
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
     }
@@ -97,14 +102,13 @@ static class RandomChoice
         "Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good",
         "Very doubtful"};
 
-    static readonly string[] launchChoices = {"Launch!", "Hasshin!", "Gattai!", "Gasshin!", "Rider Kick!", "Clock Up!",
-        "Are you Ready? We are l@dy!", "Heaven or Hell!", "Apprivoise!!", "Kiraboshi!", "Fight!"};
+    public static string[] LaunchChoices { get; set; }
 
 
     public static string ChooseRndLaunch()
     {
-        int rndIndex = rnd.Next(launchChoices.Length);
-        return launchChoices[rndIndex];
+        int rndIndex = rnd.Next(LaunchChoices.Length);
+        return LaunchChoices[rndIndex];
     }
 
     public static string Shake8Ball()
@@ -193,5 +197,48 @@ static class RandomChoice
             int rndIndex = rnd.Next(options.Length);
             return options[rndIndex];
         }
+    }
+}
+
+
+class Config : XmlConfig
+{
+    public List<string> LaunchChoices { get; set; }
+
+
+    public Config(string file) : base(file)
+    {}
+
+    public override void LoadConfig()
+    {
+        XElement countdownOptions = Config.Element("countdown");
+
+        LaunchChoices = new List<string>();
+        foreach (XElement option in countdownOptions.Elements())
+        {
+            LaunchChoices.Add(option.Value);
+        }
+    }
+
+    public override XElement DefaultConfig()
+    {
+        var config = 
+            new XElement("config",
+                         new XElement("countdown",
+                            new XElement("option", "Launch!"),
+                            new XElement("option", "Hasshin!"),
+                            new XElement("option", "Gasshin!"),
+                            new XElement("option", "Gattai!"),
+                            new XElement("option", "Rider Kick!"),
+                            new XElement("option", "Clock Up!"),
+                            new XElement("option", "Are you Ready? We are l@dy!"),
+                            new XElement("option", "Heaven or Hell!"),
+                            new XElement("option", "Let's Rock!"),
+                            new XElement("option", "Apprivoise!!"),
+                            new XElement("option", "Kiraboshi!"),
+                            new XElement("option", "Fight!")
+                            )
+                         );
+        return config;
     }
 }

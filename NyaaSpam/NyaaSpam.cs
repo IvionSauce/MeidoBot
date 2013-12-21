@@ -2,8 +2,10 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Xml;
+using System.Xml.Linq;
 using System.ServiceModel.Syndication;
 using System.Collections.Generic;
+using IvionSoft;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -13,18 +15,11 @@ public class NyaaSpam : IMeidoHook
 {
     IIrcComm irc;
     NyaaPatterns nyaa = new NyaaPatterns();
-
-    HashSet<string> _skipCategories = new HashSet<string>(new string[] {
-        "Non-English-translated Anime", "Non-English-translated Live Action", "Non-English-scanlated Books"});
-    public HashSet<string> SkipCategories
-    {
-        get { return _skipCategories; }
-        set { _skipCategories = value; }
-    }
+    NyaaConfig nyaaConfig = new NyaaConfig("NyaaSpam.xml");
 
     public string Description
     {
-        get { return "NyaaSpam v0.33"; }
+        get { return "NyaaSpam v0.40"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -40,9 +35,6 @@ public class NyaaSpam : IMeidoHook
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm)
     {
-        irc = ircComm;
-        irc.AddChannelMessageHandler(HandleMessage);
-
         string nyaaFile = AppDomain.CurrentDomain.BaseDirectory + "/_nyaa";
         try
         {
@@ -53,6 +45,9 @@ public class NyaaSpam : IMeidoHook
             File.Create(nyaaFile).Dispose();
             nyaa.LoadFromFile(nyaaFile);
         }
+
+        irc = ircComm;
+        irc.AddChannelMessageHandler(HandleMessage);
 
         new Thread(ReadFeed).Start();
     }
@@ -199,7 +194,7 @@ public class NyaaSpam : IMeidoHook
 
         while (true)
         {
-            Thread.Sleep(TimeSpan.FromMinutes(15));
+            Thread.Sleep( TimeSpan.FromMinutes(nyaaConfig.Interval) );
             Console.WriteLine("\n{0}: Starting ReadFeed Cycle", DateTime.Now);
 
             if (nyaa.ChangedSinceLastSave() == true)
@@ -220,6 +215,8 @@ public class NyaaSpam : IMeidoHook
             bool latestItem = true;
             foreach (SyndicationItem item in feed.Items)
             {
+                // Since feed.Items is only IEnumerable, we can't just access the first member by index, so we have to
+                // use this roundabout way. :/
                 if (latestItem == true)
                 {
                     latestPublish = item.PublishDate;
@@ -230,11 +227,8 @@ public class NyaaSpam : IMeidoHook
                 if (item.PublishDate <= lastPrintedTime)
                     break;
 
-                // Debug
-                Console.WriteLine(item.Categories[0].Name);
-                Console.WriteLine(item.Title.Text);
-
-                if (SkipCategories.Contains(item.Categories[0].Name))
+                // Skip processing items in categories we don't care about.
+                if (nyaaConfig.SkipCategories.Contains(item.Categories[0].Name))
                     continue;
 
                 string[] channels = nyaa.PatternMatch(item.Title.Text);
@@ -247,5 +241,99 @@ public class NyaaSpam : IMeidoHook
             }
             lastPrintedTime = latestPublish;
         }
+    }
+}
+
+
+class NyaaConfig : XmlConfig
+{
+    public int Interval { get; set; }
+    public HashSet<string> SkipCategories { get; set; }
+
+
+    public NyaaConfig(string file) : base(file)
+    {}
+
+    public override void LoadConfig()
+    {
+        Interval = (int)Config.Element("interval");
+
+        SkipCategories = new HashSet<string>();
+        XElement skipCategories = Config.Element("skipcategories");
+        if (skipCategories != null)
+        {
+            foreach (XElement cat in skipCategories.Elements())
+            {
+                if (cat.Value != null)
+                    SkipCategories.Add(cat.Value);
+            }
+        }
+    }
+
+    public override XElement DefaultConfig()
+    {
+        var config =
+            new XElement("config",
+                         new XElement("interval", 15, new XComment("In minutes")),
+                         new XElement("skipcategories",
+                            new XElement("category", "Non-English-translated Anime"),
+                            new XElement("category", "Non-English-translated Live Action"),
+                            new XElement("category", "Non-English-scanlated Books")
+                            )
+                         );
+        return config;
+    }
+}
+
+
+public class NyaaPatterns : DomainListsReadWriter
+{
+    public string[] GetPatterns(string channel)
+    {
+        string chanLow = channel.ToLower();
+        
+        List<string> patterns;
+        string[] value = null;
+        
+        _rwlock.EnterReadLock();
+        if (domainSpecific.TryGetValue(chanLow, out patterns))
+            value = patterns.ToArray();
+        
+        _rwlock.ExitReadLock();
+        return value;
+    }
+    
+    // Returns array with the channels that have a pattern matching the passed title.
+    public string[] PatternMatch(string title)
+    {
+        List<string> value = new List<string>();
+        
+        _rwlock.EnterReadLock();
+        foreach (string channel in domainSpecific.Keys)
+        {
+            foreach (string pattern in domainSpecific[channel])
+            {
+                if (title.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    value.Add(channel);
+                    break;
+                }
+            }
+        }
+        
+        _rwlock.ExitReadLock();
+        if (value.Count > 0)
+            return value.ToArray();
+        else
+            return null;
+    }
+}
+
+
+static class ExtensionMethods
+{
+    public static bool Contains(this string source, string value, StringComparison comp)
+    {
+        return source.IndexOf(value, comp) >= 0;
     }
 }

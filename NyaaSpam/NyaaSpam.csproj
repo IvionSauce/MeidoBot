@@ -34,6 +34,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -44,9 +45,9 @@
       <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
       <Name>MeidoCommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ListFiles\ListFiles.csproj">
+    <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
       <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
-      <Name>ListFiles</Name>
+      <Name>IvionSoft</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
