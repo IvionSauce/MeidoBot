@@ -82,13 +82,24 @@ public class NyaaSpam : IMeidoHook
 
     void Add(string channel, string patternsStr)
     {
-        string[] patterns = patternsStr.Split(',');
-        foreach (string pattern in patterns)
+        // If enclosed in quotation marks, add string within the marks verbatim.
+        if ( patternsStr.StartsWith("\"") && patternsStr.EndsWith("\"") )
         {
-            if (pattern[0] == ' ')
-                nyaa.Add(channel, pattern.Substring(1));
-            else
-                nyaa.Add(channel, pattern);
+            // Slice off the quotation marks.
+            string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
+            nyaa.Add(pattern);
+        }
+        // Else interpret comma's as seperators between different titles.
+        else
+        {
+            string[] patterns = patternsStr.Split(',');
+            foreach (string pattern in patterns)
+            {
+                if (pattern[0] == ' ')
+                    nyaa.Add(channel, pattern.Substring(1));
+                else
+                    nyaa.Add(channel, pattern);
+            }
         }
     }
 
@@ -264,7 +275,7 @@ class NyaaConfig : XmlConfig
         {
             foreach (XElement cat in skipCategories.Elements())
             {
-                if (cat.Value != null)
+                if (!string.IsNullOrEmpty(cat.Value))
                     SkipCategories.Add(cat.Value);
             }
         }

@@ -198,45 +198,4 @@ namespace IvionSoft
             _rwlock.ExitUpgradeableReadLock();
         }
     }
-
-
-    public class Blacklist : DomainListsReader
-    {
-        public bool InBlacklist(string url, string channel)
-        {
-            _rwlock.EnterReadLock();
-
-            // Check the global blacklist.
-            foreach (string s in globalList)
-            {
-                if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-
-            // Check for a channel specific blacklist, since only a minority will have one it will cause the
-            // foreach loop to be skipped. (Acting on the assumption that TryGetValue is efficient)
-            List<string> channelList;
-            if (domainSpecific.TryGetValue(channel.ToLower(), out channelList))
-            {
-                foreach (string s in channelList)
-                {
-                    if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-
-            _rwlock.ExitReadLock();
-            // If neither return a hit, return false - since it's in neither of the blacklists.
-            return false;
-        }
-    }
 }
-
-
-static class ExtensionMethods
-    {
-        public static bool Contains(this string source, string value, StringComparison comp)
-        {
-            return source.IndexOf(value, comp) >= 0;
-        }
-    }
