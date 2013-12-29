@@ -29,83 +29,90 @@ namespace IvionSoft
             return value;
         }
 
-        public string Get(string channel, int index)
+        public string Get(string domain, int index)
         {
-            string chanLow = channel.ToLower();
+            string domLow = domain.ToLower();
 
-            List<string> channelList;
+            List<string> domainList;
             string value = null;
 
             _rwlock.EnterReadLock();
-            if (domainSpecific.TryGetValue(chanLow, out channelList))
+            if (domainSpecific.TryGetValue(domLow, out domainList))
             {
-                if (index < channelList.Count)
-                    value = channelList[index];
+                if (index < domainList.Count)
+                    value = domainList[index];
             }
 
             _rwlock.ExitReadLock();
             return value;
         }
 
-        public void Add(string line)
+        public int Add(string line)
         {
-            if (string.IsNullOrWhiteSpace(line))
-                return;
+            if ( string.IsNullOrWhiteSpace(line) || line[0] == '#' || line[0] == ':' )
+                return -1;
 
             _rwlock.EnterWriteLock();
             globalList.Add(line);
+            int index = globalList.Count - 1;
 
             if (changedSinceLastSave == false)
                 changedSinceLastSave = true;
+
             _rwlock.ExitWriteLock();
+            return index;
         }
 
-        public void Add(string channel, string line)
+        public int Add(string domain, string line)
         {
-            if (string.IsNullOrWhiteSpace(line))
-                return;
+            if ( string.IsNullOrWhiteSpace(line) || line[0] == '#' || line[0] == ':' )
+                return -1;
 
-            string chanLow = channel.ToLower();
+            string domLow = domain.ToLower();
 
-            List<string> channelList;
+            List<string> domainList;
 
             _rwlock.EnterWriteLock();
-            if (domainSpecific.TryGetValue(chanLow, out channelList))
-                channelList.Add(line);
+            if (domainSpecific.TryGetValue(domLow, out domainList))
+                domainList.Add(line);
             else
             {
-                domainSpecific.Add(chanLow, new List<string>());
-                domainSpecific[chanLow].Add(line);
+                domainSpecific.Add(domLow, new List<string>());
+                domainList = domainSpecific[domLow];
+                domainList.Add(line);
             }
+            int index = domainList.Count - 1;
 
             if (changedSinceLastSave == false)
                 changedSinceLastSave = true;
+
             _rwlock.ExitWriteLock();
+            return index;
         }
 
-        public void Add(string[] channels, string line)
+        public void Add(string[] domains, string line)
         {
-            foreach (string channel in channels)
+            foreach (string domain in domains)
             {
-                Add(channel, line);
+                Add(domain, line);
             }
         }
 
         // Returns removed string, returns null if nothing was removed.
-        public string Remove(string channel, int index)
+        public string Remove(string domain, int index)
         {
-            string chanLow = channel.ToLower();
+            string domLow = domain.ToLower();
 
-            List<string> lines;
+            List<string> domainList;
             string value = null;
 
             _rwlock.EnterWriteLock();
-            if (domainSpecific.TryGetValue(chanLow, out lines))
+            if (domainSpecific.TryGetValue(domLow, out domainList))
             {
-                if (index < lines.Count)
+                if (index < domainList.Count)
                 {
-                    value = lines[index];
-                    lines.RemoveAt(index);
+                    value = domainList[index];
+                    domainList.RemoveAt(index);
                 }
             }
 
@@ -181,10 +188,10 @@ namespace IvionSoft
             _rwlock.EnterUpgradeableReadLock();
             using (var fileStream = new StreamWriter(filename))
             {
-                foreach (string channel in domainSpecific.Keys)
+                foreach (string domain in domainSpecific.Keys)
                 {
-                    fileStream.WriteLine(":{0}", channel);
-                    foreach (string pattern in domainSpecific[channel])
+                    fileStream.WriteLine(":{0}", domain);
+                    foreach (string pattern in domainSpecific[domain])
                         fileStream.WriteLine(pattern);
                 }
             }
