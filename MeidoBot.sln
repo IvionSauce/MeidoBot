@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiscUtils", "MiscUtils\Misc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IvionSoft", "IvionSoft\IvionSoft.csproj", "{E5A36F53-3202-453E-BA3D-550D81F2BE25}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UrlTitling", "UrlTitling\UrlTitling.csproj", "{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -51,6 +53,10 @@ Global
 		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Debug|x86.Build.0 = Debug|Any CPU
 		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Release|x86.ActiveCfg = Release|Any CPU
 		{E5A36F53-3202-453E-BA3D-550D81F2BE25}.Release|x86.Build.0 = Release|Any CPU
+		{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}.Debug|x86.Build.0 = Debug|Any CPU
+		{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}.Release|x86.ActiveCfg = Release|Any CPU
+		{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}.Release|x86.Build.0 = Release|Any CPU
 		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Debug|x86.Build.0 = Debug|Any CPU
 		{F69D9BD9-2BAB-4F4E-A0AD-3CB4F2827A97}.Release|x86.ActiveCfg = Release|Any CPU
