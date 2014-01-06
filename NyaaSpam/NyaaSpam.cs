@@ -27,7 +27,15 @@ public class NyaaSpam : IMeidoHook
         get 
         {
             return new Dictionary<string, string>()
-            {};
+            {
+                {"nyaa", "See \"nyaa add|del|show\" for help."},
+                {"nyaa add", "add <pattern...> - Adds pattern(s), seperated by \",\". Unless enclosed in quotation " +
+                    "marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
+                {"nyaa del", "del <index...> - Removes pattern(s) inidicated by given indices. Can be seperated by " +
+                    "\",\" and accepts ranges given as \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
+                {"nyaa show", "show [index...] - Gives an overview of all patterns that are checked for. If given " +
+                    "an index/indices it will show just those. (Ex: nyaa show) (Ex: nyaa show 4, 7, 0-2)"}
+            };
         }
     }
 
