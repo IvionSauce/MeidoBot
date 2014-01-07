@@ -18,7 +18,7 @@ namespace MeidoBot
         public int Count { get; private set; }
 
         string _triggerPrefix = ".";
-        public string TriggerPrefix
+        public string Prefix
         {
             get { return _triggerPrefix; }
             set { _triggerPrefix = value; }
@@ -40,9 +40,13 @@ namespace MeidoBot
             container.ComposeParts(this);
 
             // Count the number of plugins loaded and make it availabe in the Count property.
+            // Also share the prefix with them.
             int count = 0;
             foreach (var plugin in pluginContainer)
+            {
+                plugin.Prefix = this.Prefix;
                 count++;
+            }
             Count = count;
         }
 
@@ -74,7 +78,7 @@ namespace MeidoBot
         public string GetHelp(string subject)
         {
             string helpSubject;
-            if (subject.StartsWith(TriggerPrefix))
+            if (subject.StartsWith(Prefix))
                 helpSubject = subject.Substring(1);
             else
                 helpSubject = subject;

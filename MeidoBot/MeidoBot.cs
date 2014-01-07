@@ -105,7 +105,8 @@ namespace MeidoBot
         // Pass on the message and associated info to the plugins.
         void OnChannelMessage(object sender, Meebey.SmartIrc4net.IrcEventArgs e)
         {
-            if (e.Data.MessageArray[0] == ".h")
+            if (e.Data.MessageArray[0] == plugins.Prefix + "h" ||
+                e.Data.MessageArray[0] == plugins.Prefix + "help")
             {
                 string helpMessage = Help(e.Data.MessageArray);
                 irc.SendMessage(SendType.Message, e.Data.Channel, helpMessage);
