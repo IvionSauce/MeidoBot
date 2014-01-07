@@ -149,7 +149,7 @@ namespace MeidoBot
         {
             // Load plugins and announce we're doing so.
             Console.WriteLine("Loading plugins...");
-            plugins.LoadPlugins(ircComm);
+            plugins.LoadPlugins(ircComm, new MeidoComm());
             // Print number and descriptions of loaded plugins.
             Console.WriteLine("Done! Loaded {0} plugin(s):", plugins.Count);
             foreach (string s in plugins.GetDescriptions())

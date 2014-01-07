@@ -10,7 +10,7 @@ namespace MeidoBot
     // http://dotnetbyexample.blogspot.nl/2010/04/very-basic-mef-sample-using-importmany.html and
     // http://msdn.microsoft.com/en-us/library/dd460648.aspx
     // Both were used by yours truly to make this very simple plugin-architecture you see below.
-    public class PluginManager
+    class PluginManager
     {
         [ImportMany(typeof(IMeidoHook))]
         IEnumerable<IMeidoHook> pluginContainer;
