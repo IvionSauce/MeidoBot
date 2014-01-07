@@ -23,7 +23,9 @@ namespace MeidoCommon
     }
 
     public interface IMeidoComm
-    {}
+    {
+        string ConfDir { get; }
+    }
 
     public interface IIrcComm
     {

@@ -10,7 +10,14 @@ using MeidoCommon;
 namespace MeidoBot
 {
     class MeidoComm : IMeidoComm
-    {}
+    {
+        public string ConfDir { get; private set; }
+
+        public MeidoComm()
+        {
+            ConfDir = "conf";
+        }
+    }
 
 
     // Implement IIrcComm by using a IrcClient as backend, allowing a limited subset of its methods to be used by

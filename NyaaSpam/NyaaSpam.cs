@@ -15,7 +15,7 @@ public class NyaaSpam : IMeidoHook
 {
     IIrcComm irc;
     NyaaPatterns nyaa = new NyaaPatterns();
-    NyaaConfig nyaaConfig = new NyaaConfig("NyaaSpam.xml");
+    NyaaConfig conf;
 
     public string Prefix { get; set; }
 
@@ -47,9 +47,11 @@ public class NyaaSpam : IMeidoHook
 
 
     [ImportingConstructor]
-    public NyaaSpam(IIrcComm ircComm)
+    public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        string nyaaFile = AppDomain.CurrentDomain.BaseDirectory + "/_nyaa";
+        conf = new NyaaConfig(meidoComm.ConfDir + "/NyaaSpam.xml");
+
+        string nyaaFile = meidoComm.ConfDir + "/_nyaa";
         try
         {
             nyaa.LoadFromFile(nyaaFile);
@@ -219,7 +221,7 @@ public class NyaaSpam : IMeidoHook
 
         while (true)
         {
-            Thread.Sleep( TimeSpan.FromMinutes(nyaaConfig.Interval) );
+            Thread.Sleep( TimeSpan.FromMinutes(conf.Interval) );
             Console.WriteLine("\n{0}: Starting ReadFeed Cycle", DateTime.Now);
 
             if (nyaa.ChangedSinceLastSave() == true)
@@ -253,7 +255,7 @@ public class NyaaSpam : IMeidoHook
                     break;
 
                 // Skip processing items in categories we don't care about.
-                if (nyaaConfig.SkipCategories.Contains(item.Categories[0].Name))
+                if (conf.SkipCategories.Contains(item.Categories[0].Name))
                     continue;
 
                 string[] channels = nyaa.PatternMatch(item.Title.Text);

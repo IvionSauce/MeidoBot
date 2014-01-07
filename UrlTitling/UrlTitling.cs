@@ -15,7 +15,7 @@ public class UrlTitler : IMeidoHook
 {
     IIrcComm irc;
 
-    Config conf = new Config("UrlTitling.xml");
+    Config conf;
     NickDisable nickDisable = new NickDisable();
 
     public string Prefix { get; set; }
@@ -43,9 +43,10 @@ public class UrlTitler : IMeidoHook
 
 
     [ImportingConstructor]
-    public UrlTitler(IIrcComm ircComm)
+    public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         irc = ircComm;
+        conf = new Config(meidoComm.ConfDir + "/UrlTitling.xml");
 
         WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);

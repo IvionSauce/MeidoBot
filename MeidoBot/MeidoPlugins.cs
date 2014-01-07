@@ -25,7 +25,7 @@ namespace MeidoBot
         }
 
 
-        public void LoadPlugins(IIrcComm ircComm)
+        public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)
         {
             // Create catalog and add our plugin-directory to it.
             var catalog = new AggregateCatalog();
@@ -36,6 +36,7 @@ namespace MeidoBot
 
             // With thanks to http://stackoverflow.com/questions/7684766/
             container.ComposeExportedValue<IIrcComm>(ircComm);
+            container.ComposeExportedValue<IMeidoComm>(meidoComm);
 
             container.ComposeParts(this);
 
