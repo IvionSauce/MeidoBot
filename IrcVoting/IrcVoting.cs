@@ -10,9 +10,15 @@ public class IrcVoting : IMeidoHook
 {
     VotingManager votingManager;
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "IrcVoting v0.22"; }
+        get { return "IrcVoting"; }
+    }
+    public string Version
+    {
+        get { return "0.22"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -21,7 +27,7 @@ public class IrcVoting : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {".vote", ".vote <motion> - Starts vote on a motion, there can only be one vote ongoing at a time."}
+                {"vote", "vote <motion> - Starts vote on a motion, there can only be one vote ongoing at a time."}
             };
         }
     }

@@ -10,9 +10,15 @@ public class MiscUtils : IMeidoHook
 {
     IIrcComm irc;
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "MiscUtils v0.28"; }
+        get { return "MiscUtils"; }
+    }
+    public string Version
+    {
+        get { return "0.28"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -21,10 +27,10 @@ public class MiscUtils : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {".tell",
-                    ".tell <channel> <message> - If bot is in the specified channel, send message to the channel."},
-                {".say",
-                    ".say <channel> <message> - If bot is in the specified channel, send message to the channel."}
+                {"tell",
+                    "tell <channel> <message> - If bot is in the specified channel, send message to the channel."},
+                {"say",
+                    "say <channel> <message> - If bot is in the specified channel, send message to the channel."}
             };
         }
     }

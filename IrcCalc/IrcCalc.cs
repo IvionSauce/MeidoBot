@@ -10,9 +10,15 @@ public class Calc : IMeidoHook
 {
     IIrcComm irc;
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "IRC Calc v1.0"; }
+        get { return "IrcCalc"; }
+    }
+    public string Version
+    {
+        get { return "1.0"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -21,7 +27,7 @@ public class Calc : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {".calc", @".calc <expression> - Calculates expression, accepted operators: ""+"", ""-"", ""*""," +
+                {"calc", @"calc <expression> - Calculates expression, accepted operators: ""+"", ""-"", ""*""," +
                     @" ""/"", ""^""."}
             };
         }

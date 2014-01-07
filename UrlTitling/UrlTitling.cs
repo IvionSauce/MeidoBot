@@ -18,9 +18,15 @@ public class UrlTitler : IMeidoHook
     Config conf = new Config("UrlTitling.xml");
     NickDisable nickDisable = new NickDisable();
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "URL Titling Service v0.987"; }
+        get { return "URL Titling Service"; }
+    }
+    public string Version
+    {
+        get { return "0.987"; }
     }
 
     public Dictionary<string,string> exportedHelp
@@ -29,8 +35,8 @@ public class UrlTitler : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {".disable", ".disable - Temporarily disable URL-Titling for you in current channel."},
-                {".enable", ".enable - Re-enable (previously disabled) URL-Titling for you."}
+                {"disable", "disable - Temporarily disable URL-Titling for you in current channel."},
+                {"enable", "enable - Re-enable (previously disabled) URL-Titling for you."}
             };
         }
     }
@@ -47,8 +53,8 @@ public class UrlTitler : IMeidoHook
         ChannelThreadManager.Blacklist = new Blacklist();
         try
         {
-            ChannelThreadManager.Blacklist.LoadFromFile("blacklist");
-            Console.WriteLine("");
+            ChannelThreadManager.Blacklist.LoadFromFile(conf.BlacklistLocation);
+            Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
         }
         // Purposefuly catch these exceptions, a blacklist is optional and it's to the user to make sure it's there
         // where they say it is. :V
@@ -422,8 +428,8 @@ static class ChannelThreadManager
             string htmlInfo = webToIrc.GetWebInfo(url);
             if (htmlInfo != null)
             {
-                Console.WriteLine(url + "  --  " + htmlInfo);
                 irc.SendMessage(Channel, htmlInfo);
+                Console.WriteLine(url + "  --  " + htmlInfo);
             }
         }
 

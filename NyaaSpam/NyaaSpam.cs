@@ -17,9 +17,15 @@ public class NyaaSpam : IMeidoHook
     NyaaPatterns nyaa = new NyaaPatterns();
     NyaaConfig nyaaConfig = new NyaaConfig("NyaaSpam.xml");
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "NyaaSpam v0.40"; }
+        get { return "NyaaSpam"; }
+    }
+    public string Version
+    {
+        get { return "0.40"; }
     }
 
     public Dictionary<string,string> exportedHelp
