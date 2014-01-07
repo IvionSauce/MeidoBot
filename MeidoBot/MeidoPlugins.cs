@@ -29,7 +29,6 @@ namespace MeidoBot
         {
             // Create catalog and add our plugin-directory to it.
             var catalog = new AggregateCatalog();
-            // catalog.Catalogs.Add(new AssemblyCatalog(typeof(PluginManager).Assembly));
             catalog.Catalogs.Add(new DirectoryCatalog("."));
 
             // Put it in a container and compose/import the plugins into the IEnumerable pluginContainer field above.
@@ -54,7 +53,7 @@ namespace MeidoBot
             int i = 0;
             foreach (IMeidoHook plugin in pluginContainer)
             {
-                descriptions[i] = plugin.Description;
+                descriptions[i] = string.Concat(plugin.Name, " ", plugin.Version);
                 i++;
             }
 
@@ -65,7 +64,7 @@ namespace MeidoBot
         {
             var keys = new List<string>();
             foreach (IMeidoHook plugin in pluginContainer)
-                foreach (string key in plugin.exportedHelp.Keys)
+                foreach (string key in plugin.Help.Keys)
                     keys.Add(key);
 
             keys.Sort();
@@ -74,13 +73,16 @@ namespace MeidoBot
 
         public string GetHelp(string subject)
         {
-            string subjectWithPrefix = TriggerPrefix + subject;
-            string help;
+            string helpSubject;
+            if (subject.StartsWith(TriggerPrefix))
+                helpSubject = subject.Substring(1);
+            else
+                helpSubject = subject;
 
             foreach (IMeidoHook plugin in pluginContainer)
             {
-                if (plugin.exportedHelp.TryGetValue(subject, out help) ||
-                    plugin.exportedHelp.TryGetValue(subjectWithPrefix, out help))
+                string help;
+                if (plugin.Help.TryGetValue(helpSubject, out help))
                     return help;
             }
             return null;

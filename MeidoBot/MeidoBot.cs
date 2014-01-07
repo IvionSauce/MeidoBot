@@ -128,7 +128,7 @@ namespace MeidoBot
             }
             else
             {
-                string help = plugins.GetHelp(message[1]);
+                string help = plugins.GetHelp( string.Join(" ", message, 1, message.Length - 1) );
 
                 if (help != null)
                     return help;

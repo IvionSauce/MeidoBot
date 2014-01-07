@@ -5,8 +5,11 @@ namespace MeidoCommon
 {
     public interface IMeidoHook
     {
-        string Description { get; }
-        Dictionary<string,string> exportedHelp { get; }
+        string Name { get; }
+        string Version { get; }
+        Dictionary<string, string> Help { get; }
+
+        string Prefix { set; }
     }
 
     public interface IIrcMessage
