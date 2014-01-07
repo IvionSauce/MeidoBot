@@ -21,7 +21,7 @@ public class MiscUtils : IMeidoHook
         get { return "0.28"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {

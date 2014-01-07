@@ -28,7 +28,7 @@ public class NyaaSpam : IMeidoHook
         get { return "0.40"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {

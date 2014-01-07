@@ -21,7 +21,7 @@ public class IrcVoting : IMeidoHook
         get { return "0.22"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {

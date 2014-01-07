@@ -29,7 +29,7 @@ public class UrlTitler : IMeidoHook
         get { return "0.987"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {

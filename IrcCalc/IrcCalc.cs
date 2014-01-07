@@ -21,7 +21,7 @@ public class Calc : IMeidoHook
         get { return "1.0"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {
