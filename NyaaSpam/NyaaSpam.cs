@@ -25,7 +25,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.41"; }
+        get { return "0.42"; }
     }
 
     public Dictionary<string,string> Help
@@ -103,7 +103,7 @@ public class NyaaSpam : IMeidoHook
         {
             // Slice off the quotation marks.
             string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
-            nyaa.Add(pattern);
+            nyaa.Add(channel, pattern);
         }
         // Else interpret comma's as seperators between different titles.
         else
