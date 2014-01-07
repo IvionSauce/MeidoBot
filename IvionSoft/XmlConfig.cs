@@ -15,11 +15,13 @@ namespace IvionSoft
             try
             {
                 Config = XElement.Load(file);
+                Console.WriteLine("-> Loaded config from " + file);
             }
             catch (FileNotFoundException)
             {
                 Config = DefaultConfig();
                 Config.Save(file);
+                Console.WriteLine("-> Created default config at " + file);
             }
             catch (XmlException ex)
             {

@@ -164,7 +164,7 @@ namespace MeidoBot
             this.nick = nick;
 
             // Setting some SmartIrc4Net options.
-            irc.CtcpVersion = "MeidoBot v0.87.7";
+            irc.CtcpVersion = "MeidoBot v0.87.8";
             irc.AutoJoinOnInvite = true;
             irc.Encoding = Encoding.UTF8;
             irc.ActiveChannelSyncing = true;
@@ -191,7 +191,7 @@ namespace MeidoBot
             }
             catch (CouldNotConnectException ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine(ex.Message);
             }
         }
     }
