@@ -14,33 +14,39 @@ public class IrcRandom : IMeidoHook
 {
     IIrcComm irc;
 
-    public string Description
+    public string Prefix { get; set; }
+
+    public string Name
     {
-        get { return "RandomChoice v0.95"; }
+        get { return "RandomChoice"; }
+    }
+    public string Version
+    {
+        get { return "0.95"; }
     }
 
-    public Dictionary<string,string> exportedHelp
+    public Dictionary<string,string> Help
     {
         get 
         {
             return new Dictionary<string, string>()
             {
-                {".c", ".c <options> - Takes either a range of numbers (.c x-y) or a list of options seperated by" +
+                {"c", "c <options> - Takes either a range of numbers (.c x-y) or a list of options seperated by" +
                      @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
 
-                {".cd", ".cd - Want to simulwatch something? Countdown is the tool for you! Invoking .cd will provide " +
+                {"cd", "cd - Want to simulwatch something? Countdown is the tool for you! Invoking .cd will provide " +
                     "you with an automatic countdown, starting from 3 and ending in a spectacular launch!"},
 
-                {".8ball", ".8ball [question] - Ask the Magic 8-Ball any yes or no question."}
+                {"8ball", "8ball [question] - Ask the Magic 8-Ball any yes or no question."}
             };
         }
     }
 
 
     [ImportingConstructor]
-    public IrcRandom(IIrcComm ircComm)
+    public IrcRandom(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        var conf = new Config("RandomChoice.xml");
+        var conf = new Config(meidoComm.ConfDir + "/RandomChoice.xml");
         RandomChoice.LaunchChoices = conf.LaunchChoices.ToArray();
 
         irc = ircComm;
