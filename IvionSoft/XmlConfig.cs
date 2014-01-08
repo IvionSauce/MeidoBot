@@ -23,6 +23,12 @@ namespace IvionSoft
                 Config.Save(file);
                 Console.WriteLine("-> Created default config at " + file);
             }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine(" ! Directory not found: " + file);
+                Console.WriteLine("-> Loading default config.");
+                Config = DefaultConfig();
+            }
             catch (XmlException ex)
             {
                 Console.WriteLine("!! XML Exception: " + ex.Message);
