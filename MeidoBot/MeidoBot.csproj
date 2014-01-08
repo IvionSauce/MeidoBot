@@ -46,5 +46,7 @@
     <Reference Include="Meebey.SmartIrc4net">
       <HintPath>Meebey.SmartIrc4net.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
 </Project>

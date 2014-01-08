@@ -16,13 +16,7 @@ namespace MeidoBot
         IEnumerable<IMeidoHook> pluginContainer;
 
         public int Count { get; private set; }
-
-        string _triggerPrefix = ".";
-        public string Prefix
-        {
-            get { return _triggerPrefix; }
-            set { _triggerPrefix = value; }
-        }
+        public string Prefix { get; set; }
 
 
         public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)
@@ -84,12 +78,11 @@ namespace MeidoBot
             else
                 helpSubject = subject;
 
+            string help;
             foreach (IMeidoHook plugin in pluginContainer)
-            {
-                string help;
                 if (plugin.Help.TryGetValue(helpSubject, out help))
                     return help;
-            }
+
             return null;
         }
     }
