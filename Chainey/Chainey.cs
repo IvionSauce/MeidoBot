@@ -52,9 +52,12 @@ public class IrcChainey : IMeidoHook
         if (nick1.Length > 1)
             nick2 = nick1.Substring(0, nick1.Length - 1);
 
+        // If directly addressed.
         if (irc.IsMe(nick2) || irc.IsMe(nick1) && e.MessageArray.Length > 1)
             new Thread( () => HandleAddressed(e.Channel, e.Nick, e.MessageArray) ).Start();
-        else
+
+        // Only process unaddressed messages if they're worthwhile.
+        else if (e.MessageArray.Length >= config.Order)
             new Thread( () => HandleUnaddressed(e.Channel, e.Message) ).Start();
     }
 

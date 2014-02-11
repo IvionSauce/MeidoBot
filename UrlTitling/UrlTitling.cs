@@ -47,7 +47,7 @@ public class UrlTitler : IMeidoHook
         WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);
 
-        ChannelThreadManager.Blacklist = new Blacklist();
+        ChannelThreadManager.Blacklist = new ControlList();
         try
         {
             ChannelThreadManager.Blacklist.LoadFromFile(conf.BlacklistLocation);
@@ -114,7 +114,7 @@ public class UrlTitler : IMeidoHook
 static class ChannelThreadManager
 {
     static public IIrcComm irc { get; set; }
-    static public Blacklist Blacklist { get; set; }
+    static public ControlList Blacklist { get; set; }
     static public Config Conf { get; set; }
 
     static Dictionary<string, ChannelThread> channelThreads = new Dictionary<string, ChannelThread>();
@@ -126,7 +126,7 @@ static class ChannelThreadManager
 
         lock (thread._channelLock)
         {
-            thread.UrlQueue.Enqueue( new string[] {url, nick} );
+            thread.UrlQueue.Enqueue( new string[] {nick, url} );
             Monitor.Pulse(thread._channelLock);
         }
     }
@@ -169,10 +169,10 @@ static class ChannelThreadManager
 
         void Consumer(string[] item)
         {
-            string url = item[0];
-            string nick = item[1];
+            string nick = item[0];
+            string url = item[1];
 
-            if (Blacklist.InBlacklist(url, Channel, nick))
+            if (Blacklist.IsInList(url, Channel, nick))
             {
                 Console.WriteLine("Blacklisted: " + url);
                 return;

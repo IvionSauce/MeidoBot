@@ -148,6 +148,11 @@ namespace Chainey
             return sentence;
         }
 
+        public string BuildRandomSentence(int maxWords)
+        {
+            return BuildSentence(null, maxWords);
+        }
+
         // This method assumes you've already set the CommandText in the calling method.
         string BuildASentence(int maxWords, SqliteCommand cmd)
         {

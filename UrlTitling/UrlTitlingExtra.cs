@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using IvionSoft;
 
 
-public class Blacklist : DomainListsReader
+public class ControlList : DomainListsReader
 {
-    public bool InBlacklist(string url, string channel, string nick)
+    public bool IsInList(string url, string channel, string nick)
     {
         _rwlock.EnterReadLock();
         
