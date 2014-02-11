@@ -70,26 +70,30 @@ public class NyaaSpam : IMeidoHook
 
     public void HandleMessage(IIrcMessage e)
     {
-        if (e.Message.StartsWith(".nyaa add ") && e.MessageArray.Length > 2)
-            Add(e.Channel, e.Message.Substring(10));
+        if (e.Message.StartsWith(Prefix + "nyaa add ") && e.MessageArray.Length > 2)
+        {
+            Add( e.Channel, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+        }
 
-        else if (e.Message.StartsWith(".nyaa del ") && e.MessageArray.Length > 2)
-            Del(e.Channel, e.Nick, e.Message.Substring(10));
+        else if (e.Message.StartsWith(Prefix + "nyaa del ") && e.MessageArray.Length > 2)
+        {
+            Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+        }
 
-        else if (e.Message.StartsWith(".nyaa show"))
+        else if (e.Message.StartsWith(Prefix + "nyaa show"))
         {
             if (e.MessageArray.Length > 2)
-                Show(e.Channel, e.Nick, e.Message.Substring(11));
+                Show( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
             else
                 Show(e.Channel, e.Nick);
         }
 
-        else if (e.Message.StartsWith(".nyaa reload"))
+        else if (e.Message.StartsWith(Prefix + "nyaa reload"))
         {
             nyaa.ReloadFile();
             irc.SendMessage(e.Channel, "Patterns reloaded from disk.");
         }
-        else if (e.Message.StartsWith(".nyaa save"))
+        else if (e.Message.StartsWith(Prefix + "nyaa save"))
         {
             nyaa.WriteFile();
             irc.SendMessage(e.Channel, "Patterns saved to disk.");
@@ -309,58 +313,5 @@ class NyaaConfig : XmlConfig
                             )
                          );
         return config;
-    }
-}
-
-
-public class NyaaPatterns : DomainListsReadWriter
-{
-    public string[] GetPatterns(string channel)
-    {
-        string chanLow = channel.ToLower();
-        
-        List<string> patterns;
-        string[] value = null;
-        
-        _rwlock.EnterReadLock();
-        if (domainSpecific.TryGetValue(chanLow, out patterns))
-            value = patterns.ToArray();
-        
-        _rwlock.ExitReadLock();
-        return value;
-    }
-    
-    // Returns array with the channels that have a pattern matching the passed title.
-    public string[] PatternMatch(string title)
-    {
-        List<string> value = new List<string>();
-        
-        _rwlock.EnterReadLock();
-        foreach (string channel in domainSpecific.Keys)
-        {
-            foreach (string pattern in domainSpecific[channel])
-            {
-                if (title.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                {
-                    value.Add(channel);
-                    break;
-                }
-            }
-        }
-        
-        _rwlock.ExitReadLock();
-        if (value.Count > 0)
-            return value.ToArray();
-        else
-            return null;
-    }
-}
-
-
-static class ExtensionMethods
-{
-    public static bool Contains(this string source, string value, StringComparison comp)
-    {
-        return source.IndexOf(value, comp) >= 0;
     }
 }
