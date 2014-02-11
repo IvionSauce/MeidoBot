@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{91DEE322-FC87-492E-90C3-4F6019C79921}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Chainey</RootNamespace>
+    <AssemblyName>Chainey</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="Mono.Data.Sqlite" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="Database.cs" />
+    <Compile Include="Chainey.cs" />
+    <Compile Include="MarkovTools.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
+      <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
+      <Name>MeidoCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
+      <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
+      <Name>IvionSoft</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
