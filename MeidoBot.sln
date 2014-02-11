@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IvionSoft", "IvionSoft\Ivio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UrlTitling", "UrlTitling\UrlTitling.csproj", "{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chainey", "Chainey\Chainey.csproj", "{91DEE322-FC87-492E-90C3-4F6019C79921}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -37,6 +39,10 @@ Global
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.Build.0 = Debug|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.ActiveCfg = Release|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.Build.0 = Release|x86
+		{91DEE322-FC87-492E-90C3-4F6019C79921}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{91DEE322-FC87-492E-90C3-4F6019C79921}.Debug|x86.Build.0 = Debug|Any CPU
+		{91DEE322-FC87-492E-90C3-4F6019C79921}.Release|x86.ActiveCfg = Release|Any CPU
+		{91DEE322-FC87-492E-90C3-4F6019C79921}.Release|x86.Build.0 = Release|Any CPU
 		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Debug|x86.Build.0 = Debug|Any CPU
 		{BE2E9C3F-92D1-41CD-A89C-73B685322EAD}.Release|x86.ActiveCfg = Release|Any CPU

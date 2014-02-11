@@ -61,6 +61,10 @@ namespace MeidoBot
         {
             return irc.GetChannels();
         }
+        public bool IsMe(string nick)
+        {
+            return irc.IsMe(nick);
+        }
     }
 
 
@@ -115,7 +119,7 @@ namespace MeidoBot
             }
             catch (CouldNotConnectException ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
             }
         }
 
@@ -137,10 +141,30 @@ namespace MeidoBot
                 string helpMessage = Help(e.Data.MessageArray);
                 irc.SendMessage(SendType.Message, e.Data.Channel, helpMessage);
             }
-            // Only dispatch to the plugins if there's something to dispatch.
-            else if (e.Data.MessageArray.Length > 0)
+            else
                 ircComm.ChannelMessageHandlers(new IrcMessage(e.Data));
 
+        }
+
+        void OnQueryMessage(object sender, Meebey.SmartIrc4net.IrcEventArgs e)
+        {
+            // Some makeshift stuff, will need to code an authentication system.
+            if (e.Data.MessageArray[0] == "disconnect" &&
+                e.Data.Nick == "Ivion")
+            {
+                // This somehow doesn't end the main thread. Just another episode in "shit I don't get".
+                irc.Disconnect();
+            }
+
+            else if (e.Data.MessageArray[0] == "part" &&
+                     e.Data.MessageArray.Length == 2 &&
+                     e.Data.Nick == "Ivion")
+            {
+                irc.RfcPart(e.Data.MessageArray[1]);
+            }
+
+            else
+                ircComm.QueryMessageHandlers(new IrcMessage(e.Data));
         }
 
         // Help trigger
@@ -191,13 +215,14 @@ namespace MeidoBot
             Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
 
             plugins.Prefix = prefix;
-            // Initiliaze the IrcComm with our IrcClient instance.
+            // Initialize the IrcComm with our IrcClient instance.
             ircComm = new IrcComm(irc);
             LoadPlugins();
 
             // Add our methods (defined above) to handle IRC events.
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
+            irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);
         }
     }
 

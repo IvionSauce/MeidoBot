@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -18,7 +19,7 @@ public class MiscUtils : IMeidoHook
     }
     public string Version
     {
-        get { return "0.28"; }
+        get { return "0.35"; }
     }
 
     public Dictionary<string,string> Help
@@ -27,10 +28,9 @@ public class MiscUtils : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"tell",
-                    "tell <channel> <message> - If bot is in the specified channel, send message to the channel."},
-                {"say",
-                    "say <channel> <message> - If bot is in the specified channel, send message to the channel."}
+                {"say", "say [channel] <message> - If bot is in the specified channel, send message to the channel. " +
+                    "If no channel is given, message will be sent to current channel."},
+                {"timer", "timer <minutes> - Starts a timer. Minutes must be positive."}
             };
         }
     }
@@ -41,21 +41,80 @@ public class MiscUtils : IMeidoHook
     {
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
+        irc.AddQueryMessageHandler(HandlePM);
     }
 
     public void HandleChannelMessage(IIrcMessage e)
     {
-        switch (e.MessageArray[0])
+        // Say trigger.
+        if (e.MessageArray[0] == Prefix + "say" &&
+            e.MessageArray.Length > 1)
         {
-        case ".say":
-        case ".tell":
+            string toChannel = Say(e.MessageArray, e.Channel);
+            Console.WriteLine("\n--- Say: {0}/{1} -> {2}", e.Channel, e.Nick, toChannel);
+        }
+
+        // Timer trigger.
+        else if (e.MessageArray[0] == Prefix + "timer" &&
+                 e.MessageArray.Length > 1)
+        {
+            double minutes;
+            if (double.TryParse(e.MessageArray[1], out minutes))
+            {
+                if (minutes <= 0)
+                    return;
+
+                string[] info = {e.Channel, e.Nick};
+                var time = TimeSpan.FromMinutes(minutes);
+
+                new Timer(IrcTimer, info, time, TimeSpan.Zero);
+                irc.SendMessage( e.Channel, string.Format("{0}: Your timer has started.", e.Nick) );
+            }
+        }
+    }
+
+    public void HandlePM(IIrcMessage e)
+    {
+        if (e.MessageArray[0] == "say")
+        {
             if (e.MessageArray.Length > 2)
             {
-                Console.WriteLine("\n--- Tell: {0}/{1} -> {2}", e.Channel, e.Nick, e.MessageArray[1]);
-                Tell(e.MessageArray);
+                string toChannel = Say(e.MessageArray, "");
+                Console.WriteLine("\n--- Say: PM/{1} -> {2}", e.Channel, e.Nick, toChannel);
             }
-            break;
         }
+    }
+
+    void IrcTimer(object data)
+    {
+        var info = (string[])data;
+        irc.SendMessage( info[0], string.Format("{0}: !RINGRING! Your timer has finished.", info[1]) );
+    }
+
+    string Say(string[] command, string currentChannel)
+    {
+        string channel, message;
+        if (command[1].StartsWith("#"))
+        {
+            channel = command[1];
+            message = string.Join(" ", command, 2, command.Length - 2);
+        }
+        else
+        {
+            channel = currentChannel;
+            message = string.Join(" ", command, 1, command.Length - 1);
+        }
+        return Say(channel, message);
+    }
+
+    string Say(string channel, string message)
+    {
+        if (!string.IsNullOrEmpty(channel) && InChannel(channel))
+        {
+            irc.SendMessage(channel, message);
+            return channel;
+        }
+        return null;
     }
 
     bool InChannel(string channel)
@@ -66,15 +125,5 @@ public class MiscUtils : IMeidoHook
                 return true;
         }
         return false;
-    }
-
-    void Tell(string[] command)
-    {
-        // Index 0 is ".tell"/".say", index 1 is `channel` and everything from index 2 onward is the `message`.
-        string channel = command[1];
-        var message = string.Join(" ", command, 2, command.Length - 2);
-
-        if (InChannel(channel))
-            irc.SendMessage(channel, message);
     }
 }

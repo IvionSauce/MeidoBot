@@ -38,5 +38,6 @@
   <ItemGroup>
     <Compile Include="DomainLists.cs" />
     <Compile Include="XmlConfig.cs" />
+    <Compile Include="History.cs" />
   </ItemGroup>
 </Project>

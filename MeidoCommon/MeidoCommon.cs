@@ -37,5 +37,6 @@ namespace MeidoCommon
         void SendNotice(string target, string message);
 
         string[] GetChannels();
+        bool IsMe(string nick);
     }
 }
