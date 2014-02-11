@@ -6,7 +6,7 @@ using IvionSoft;
 
 public class Blacklist : DomainListsReader
 {
-    public bool InBlacklist(string url, string channel)
+    public bool InBlacklist(string url, string channel, string nick)
     {
         _rwlock.EnterReadLock();
         
@@ -22,10 +22,11 @@ public class Blacklist : DomainListsReader
         
         // Check for a channel specific blacklist, since only a minority will have one it will cause the
         // foreach loop to be skipped. (Acting on the assumption that TryGetValue is efficient)
-        List<string> channelList;
-        if (domainSpecific.TryGetValue(channel.ToLower(), out channelList))
+        List<string> domainList;
+        if (domainSpecific.TryGetValue(channel.ToLower(), out domainList) ||
+            domainSpecific.TryGetValue(nick.ToLower(), out domainList) )
         {
-            foreach (string s in channelList)
+            foreach (string s in domainList)
             {
                 if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
                 {
