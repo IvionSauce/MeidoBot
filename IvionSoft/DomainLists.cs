@@ -133,18 +133,18 @@ namespace IvionSoft
 
         public void LoadFromFile(string file)
         {
-            // Just keep the write lock for the entire reading cycle.
-            _rwlock.EnterWriteLock();
-
-            filename = file;
-            globalList.Clear();
-            domainSpecific.Clear();
-
             using (var fileStream = new StreamReader(file))
             {
+                // Just keep the write lock for the entire reading cycle.
+                _rwlock.EnterWriteLock();
+                
+                filename = file;
+                globalList.Clear();
+                domainSpecific.Clear();
+
                 // Applicable domain of the lines yet to read, start of in 'global' mode - meaning that read
-                // lines are applicable to all channels. Gets changed whenever instucted to by ":".
-                string[] domain = {"all"};
+                // lines are applicable to all channels. Gets changed whenever instructed to by ":".
+                string[] domain = {"_all"};
 
                 while (fileStream.Peek() >= 0)
                 {
@@ -153,14 +153,13 @@ namespace IvionSoft
                     // Ignore empty lines or comments.
                     if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
                         continue;
-                    // Add channels, delimited by comma's, to the domain.
                     else if (line[0] == ':')
                         // Remove leading ":" before splitting.
                         domain = line.Substring(1).Split(',');
                     // The rest will be treated as relevant and added to the list.
                     else
                     {
-                        if (domain[0] == "all")
+                        if (domain[0] == "_all")
                             Add(line);
                         else if (domain.Length == 1)
                             Add(domain[0], line);
