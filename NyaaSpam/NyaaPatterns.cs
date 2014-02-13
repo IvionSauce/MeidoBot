@@ -25,8 +25,10 @@ public class NyaaPatterns : DomainListsReadWriter
         List<string> channels = new List<string>();
         
         _rwlock.EnterReadLock();
+        // Iterate over the channels.
         foreach (string channel in domainSpecific.Keys)
         {
+            // Iterate over the patterns associated with channel.
             foreach (string pattern in domainSpecific[channel])
             {
                 // Split each pattern into its constituents. If the title contains it subtract 1 from the countdown.

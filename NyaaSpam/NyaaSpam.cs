@@ -220,13 +220,14 @@ public class NyaaSpam : IMeidoHook
 
     void ReadFeed()
     {
-        DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
-        DateTimeOffset latestPublish = DateTimeOffset.Now;
+        var interval = TimeSpan.FromMinutes(conf.Interval);
+
+        var lastPrintedTime = DateTimeOffset.Now;
+        DateTimeOffset latestPublish;
 
         while (true)
         {
-            Thread.Sleep( TimeSpan.FromMinutes(conf.Interval) );
-            Console.WriteLine("\n{0}: Starting ReadFeed Cycle", DateTime.Now);
+            Thread.Sleep(interval);
 
             if (nyaa.ChangedSinceLastSave() == true)
                 nyaa.WriteFile();
@@ -237,9 +238,9 @@ public class NyaaSpam : IMeidoHook
                 XmlReader reader = XmlReader.Create("http://www.nyaa.se/?page=rss");
                 feed = SyndicationFeed.Load(reader);
             }
-            catch (Exception ex)
+            catch (System.Net.WebException ex)
             {
-                Console.WriteLine("Error in ReadFeed: " + ex.Message);
+                Console.WriteLine("WebException in ReadFeed: " + ex.Message);
                 continue;
             }
 
@@ -257,7 +258,6 @@ public class NyaaSpam : IMeidoHook
                 // Once we hit items that we probably already have printed, stop processing the rest.
                 if (item.PublishDate <= lastPrintedTime)
                     break;
-
                 // Skip processing items in categories we don't care about.
                 if (conf.SkipCategories.Contains(item.Categories[0].Name))
                     continue;
