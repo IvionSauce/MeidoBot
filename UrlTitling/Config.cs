@@ -34,6 +34,7 @@ class Config : XmlConfig
     // Global and/or static settings.
     public double Threshold { get; set; }
     public string BlacklistLocation { get; set; }
+    public string WhitelistLocation { get; set; }
     public CookieCollection CookieColl { get; set; }
     
     // Channel specific settings, or at least the possibility thereof.
@@ -128,7 +129,8 @@ class Config : XmlConfig
     public override void LoadConfig ()
     {
         Threshold = (double)Config.Element("threshold");
-        BlacklistLocation = Config.Element("blacklist-location").Value;
+        BlacklistLocation = (string)Config.Element("blacklist-location");
+        WhitelistLocation = (string)Config.Element("whitelist-location");
         
         LoadCookies();
         LoadIntoWebIrcSettings();
@@ -216,36 +218,37 @@ class Config : XmlConfig
             new XElement("config",
                          new XElement("threshold", 1.0d, new XComment("Number between 0 and 1")),
                          new XElement("blacklist-location", "conf/blacklist"),
+                         new XElement("whitelist-location", "conf/whitelist"),
                          
                          new XComment("For 'danbooru' and 'chan-foolz' you can have channel specific options.\n" +
                          "Just create another one with appropriate value in the `channel` attribute."),
                          
                          new XElement("danbooru", new XAttribute("channel", "_all"),
-                         new XElement("max-tags-displayed", 5, new XComment("Limits each tag category " +
+                            new XElement("max-tags-displayed", 5, new XComment("Limits each tag category " +
                                                                "(characters, copyrights and artists) to this number")),
-                         new XElement("continuation-symbol", "[...]", new XComment("What to print to indicate " +
+                            new XElement("continuation-symbol", "[...]", new XComment("What to print to indicate " +
                                                                       "that there are more tags than displayed")),
-                         new XElement("colourize", true)
+                            new XElement("colourize", true)
                          /* new XElement("normal-code", "", new XComment("Default is no control-codes")),
                             new XElement("characters-code", "\u000303"),
                             new XElement("copyrights-code", "\u000306"),
                             new XElement("artists-code", "\u000305") */
-                         ),
+                            ),
                          
                          new XElement("chan-foolz", new XAttribute("channel", "_all"),
-                         new XElement("max-lines", 2),
-                         new XElement("max-characters", 128),
-                         new XElement("continuation-symbol", "…")
-                         ),
+                            new XElement("max-lines", 2),
+                            new XElement("max-characters", 128),
+                            new XElement("continuation-symbol", "…")
+                            ),
                          
                          new XElement("cookies",
-                         new XElement("cookie",
-                         new XElement("name", ""),
-                         new XElement("content", ""),
-                         new XElement("path", ""),
-                         new XElement("host", "")
-                         )
-                         )
+                            new XElement("cookie",
+                                new XElement("name", ""),
+                                new XElement("content", ""),
+                                new XElement("path", ""),
+                                new XElement("host", "")
+                                )
+                            )
                          );
         return config;
     }

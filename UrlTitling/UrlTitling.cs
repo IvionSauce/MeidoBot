@@ -46,20 +46,8 @@ public class UrlTitler : IMeidoHook
 
         WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);
-
-        ChannelThreadManager.Blacklist = new ControlList();
-        try
-        {
-            ChannelThreadManager.Blacklist.LoadFromFile(conf.BlacklistLocation);
-            Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
-        }
-        // Purposefuly catch these exceptions, a blacklist is optional and it's to the user to make sure it's there
-        // where they say it is. :V
-        catch (FileNotFoundException)
-        {}
-        catch (DirectoryNotFoundException)
-        {}
-
+        // Setup black- and whitelist.
+        SetupBWLists(conf);
         // Sharing stuff with the Channel Manager.
         ChannelThreadManager.irc = ircComm;
         ChannelThreadManager.Conf = conf;
@@ -67,27 +55,59 @@ public class UrlTitler : IMeidoHook
         irc.AddChannelMessageHandler(HandleChannelMessage);
     }
 
+    void SetupBWLists(Config conf)
+    {
+        ChannelThreadManager.Blacklist = new Blacklist();
+        ChannelThreadManager.Whitelist = new Whitelist();
+        if (conf.BlacklistLocation != null)
+        {
+            try
+            {
+                ChannelThreadManager.Blacklist.LoadFromFile(conf.BlacklistLocation);
+                Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
+            }
+            catch (FileNotFoundException)
+            {}
+            catch (DirectoryNotFoundException)
+            {}
+        }
+        if (conf.WhitelistLocation != null)
+        {
+            try
+            {
+                ChannelThreadManager.Whitelist.LoadFromFile(conf.WhitelistLocation);
+                Console.WriteLine("-> Loaded whitelist from " + conf.WhitelistLocation);
+            }
+            catch (FileNotFoundException)
+            {}
+            catch (DirectoryNotFoundException)
+            {}
+        }
+    }
+
     public void HandleChannelMessage(IIrcMessage e)
     {
+        string index0 = e.MessageArray[0];
         // ----- Trigger handling -----
-        switch (e.MessageArray[0])
+        if (index0 == Prefix + "reload_bw")
         {
-        case ".reload_bl":
             ChannelThreadManager.Blacklist.ReloadFile();
-            irc.SendMessage(e.Channel, "Blacklist has been reloaded.");
-            return;
-        case ".disable":
+            ChannelThreadManager.Whitelist.ReloadFile();
+            irc.SendMessage(e.Channel, "Black- and whitelist have been reloaded.");
+        }
+        else if (index0 == Prefix + "disable")
+        {
             nickDisable.Add(e.Nick, e.Channel);
             irc.SendNotice(e.Nick, string.Format("Disabling URL-Titling for you. (In {0})", e.Channel));
-            return;
-        case ".enable":
+        }
+        else if (index0 == Prefix + "enable")
+        {
             if (nickDisable.Remove(e.Nick, e.Channel))
                 irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
-            return;
-        // Do nothing if it might be a trigger we're not associated with.
-        case ".":
-            return;
         }
+        // Do nothing if it might be a trigger we're not associated with.
+        else if (e.Message.StartsWith(Prefix))
+            return;
 
         // ----- Handling of URLs -----
         bool printedDetection = false;
@@ -114,7 +134,8 @@ public class UrlTitler : IMeidoHook
 static class ChannelThreadManager
 {
     static public IIrcComm irc { get; set; }
-    static public ControlList Blacklist { get; set; }
+    static public Blacklist Blacklist { get; set; }
+    static public Whitelist Whitelist { get; set; }
     static public Config Conf { get; set; }
 
     static Dictionary<string, ChannelThread> channelThreads = new Dictionary<string, ChannelThread>();
@@ -172,12 +193,27 @@ static class ChannelThreadManager
             string nick = item[0];
             string url = item[1];
 
-            if (Blacklist.IsInList(url, Channel, nick))
+            bool? inWhite = Whitelist.IsInList(url, Channel, nick);
+            // If whitelist not applicable.
+            if (inWhite == null)
             {
-                Console.WriteLine("Blacklisted: " + url);
-                return;
+                if ( Blacklist.IsInList(url, Channel, nick) )
+                {
+                    Console.WriteLine("Blacklisted: " + url);
+                    return;
+                }
+                OutputUrl(url);
             }
+            // If in whitelist, go directly to output and skip blacklist.
+            else if (inWhite == true)
+                OutputUrl(url);
+            // If the whitelist was applicable, but the URL wasn't found in it.
+            else
+                Console.WriteLine("Not whitelisted: " + url);
+        }
 
+        void OutputUrl(string url)
+        {
             string htmlInfo = webToIrc.GetWebInfo(url);
             if (htmlInfo != null)
             {

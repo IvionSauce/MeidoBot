@@ -4,13 +4,65 @@ using System.Collections.Generic;
 using IvionSoft;
 
 
-public class ControlList : DomainListsReader
+public class Whitelist : ControlList
+{
+    public bool? IsInList(string url, string channel, string nick)
+    {
+        /* bool inGlobal = IsInGlobalList(url);
+        if (inGlobal)
+            return true; */
+        
+        return IsInDomainList(url, channel, nick);
+    }
+}
+
+
+public class Blacklist : ControlList
 {
     public bool IsInList(string url, string channel, string nick)
     {
+        bool inGlobal = IsInGlobalList(url);
+        if (inGlobal)
+            return true;
+
+        bool? inDomain = IsInDomainList(url, channel, nick);
+        if (inDomain != null)
+            return (bool)inDomain;
+        else
+            return false;
+    }
+}
+
+
+public class ControlList : DomainListsReader
+{
+    public bool? IsInDomainList(string url, string channel, string nick)
+    {
         _rwlock.EnterReadLock();
-        
-        // Check the global blacklist.
+        List<string> domainList;
+        if (domainSpecific.TryGetValue(channel.ToLower(), out domainList) ||
+            domainSpecific.TryGetValue(nick.ToLower(), out domainList) )
+        {
+            _rwlock.ExitReadLock();
+            foreach (string s in domainList)
+            {
+                if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            // Return false if it does have an entry, but the URL isn't in the list.
+            return false;
+        }
+        else
+        {
+            _rwlock.ExitReadLock();
+            // Return null if it doesn't even have an entry.
+            return null;
+        }
+    }
+
+    public bool IsInGlobalList(string url)
+    {
+        _rwlock.EnterReadLock();
         foreach (string s in globalList)
         {
             if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
@@ -19,25 +71,8 @@ public class ControlList : DomainListsReader
                 return true;
             }
         }
-        
-        // Check for a channel specific blacklist, since only a minority will have one it will cause the
-        // foreach loop to be skipped. (Acting on the assumption that TryGetValue is efficient)
-        List<string> domainList;
-        if (domainSpecific.TryGetValue(channel.ToLower(), out domainList) ||
-            domainSpecific.TryGetValue(nick.ToLower(), out domainList) )
-        {
-            foreach (string s in domainList)
-            {
-                if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
-                {
-                    _rwlock.ExitReadLock();
-                    return true;
-                }
-            }
-        }
-        
         _rwlock.ExitReadLock();
-        // If neither return a hit, return false - since it's in neither of the blacklists.
+
         return false;
     }
 }
