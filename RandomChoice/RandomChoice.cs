@@ -22,7 +22,7 @@ public class IrcRandom : IMeidoHook
     }
     public string Version
     {
-        get { return "0.96"; }
+        get { return "0.97"; }
     }
 
     public Dictionary<string,string> Help
@@ -55,20 +55,19 @@ public class IrcRandom : IMeidoHook
 
     public void HandleChannelMessage(IIrcMessage e)
     {
-        switch (e.MessageArray[0])
+        string index0 = e.MessageArray[0];
+
+        if (index0 == Prefix + "c")
         {
-        case ".c":
             string choice = RandomChoice.RndChoice(e.MessageArray);
             if (choice != null)
                 irc.SendMessage(e.Channel, e.Nick + ": " + choice);
-            break;
-        case ".cd":
-            new Thread( () => Countdown(e.Channel) ).Start();
-            break;
-        case ".8ball":
-            new Thread( () => EightBall(e.Channel) ).Start();
-            break;
         }
+        else if (index0 == Prefix + "cd")
+            new Thread( () => Countdown(e.Channel) ).Start();
+
+        else if (index0 == Prefix + "8ball")
+            new Thread( () => EightBall(e.Channel) ).Start();
     }
 
     void Countdown(string channel)
@@ -182,8 +181,8 @@ static class RandomChoice
             int begin, end;
             try
             {
-                begin = Convert.ToInt32(numberSeq.Groups[1].Value);
-                end = Convert.ToInt32(numberSeq.Groups[2].Value);
+                begin = int.Parse(numberSeq.Groups[1].Value);
+                end = int.Parse(numberSeq.Groups[2].Value);
             }
             catch (OverflowException)
             {
@@ -193,7 +192,7 @@ static class RandomChoice
             if (begin > end)
                 return null;
             else
-                return Convert.ToString(rnd.Next(begin, end));
+                return Convert.ToString( rnd.Next(begin, (end + 1)) );
         }
         // Else assume that it's a collection of options, so extract those options into an array and choose
         // a random member.
@@ -221,9 +220,7 @@ class Config : XmlConfig
 
         LaunchChoices = new List<string>();
         foreach (XElement option in countdownOptions.Elements())
-        {
             LaunchChoices.Add(option.Value);
-        }
     }
 
     public override XElement DefaultConfig()
