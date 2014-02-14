@@ -25,7 +25,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.42"; }
+        get { return "0.45"; }
     }
 
     public Dictionary<string,string> Help
@@ -34,7 +34,6 @@ public class NyaaSpam : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"nyaa", "See \"nyaa add|del|show\" for help."},
                 {"nyaa add", "add <pattern...> - Adds pattern(s), seperated by \",\". Unless enclosed in quotation " +
                     "marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
                 {"nyaa del", "del <index...> - Removes pattern(s) inidicated by given indices. Can be seperated by " +
@@ -70,33 +69,39 @@ public class NyaaSpam : IMeidoHook
 
     public void HandleMessage(IIrcMessage e)
     {
-        if (e.Message.StartsWith(Prefix + "nyaa add ") && e.MessageArray.Length > 2)
+        if (e.MessageArray[0] == Prefix + "nyaa")
         {
-            Add( e.Channel, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
-        }
+            if (e.MessageArray.Length == 1)
+                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show|>\" for help", Prefix) );
 
-        else if (e.Message.StartsWith(Prefix + "nyaa del ") && e.MessageArray.Length > 2)
-        {
-            Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
-        }
+            else if (e.MessageArray[1] == "add" && e.MessageArray.Length > 2)
+            {
+                Add( e.Channel, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+            }
 
-        else if (e.Message.StartsWith(Prefix + "nyaa show"))
-        {
-            if (e.MessageArray.Length > 2)
-                Show( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
-            else
-                Show(e.Channel, e.Nick);
-        }
+            else if (e.MessageArray[1] == "del" && e.MessageArray.Length > 2)
+            {
+                Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+            }
 
-        else if (e.Message.StartsWith(Prefix + "nyaa reload"))
-        {
-            nyaa.ReloadFile();
-            irc.SendMessage(e.Channel, "Patterns reloaded from disk.");
-        }
-        else if (e.Message.StartsWith(Prefix + "nyaa save"))
-        {
-            nyaa.WriteFile();
-            irc.SendMessage(e.Channel, "Patterns saved to disk.");
+            else if (e.MessageArray[1] == "show")
+            {
+                if (e.MessageArray.Length > 2)
+                    Show( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+                else
+                    Show(e.Channel, e.Nick);
+            }
+
+            else if (e.MessageArray[1] == "reload")
+            {
+                nyaa.ReloadFile();
+                irc.SendMessage(e.Channel, "Patterns reloaded from disk.");
+            }
+            else if (e.MessageArray[1] == "save")
+            {
+                nyaa.WriteFile();
+                irc.SendMessage(e.Channel, "Patterns saved to disk.");
+            }
         }
     }
 
@@ -133,7 +138,7 @@ public class NyaaSpam : IMeidoHook
         {
             removedPattern = nyaa.Remove(channel, i);
             if (removedPattern != null)
-                irc.SendNotice(nick, string.Format("Deleted: {0}", removedPattern));
+                irc.SendNotice( nick, string.Format("Deleted: {0}", removedPattern) );
         }
         if (removedPattern != null)
             irc.SendNotice(nick, " -----");
@@ -148,7 +153,7 @@ public class NyaaSpam : IMeidoHook
         {
             pattern = nyaa.Get(channel, i);
             if (pattern != null)
-                irc.SendNotice(nick, string.Format("[{0}] \"{1}\"", i, pattern));
+                irc.SendNotice( nick, string.Format("[{0}] \"{1}\"", i, pattern) );
         }
         if (pattern != null)
             irc.SendNotice(nick, " -----");
@@ -156,7 +161,7 @@ public class NyaaSpam : IMeidoHook
 
     void Show(string channel, string nick)
     {
-        irc.SendNotice(nick, string.Format("Patterns for {0}:", channel));
+        irc.SendNotice( nick, string.Format("Patterns for {0}:", channel) );
 
         string[] patterns = nyaa.GetPatterns(channel);
         if (patterns == null)
@@ -169,9 +174,9 @@ public class NyaaSpam : IMeidoHook
         {
             j = i + half;
             if (j < patterns.Length)
-                irc.SendNotice(nick, string.Format("[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j]));
+                irc.SendNotice( nick, string.Format("[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j]) );
             else
-                irc.SendNotice(nick, string.Format("[{0}] {1}", i, patterns[i]));
+                irc.SendNotice( nick, string.Format("[{0}] {1}", i, patterns[i]) );
         }
 
         irc.SendNotice(nick, " -----");
@@ -223,7 +228,7 @@ public class NyaaSpam : IMeidoHook
         var interval = TimeSpan.FromMinutes(conf.Interval);
 
         var lastPrintedTime = DateTimeOffset.Now;
-        DateTimeOffset latestPublish;
+        var latestPublish = DateTimeOffset.Now;
 
         while (true)
         {

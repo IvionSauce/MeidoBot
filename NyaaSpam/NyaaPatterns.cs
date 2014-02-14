@@ -23,6 +23,10 @@ public class NyaaPatterns : DomainListsReadWriter
     public string[] PatternMatch(string title)
     {
         List<string> channels = new List<string>();
+
+        string tmpTitle;
+        string[] constituents;
+        int countdown;
         
         _rwlock.EnterReadLock();
         // Iterate over the channels.
@@ -31,14 +35,25 @@ public class NyaaPatterns : DomainListsReadWriter
             // Iterate over the patterns associated with channel.
             foreach (string pattern in domainSpecific[channel])
             {
-                // Split each pattern into its constituents. If the title contains it subtract 1 from the countdown.
+                // Split each pattern into its constituents. If the title contains one subtract 1 from the countdown.
                 // When the countdown reaches 0 it means all constituents were found in the title, so add the channel.
-                string[] split = pattern.Split(' ');
-                int countdown = split.Length;
+                tmpTitle = title;
+                constituents = pattern.Split(' ');
+                countdown = constituents.Length;
 
-                foreach (string s in split)
-                    if ( title.Contains(s, StringComparison.OrdinalIgnoreCase) )
+                foreach (string s in constituents)
+                {
+                    int startIndex = tmpTitle.IndexOf(s, StringComparison.OrdinalIgnoreCase);
+
+                    if (startIndex >= 0)
+                    {
+                        // Addendum: if we have a match, remove it from the the tmpTitle, this to ensure that if we have
+                        // a pattern with repeated words it only matches when the title indeed contains multiple
+                        // instances of that word.
+                        tmpTitle = tmpTitle.Remove(startIndex, s.Length);
                         countdown--;
+                    }
+                }
 
                 if (countdown <= 0)
                 {
@@ -53,14 +68,5 @@ public class NyaaPatterns : DomainListsReadWriter
             return channels.ToArray();
         else
             return null;
-    }
-}
-
-
-static class ExtensionMethods
-{
-    public static bool Contains(this string source, string value, StringComparison comp)
-    {
-        return source.IndexOf(value, comp) >= 0;
     }
 }

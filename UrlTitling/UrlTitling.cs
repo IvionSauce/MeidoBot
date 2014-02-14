@@ -22,7 +22,7 @@ public class UrlTitler : IMeidoHook
     }
     public string Version
     {
-        get { return "0.988"; }
+        get { return "0.999"; }
     }
 
     public Dictionary<string,string> Help
@@ -59,7 +59,7 @@ public class UrlTitler : IMeidoHook
     {
         ChannelThreadManager.Blacklist = new Blacklist();
         ChannelThreadManager.Whitelist = new Whitelist();
-        if (conf.BlacklistLocation != null)
+        if (!string.IsNullOrEmpty(conf.BlacklistLocation))
         {
             try
             {
@@ -71,7 +71,7 @@ public class UrlTitler : IMeidoHook
             catch (DirectoryNotFoundException)
             {}
         }
-        if (conf.WhitelistLocation != null)
+        if (!string.IsNullOrEmpty(conf.WhitelistLocation))
         {
             try
             {

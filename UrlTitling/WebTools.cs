@@ -137,8 +137,8 @@ namespace WebToolsModule
             // Also safeguard against Divided-By-Zero or `Infinity` result.
             if (totalWords <= 0)
                 return 0d;
-
-            return foundWords / (double)totalWords;
+            else
+                return foundWords / (double)totalWords;
         }
     }
 
@@ -174,6 +174,7 @@ namespace WebToolsModule
             else
                 return null;
         }
+
         public static string[] GetThreadOP(string url, Source source)
         {
             string[] boardAndThread = GetBoardAndThreadNo(url, source);
@@ -183,6 +184,7 @@ namespace WebToolsModule
             else
                 return GetThreadOP(boardAndThread[0], int.Parse(boardAndThread[1]), source);
         }
+
 
         public static string[] GetThreadOP(string board, int thread, Source source)
         {
@@ -239,6 +241,7 @@ namespace WebToolsModule
             return fixedPost;
         }
 
+
         static string[] GetBoardAndThreadNo(string url, Source source)
         {
             GroupCollection groups;
@@ -252,6 +255,7 @@ namespace WebToolsModule
             else
                 return null;
         }
+
 
         public static string ShortenPost(string post, int maxLines, int maxChar, string contSymbol)
         {
@@ -279,6 +283,7 @@ namespace WebToolsModule
             else
                 return shortPost;
         }
+
 
         public static string RemoveSpoilerTags(string post)
         {
@@ -322,7 +327,7 @@ namespace WebToolsModule
 
             // Download the JSON into a string.
             string jsonStr = WebTools.SimpleGetString(jsonReq);
-            // If we coudln't get it, return null.
+            // If we couldn't get it, return null.
             if (jsonStr == null)
                 return null;
 
