@@ -8,6 +8,7 @@ namespace IvionSoft
         int length;
         HashSet<T> hashes;
         Queue<T> queue;
+        object _locker;
 
 
         public History(int length)
@@ -18,6 +19,8 @@ namespace IvionSoft
             this.length = length;
             hashes = new HashSet<T>();
             queue = new Queue<T>(length + 1);
+
+            _locker = new object();
         }
 
         public bool Contains(T item)
@@ -27,15 +30,19 @@ namespace IvionSoft
 
         public bool Add(T item)
         {
-            bool added = hashes.Add(item);
-
-            if (added)
+            bool added;
+            lock (_locker)
             {
-                queue.Enqueue(item);
-                if (queue.Count > length)
+                added = hashes.Add(item);
+
+                if (added)
                 {
-                    T toRemove = queue.Dequeue();
-                    hashes.Remove(toRemove);
+                    queue.Enqueue(item);
+                    if (queue.Count > length)
+                    {
+                        T toRemove = queue.Dequeue();
+                        hashes.Remove(toRemove);
+                    }
                 }
             }
 

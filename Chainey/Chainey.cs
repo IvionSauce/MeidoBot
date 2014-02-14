@@ -25,7 +25,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.25"; }
+        get { return "0.35"; }
     }
     
     public Dictionary<string,string> Help
@@ -86,7 +86,7 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string respondTo)
     {
-        string[] sorted = SortByLength(respondTo.Split(' '), config.ResponseTries);
+        string[] sorted = GetTopLength(respondTo.Split(' '), config.ResponseTries);
 
         string[] sentences = chainey.BuildSentences(sorted, config.MaxWords);
         foreach (string sen in sentences)
@@ -106,9 +106,15 @@ public class IrcChainey : IMeidoHook
 
     void AbsorbSentence(string sentence)
     {
-        string[][] possibleChains = MarkovTools.TokenizeSentence(sentence, config.Order);
-        if (possibleChains != null)
-            chainey.AddChains(possibleChains);
+        if (!history.Contains(sentence))
+        {
+            string[][] possibleChains = MarkovTools.TokenizeSentence(sentence, config.Order);
+            if (possibleChains != null)
+            {
+                history.Add(sentence);
+                chainey.AddChains(possibleChains);
+            }
+        }
     }
 
 
@@ -144,11 +150,11 @@ public class IrcChainey : IMeidoHook
 
 
     // http://www.dotnetperls.com/sort-strings-length
-    static string[] SortByLength(string[] arr, int count)
+    static string[] GetTopLength(string[] arr, int topCount)
     {
         var sorted = (from s in arr
-                     orderby s.Length descending
-                     select s).Take(count);
+                      orderby s.Length descending
+                      select s).Take(topCount);
 
         return sorted.ToArray();
     }
@@ -167,17 +173,18 @@ class Config
     // Markov Chains of the nth order.
     public int Order { get; set; }
 
+    // If she's learning and from which channels she should be learning.
     public bool Learning { get; set; }
     public HashSet<string> LearningChannels { get; set; }
 
-    // Max number words you want a sentence to have.
+    // Max number words you want a constructed sentence to have.
     public int MaxWords { get; set; }
     // The number of words it tries as individual seeds before building a random sentence.
     public int ResponseTries { get; set; }
 
     public List<string> BadWords { get; set; }
 
-    // The max amount of words that are allowed to occur in a to-learn sentence, consecutively and in total.
+    // The max amount of identical words that are allowed to occur in a to-learn sentence, consecutively and in total.
     public int MaxConsecutive { get; set; }
     public int MaxTotal { get; set; }
 

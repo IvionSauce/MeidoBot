@@ -7,7 +7,7 @@ namespace Chainey
     {
         static public string[][] TokenizeSentence(string sentence, int order)
         {
-            string[] split = sentence.Split(' ');
+            string[] split = sentence.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
             return TokenizeSentence(split, order);
         }
 
@@ -55,27 +55,6 @@ namespace Chainey
 
     static public class ChainControl
     {
-        /* static public HashSet<string> IgnoreChatWords { get; set; }
-        
-        
-        static ChainControl()
-        {
-            IgnoreChatWords = new HashSet<string>() {"a", "an", "and", "the", "that", "of", "to", "in", "it", "is",
-                "was", "i", "I", "for", "on"};
-        }
-
-        static public string[] RemoveIgnoredWords(string[] sentence)
-        {
-            var newSentence = new List<string>();
-            foreach (string s in sentence)
-            {
-                if (!IgnoreChatWords.Contains(s))
-                    newSentence.Add(s);
-            }
-
-            return newSentence.ToArray();
-        } */
-
         // Will return true if a word occurs consecutively and exceeds the threshold.
         static public bool FoulPlay(string[] words, int consecutiveThreshold, int totalThreshold)
         {
@@ -85,7 +64,9 @@ namespace Chainey
             // `Length - 1` because we don't need to check the final word, there would be nothing left to match against.
             for (int i = 0; i < (words.Length - 1); i++)
             {
-                occurrences = consecutive = 0;
+                // Set to 1, because whatever word we start on has already occurred once.
+                occurrences = consecutive = 1;
+
                 toCheck = words[i].ToLower();
 
                 // We can safely use `i + 1` here because the outer loop always stops 1 short.
