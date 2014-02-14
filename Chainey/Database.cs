@@ -78,7 +78,7 @@ namespace Chainey
             cmd.Parameters.AddWithValue("@Chain", chain);
             cmd.Parameters.AddWithValue("@FollowUp", followUp);
 
-            int value = Convert.ToInt32(cmd.ExecuteScalar());
+            var value = Convert.ToInt32(cmd.ExecuteScalar());
             if (value == 1)
                 return true;
             else

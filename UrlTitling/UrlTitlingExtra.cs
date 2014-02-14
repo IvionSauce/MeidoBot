@@ -12,7 +12,15 @@ public class Whitelist : ControlList
         if (inGlobal)
             return true; */
         
-        return IsInDomainList(url, channel, nick);
+        bool? inChannelList = IsInDomainList(url, channel);
+        bool? inNickList = IsInDomainList(url, nick);
+
+        if (inChannelList == true || inNickList == true)
+            return true;
+        else if (inChannelList == false || inNickList == false)
+            return false;
+        else
+            return null;
     }
 }
 
@@ -25,9 +33,11 @@ public class Blacklist : ControlList
         if (inGlobal)
             return true;
 
-        bool? inDomain = IsInDomainList(url, channel, nick);
-        if (inDomain != null)
-            return (bool)inDomain;
+        bool? inChannelList = IsInDomainList(url, channel);
+        bool? inNickList = IsInDomainList(url, nick);
+
+        if (inChannelList == true || inNickList == true)
+            return true;
         else
             return false;
     }
@@ -36,28 +46,28 @@ public class Blacklist : ControlList
 
 public class ControlList : DomainListsReader
 {
-    public bool? IsInDomainList(string url, string channel, string nick)
+    public bool? IsInDomainList(string url, string domain)
     {
         _rwlock.EnterReadLock();
         List<string> domainList;
-        if (domainSpecific.TryGetValue(channel.ToLower(), out domainList) ||
-            domainSpecific.TryGetValue(nick.ToLower(), out domainList) )
+        if (domainSpecific.TryGetValue(domain.ToLower(), out domainList))
         {
-            _rwlock.ExitReadLock();
             foreach (string s in domainList)
             {
                 if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
+                {
+                    _rwlock.ExitReadLock();
                     return true;
+                }
             }
+            _rwlock.ExitReadLock();
             // Return false if it does have an entry, but the URL isn't in the list.
             return false;
         }
-        else
-        {
-            _rwlock.ExitReadLock();
-            // Return null if it doesn't even have an entry.
-            return null;
-        }
+
+        _rwlock.ExitReadLock();
+        // Return null if it doesn't even have an entry.
+        return null;
     }
 
     public bool IsInGlobalList(string url)
