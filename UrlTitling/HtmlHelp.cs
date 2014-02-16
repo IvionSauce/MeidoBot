@@ -82,13 +82,13 @@ namespace HtmlHelp
         }
 
         // Forge preliminary string according to HTTP headers charset.
-        void ForgePrelimString(string charset)
+        void ForgePrelimString()
         {
             if (HtmlData != null)
             {
                 // Encoding according to HTTP Headers.
                 // Fall back to ISO-8859-1 in case of encoding not being supported.
-                string fixedCharset = FixCharset(charset);
+                string fixedCharset = FixCharset(headersCharset);
                 try
                 {
                     EncHeaders = Encoding.GetEncoding(fixedCharset);
@@ -102,18 +102,16 @@ namespace HtmlHelp
             }
         }
 
-        public void Load(string url)
+        public void Load(Uri url)
         {
-            prelimHtmlString = null;
-            UsedEncoding = EncHtml = null;
-            Load(new Uri(url), new CookieContainer(), 0);
+            Load(url, null);
         }
 
-        public void Load(string url, CookieContainer cookies)
+        public void Load(Uri url, CookieContainer cookies)
         {
             prelimHtmlString = null;
             UsedEncoding = EncHtml = null;
-            Load(new Uri(url), cookies, 0);
+            Load(url, cookies, 0);
         }
 
         // Load a HTML file, pointed to by an URL, into a byte array. If URL doesn't point to a HTML document
@@ -129,15 +127,7 @@ namespace HtmlHelp
             EncHeaders = null;
 
             // Create the HTTP request and set some options.
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-
-            req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            req.Timeout = Timeout;
-            req.KeepAlive = true;
-            // Some sites will only respond (correctly) if they get fooled.
-            req.UserAgent = "Mozilla/5.0 HTMLHelper/0.90";
-            // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
-            req.CookieContainer = cookies;
+            HttpWebRequest req = CreateRequest(url, cookies);
 
             // Get HTTP response and stream and read the stream into a byte array if it's a HTML file.
             using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
@@ -158,25 +148,40 @@ namespace HtmlHelp
             }
 
             // Forge preliminary HTML string based on the charset reported by the HTTP headers.
-            ForgePrelimString(headersCharset);
+            ForgePrelimString();
 
             string refreshUrl = HtmlTagExtract.GetMetaRefresh(prelimHtmlString);
-            if (refreshUrl == null)
-                return;
+            if (refreshUrl != null)
+            {
+                Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
 
-            Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
+                // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
+                if (redirects < 10)
+                {    
+                    // If during the redirects we get a different page/HTML string, refrain from following more redirects.
+                    // It probably means we've arrived, but only more real world testing will tell us if that's true.
+                    if (redirects > 0 && prelimHtmlString != oldString)
+                        return;
 
-            // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
-            if (redirects < 10)
-            {    
-                // If during the redirects we get a different page/HTML string, refrain from following more redirects.
-                // It probably means we've arrived, but only more real world testing will tell us if that's true.
-                if (redirects > 0 && prelimHtmlString != oldString)
-                    return;
-
-                // Otherwise keep trying to follow the redirects, keeping the same cookie container.
-                Load(redirectUrl, cookies, redirects + 1);
+                    // Otherwise keep trying to follow the redirects, keeping the same cookie container.
+                    Load(redirectUrl, cookies, redirects + 1);
+                }
             }
+        }
+
+        HttpWebRequest CreateRequest(Uri url, CookieContainer cookies)
+        {
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+            
+            req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            req.Timeout = Timeout;
+            req.KeepAlive = true;
+            // Some sites will only respond (correctly) if they get fooled.
+            req.UserAgent = "Mozilla/5.0 HTMLHelper/0.90";
+            // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
+            req.CookieContainer = cookies;
+
+            return req;
         }
 
         public static Encoding DetectEncodingHtml(string htmlString)
@@ -224,7 +229,8 @@ namespace HtmlHelp
                 Console.WriteLine("(HTTP) {0} -> {1} ;(HTML) {2}", headersCharset, EncHeaders, EncHtml);
 
                 // If they are in agreement, return already forged string.
-                if (EncHtml == EncHeaders)
+                // Or if the HTML doesn't have a charset declaration, return already forged string.
+                if (EncHtml == EncHeaders || EncHtml == null)
                 {
                     UsedEncoding = EncHeaders;
                     return prelimHtmlString;
@@ -238,16 +244,10 @@ namespace HtmlHelp
                     return prelimHtmlString;
                 }
                 // If they are not in agreement and the HTML has a charset declaration, prefer that one.
-                else if (EncHtml != null)
+                else
                 {
                     UsedEncoding = EncHtml;
                     return EncHtml.GetString(HtmlData);
-                }
-                // If the HTML doesn't have a charset declaration, return already forged string.
-                else
-                {
-                    UsedEncoding = EncHeaders;
-                    return prelimHtmlString;
                 }
             }
         }
@@ -375,7 +375,7 @@ using System.Security.Cryptography.X509Certificates; */
             // ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
 
             var bla = new HtmlEncodingHelper();
-            bla.Load(args[0]);
+            bla.Load( new Uri(args[0]) );
 
             string htmlString = bla.GetHtmlAsString();
             if (htmlString != null)

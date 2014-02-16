@@ -101,14 +101,42 @@ namespace WebIrc
             // State we want to use our ACCEPT ALL implementation.
             ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
 
+            Uri uri;
             try
             {
-                htmlEncHelper.Load(url, Cookies);
+                uri = new Uri(url);
             }
-            catch (Exception ex)
+            catch (UriFormatException)
             {
-                Console.WriteLine("Error at htmlEncHelper.Load(url): " + ex.ToString());
+                Console.WriteLine("--- UriFormatException, URL was malformed.");
                 return null;
+            }
+
+            try
+            {
+                htmlEncHelper.Load(uri, Cookies);
+            }
+            catch (WebException webex)
+            {
+                // Some ugly stuff to work around .NET being very strict about cookies and their domains.
+                if (webex.InnerException is CookieException)
+                {
+                    Console.WriteLine("--- CookieException caught! Trying without cookies.");
+                    try
+                    {
+                        htmlEncHelper.Load(uri);
+                    }
+                    catch (WebException webex2)
+                    {
+                        Console.WriteLine("--- WebException at htmlEncHelper.Load(url): " + webex2.Message);
+                        return null;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("--- WebException at htmlEncHelper.Load(url): " + webex.Message);
+                    return null;
+                }
             }
 
             string htmlString = htmlEncHelper.GetHtmlAsString();
