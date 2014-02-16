@@ -15,7 +15,8 @@ public class IrcChainey : IMeidoHook
     SqliteBack chainey;
     Config config = new Config();
 
-    History<string> history = new History<string>(10);
+    Random rnd = new Random();
+    History<string> history = new History<string>(100);
     
     public string Prefix { get; set; }
     
@@ -25,7 +26,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.35"; }
+        get { return "0.37"; }
     }
     
     public Dictionary<string,string> Help
@@ -86,15 +87,20 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string respondTo)
     {
-        string[] sorted = GetTopLength(respondTo.Split(' '), config.ResponseTries);
+        // string[] sorted = GetTopLength(respondTo.Split(' '), config.ResponseTries);
+        string[] sorted = respondTo.Split(' ');
+        // Random is _not_ thread safe.
+        lock (rnd)
+            rnd.Shuffle(sorted);
+
+        sorted = sorted.Take(config.ResponseTries).ToArray();
 
         string[] sentences = chainey.BuildSentences(sorted, config.MaxWords);
         foreach (string sen in sentences)
         {
-            if (!history.Contains(sen))
+            if (history.Add(sen))
             {
                 irc.SendMessage(channel, sen);
-                history.Add(sen);
                 return;
             }
         }
@@ -106,12 +112,17 @@ public class IrcChainey : IMeidoHook
 
     void AbsorbSentence(string sentence)
     {
-        if (!history.Contains(sentence))
+        if (history.Add(sentence))
         {
             string[][] possibleChains = MarkovTools.TokenizeSentence(sentence, config.Order);
             if (possibleChains != null)
             {
-                history.Add(sentence);
+                string sentencePart;
+                foreach (string[] chain in possibleChains)
+                {
+                    sentencePart = string.Join(" ", chain);
+                    history.Add(sentencePart);
+                }
                 chainey.AddChains(possibleChains);
             }
         }
@@ -212,5 +223,19 @@ static class ExtensionMethods
     public static bool Contains(this string source, string value, StringComparison comp)
     {
         return source.IndexOf(value, comp) >= 0;
+    }
+
+    // Fisher–Yates shuffle
+    // http://stackoverflow.com/questions/108819/
+    public static void Shuffle<T> (this Random rng, T[] array)
+    {
+        int n = array.Length;
+        while (n > 1) 
+        {
+            int k = rng.Next(n--);
+            T temp = array[n];
+            array[n] = array[k];
+            array[k] = temp;
+        }
     }
 }

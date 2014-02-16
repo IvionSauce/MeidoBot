@@ -72,7 +72,7 @@ public class NyaaSpam : IMeidoHook
         if (e.MessageArray[0] == Prefix + "nyaa")
         {
             if (e.MessageArray.Length == 1)
-                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show|>\" for help", Prefix) );
+                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show>\" for help", Prefix) );
 
             else if (e.MessageArray[1] == "add" && e.MessageArray.Length > 2)
             {
