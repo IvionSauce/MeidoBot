@@ -26,7 +26,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.37"; }
+        get { return "0.38"; }
     }
     
     public Dictionary<string,string> Help
@@ -87,15 +87,12 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string respondTo)
     {
-        // string[] sorted = GetTopLength(respondTo.Split(' '), config.ResponseTries);
-        string[] sorted = respondTo.Split(' ');
+        string[] selection = GetTopLength(respondTo.Split(' '), config.ResponseTries);
         // Random is _not_ thread safe.
         lock (rnd)
-            rnd.Shuffle(sorted);
+            rnd.Shuffle(selection);
 
-        sorted = sorted.Take(config.ResponseTries).ToArray();
-
-        string[] sentences = chainey.BuildSentences(sorted, config.MaxWords);
+        string[] sentences = chainey.BuildSentences(selection, config.MaxWords);
         foreach (string sen in sentences)
         {
             if (history.Add(sen))
@@ -104,6 +101,7 @@ public class IrcChainey : IMeidoHook
                 return;
             }
         }
+
         // We'll get here if none of the seeds gave us a sentence.
         string sentence = chainey.BuildSentence(null, config.MaxWords);
         if (sentence != null)
@@ -112,11 +110,13 @@ public class IrcChainey : IMeidoHook
 
     void AbsorbSentence(string sentence)
     {
+        // Add the whole sentence to the history...
         if (history.Add(sentence))
         {
             string[][] possibleChains = MarkovTools.TokenizeSentence(sentence, config.Order);
             if (possibleChains != null)
             {
+                // as well as all the parts/chains.
                 string sentencePart;
                 foreach (string[] chain in possibleChains)
                 {
