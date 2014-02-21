@@ -22,7 +22,7 @@ public class IrcRandom : IMeidoHook
     }
     public string Version
     {
-        get { return "0.97"; }
+        get { return "1.0"; }
     }
 
     public Dictionary<string,string> Help
@@ -112,14 +112,20 @@ static class RandomChoice
 
     public static string ChooseRndLaunch()
     {
-        int rndIndex = rnd.Next(LaunchChoices.Length);
-        return LaunchChoices[rndIndex];
+        lock (rnd)
+        {
+            int rndIndex = rnd.Next(LaunchChoices.Length);
+            return LaunchChoices[rndIndex];
+        }
     }
 
     public static string Shake8Ball()
     {
-        int rndIndex = rnd.Next(ballChoices.Length);
-        return ballChoices[rndIndex];
+        lock (rnd)
+        {
+            int rndIndex = rnd.Next(ballChoices.Length);
+            return ballChoices[rndIndex];
+        }
     }
 
     static string[] ConstructOptions(string[] message)
@@ -192,15 +198,19 @@ static class RandomChoice
             if (begin > end)
                 return null;
             else
-                return Convert.ToString( rnd.Next(begin, (end + 1)) );
+                lock (rnd)
+                    return Convert.ToString( rnd.Next(begin, (end + 1)) );
         }
         // Else assume that it's a collection of options, so extract those options into an array and choose
         // a random member.
         else
         {
             string[] options = ConstructOptions(message);
-            int rndIndex = rnd.Next(options.Length);
-            return options[rndIndex];
+            lock (rnd)
+            {
+                int rndIndex = rnd.Next(options.Length);
+                return options[rndIndex];
+            }
         }
     }
 }
