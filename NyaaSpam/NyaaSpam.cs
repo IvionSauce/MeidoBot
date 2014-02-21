@@ -14,8 +14,9 @@ using System.ComponentModel.Composition;
 public class NyaaSpam : IMeidoHook
 {
     IIrcComm irc;
+
     NyaaPatterns nyaa = new NyaaPatterns();
-    NyaaConfig conf;
+    NyaaFeedReader feedReader;
 
     public string Prefix { get; set; }
 
@@ -25,7 +26,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.45"; }
+        get { return "0.50"; }
     }
 
     public Dictionary<string,string> Help
@@ -48,7 +49,7 @@ public class NyaaSpam : IMeidoHook
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        conf = new NyaaConfig(meidoComm.ConfDir + "/NyaaSpam.xml");
+        var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
 
         string nyaaFile = meidoComm.ConfDir + "/_nyaa";
         try
@@ -61,10 +62,11 @@ public class NyaaSpam : IMeidoHook
             nyaa.LoadFromFile(nyaaFile);
         }
 
+        feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
+        feedReader.Start();
+
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleMessage);
-
-        new Thread(ReadFeed).Start();
     }
 
     public void HandleMessage(IIrcMessage e)
@@ -72,11 +74,11 @@ public class NyaaSpam : IMeidoHook
         if (e.MessageArray[0] == Prefix + "nyaa")
         {
             if (e.MessageArray.Length == 1)
-                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show>\" for help", Prefix) );
+                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show>\" for help.", Prefix) );
 
             else if (e.MessageArray[1] == "add" && e.MessageArray.Length > 2)
             {
-                Add( e.Channel, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+                Add( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
             }
 
             else if (e.MessageArray[1] == "del" && e.MessageArray.Length > 2)
@@ -92,7 +94,7 @@ public class NyaaSpam : IMeidoHook
                     Show(e.Channel, e.Nick);
             }
 
-            else if (e.MessageArray[1] == "reload")
+            /* else if (e.MessageArray[1] == "reload")
             {
                 nyaa.ReloadFile();
                 irc.SendMessage(e.Channel, "Patterns reloaded from disk.");
@@ -101,31 +103,38 @@ public class NyaaSpam : IMeidoHook
             {
                 nyaa.WriteFile();
                 irc.SendMessage(e.Channel, "Patterns saved to disk.");
-            }
+            } */
         }
     }
 
-    void Add(string channel, string patternsStr)
+    void Add(string channel, string nick, string patternsStr)
     {
+        int amount = 0;
         // If enclosed in quotation marks, add string within the marks verbatim.
         if ( patternsStr.StartsWith("\"") && patternsStr.EndsWith("\"") )
         {
             // Slice off the quotation marks.
             string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
-            nyaa.Add(channel, pattern);
+            if (nyaa.Add(channel, pattern) != -1)
+                amount++;
         }
         // Else interpret comma's as seperators between different titles.
         else
         {
             string[] patterns = patternsStr.Split(',');
+            int index;
             foreach (string pattern in patterns)
             {
-                if (pattern[0] == ' ')
-                    nyaa.Add(channel, pattern.Substring(1));
+                if (pattern.StartsWith(" "))
+                    index = nyaa.Add(channel, pattern.Substring(1));
                 else
-                    nyaa.Add(channel, pattern);
+                    index = nyaa.Add(channel, pattern);
+
+                if (index != -1)
+                    amount++;
             }
         }
+        irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
     }
 
     void Del(string channel, string nick, string numbersStr)
@@ -164,19 +173,19 @@ public class NyaaSpam : IMeidoHook
         irc.SendNotice( nick, string.Format("Patterns for {0}:", channel) );
 
         string[] patterns = nyaa.GetPatterns(channel);
-        if (patterns == null)
-            return;
-
-        int half = (int)Math.Ceiling(patterns.Length / 2d);
-
-        int j;
-        for (int i = 0; i < half; i++)
+        if (patterns != null)
         {
-            j = i + half;
-            if (j < patterns.Length)
-                irc.SendNotice( nick, string.Format("[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j]) );
-            else
-                irc.SendNotice( nick, string.Format("[{0}] {1}", i, patterns[i]) );
+            int half = (int)Math.Ceiling(patterns.Length / 2d);
+
+            int j;
+            for (int i = 0; i < half; i++)
+            {
+                j = i + half;
+                if (j < patterns.Length)
+                    irc.SendNotice( nick, string.Format("[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j]) );
+                else
+                    irc.SendNotice( nick, string.Format("[{0}] {1}", i, patterns[i]) );
+            }
         }
 
         irc.SendNotice(nick, " -----");
@@ -222,72 +231,97 @@ public class NyaaSpam : IMeidoHook
         }
         return numbers.ToArray();
     }
+}
 
-    void ReadFeed()
+
+class NyaaFeedReader
+{
+    public TimeSpan Interval { get; private set; }
+    public HashSet<string> SkipCategories { get; private set; }
+    public NyaaPatterns Nyaa { get; private set; }
+
+    Timer tmr;
+
+    IIrcComm irc;
+
+    DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
+    DateTimeOffset latestPublish = DateTimeOffset.Now;
+
+
+    public NyaaFeedReader(IIrcComm irc, Config conf, NyaaPatterns patterns)
     {
-        var interval = TimeSpan.FromMinutes(conf.Interval);
+        this.irc = irc;
 
-        var lastPrintedTime = DateTimeOffset.Now;
-        var latestPublish = DateTimeOffset.Now;
+        Interval = TimeSpan.FromMinutes(conf.Interval);
+        SkipCategories = conf.SkipCategories;
+        Nyaa = patterns;
+    }
 
-        while (true)
+    public void Start()
+    {
+        tmr = new Timer(ReadFeed, null, Interval, Interval);
+    }
+
+    public void Stop()
+    {
+        tmr.Dispose();
+    }
+
+    void ReadFeed(object data)
+    {                    
+        if (Nyaa.ChangedSinceLastSave() == true)
+            Nyaa.WriteFile();
+        
+        SyndicationFeed feed;
+        try
         {
-            Thread.Sleep(interval);
-
-            if (nyaa.ChangedSinceLastSave() == true)
-                nyaa.WriteFile();
-
-            SyndicationFeed feed;
-            try
-            {
-                XmlReader reader = XmlReader.Create("http://www.nyaa.se/?page=rss");
-                feed = SyndicationFeed.Load(reader);
-            }
-            catch (System.Net.WebException ex)
-            {
-                Console.WriteLine("WebException in ReadFeed: " + ex.Message);
-                continue;
-            }
-
-            bool latestItem = true;
-            foreach (SyndicationItem item in feed.Items)
-            {
-                // Since feed.Items is only IEnumerable, we can't just access the first member by index, so we have to
-                // use this roundabout way. :/
-                if (latestItem == true)
-                {
-                    latestPublish = item.PublishDate;
-                    latestItem = false;
-                }
-
-                // Once we hit items that we probably already have printed, stop processing the rest.
-                if (item.PublishDate <= lastPrintedTime)
-                    break;
-                // Skip processing items in categories we don't care about.
-                if (conf.SkipCategories.Contains(item.Categories[0].Name))
-                    continue;
-
-                string[] channels = nyaa.PatternMatch(item.Title.Text);
-                if (channels != null)
-                {
-                    foreach (string channel in channels)
-                        irc.SendMessage(channel, string.Format("号外! 号外! 号外! \u0002:: {0} ::\u000F {1}",
-                                                               item.Title.Text, item.Id));
-                }
-            }
-            lastPrintedTime = latestPublish;
+            XmlReader reader = XmlReader.Create("http://www.nyaa.se/?page=rss");
+            feed = SyndicationFeed.Load(reader);
         }
+        catch (System.Net.WebException ex)
+        {
+            Console.WriteLine("WebException in ReadFeed: " + ex.Message);
+            return;
+        }
+        
+        bool latestItem = true;
+        foreach (SyndicationItem item in feed.Items)
+        {
+            // Since feed.Items is only IEnumerable, we can't just access the first member by index, so we have to
+            // use this roundabout way. :/
+            if (latestItem)
+            {
+                latestPublish = item.PublishDate;
+                latestItem = false;
+            }
+            
+            // Once we hit items that we probably already have printed, stop processing the rest.
+            if (item.PublishDate <= lastPrintedTime)
+                break;
+            // Skip processing items in categories we don't care about.
+            if (SkipCategories.Contains(item.Categories[0].Name))
+                continue;
+            
+            string[] channels = Nyaa.PatternMatch(item.Title.Text);
+            if (channels != null)
+            {
+                foreach (string channel in channels)
+                    irc.SendMessage(channel, string.Format("号外! 号外! 号外! \u0002:: {0} ::\u000F {1}",
+                                                           item.Title.Text, item.Id));
+            }
+        }
+        lastPrintedTime = latestPublish;
     }
 }
 
 
-class NyaaConfig : XmlConfig
+class Config : XmlConfig
 {
     public int Interval { get; set; }
     public HashSet<string> SkipCategories { get; set; }
 
 
-    public NyaaConfig(string file) : base(file)
+    public Config(string file) : base(file)
     {}
 
     public override void LoadConfig()
