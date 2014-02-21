@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UrlTitling", "UrlTitling\Ur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chainey", "Chainey\Chainey.csproj", "{91DEE322-FC87-492E-90C3-4F6019C79921}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeLeft", "TimeLeft\TimeLeft.csproj", "{6D626C6C-9DA6-412D-A97E-F5C065299F40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -39,6 +41,10 @@ Global
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Debug|x86.Build.0 = Debug|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.ActiveCfg = Release|x86
 		{6353030E-9800-40EC-988D-C1013D138D7A}.Release|x86.Build.0 = Release|x86
+		{6D626C6C-9DA6-412D-A97E-F5C065299F40}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6D626C6C-9DA6-412D-A97E-F5C065299F40}.Debug|x86.Build.0 = Debug|Any CPU
+		{6D626C6C-9DA6-412D-A97E-F5C065299F40}.Release|x86.ActiveCfg = Release|Any CPU
+		{6D626C6C-9DA6-412D-A97E-F5C065299F40}.Release|x86.Build.0 = Release|Any CPU
 		{91DEE322-FC87-492E-90C3-4F6019C79921}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{91DEE322-FC87-492E-90C3-4F6019C79921}.Debug|x86.Build.0 = Debug|Any CPU
 		{91DEE322-FC87-492E-90C3-4F6019C79921}.Release|x86.ActiveCfg = Release|Any CPU
