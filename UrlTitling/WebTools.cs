@@ -164,8 +164,85 @@ namespace WebToolsModule
 
         static readonly Regex spoilerRegexp =  new Regex(@"(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
 
+
+        static readonly Dictionary<string, string> boardMapping = new Dictionary<string, string>()
+        {
+            // Japanese Culture
+            {"a", "Anime & Manga"},
+            {"c", "Anime/Cute"},
+            {"w", "Anime/Wallpapers"},
+            {"m", "Mecha"},
+            {"cgl", "Cosplay & EGL"},
+            {"cm", "Cute/Male"},
+            {"f", "Flash"},
+            {"n", "Transportation"},
+            {"jp", "Otaku Culture"},
+            {"vp", "Pokémon"},
+            // Interests
+            {"v", "Video Games"},
+            {"vg", "Video Game Generals"},
+            {"vr", "Retro Games"},
+            {"co", "Comics & Cartoons"},
+            {"g", "Technology"},
+            {"tv", "Television & Film"},
+            {"k", "Weapons"},
+            {"o", "Auto"},
+            {"an", "Animals & Nature"},
+            {"tg", "Traditional Games"},
+            {"sp", "Sports"},
+            {"asp", "Alternative Sports"},
+            {"sci", "Science & Math"},
+            {"int", "International"},
+            {"out", "Outdoors"},
+            {"toy", "Toys"},
+            {"biz", "Business & Finance"},
+            // Creative
+            {"i", "Oekaki"},
+            {"po", "Papercraft & Origami"},
+            {"p", "Photography"},
+            {"ck", "Food & Cooking"},
+            {"ic", "Artwork/Critique"},
+            {"wg", "Wallpapers/General"},
+            {"mu", "Music"},
+            {"fa", "Fashion"},
+            {"3", "3DCG"},
+            {"gd", "Graphic Design"},
+            {"diy", "Do-It-Yourself"},
+            {"wsg", "Worksafe GIF"},
+            // Adult
+            {"s", "Sexy Beautiful Women"},
+            {"hc", "Hardcore"},
+            {"hm", "Handsome Men"},
+            {"h", "Hentai"},
+            {"e", "Ecchi"},
+            {"u", "Yuri"},
+            {"d", "Hentai/Alternative"},
+            {"y", "Yaoi"},
+            {"t", "Torrents"},
+            // Rapidshares doesn't follow the 4chan.org/[board] standard.
+            // rs.4chan.org
+            {"hr", "High Resolution"},
+            {"gif", "Adult GIF"},
+            // Other
+            {"trv", "Travel"},
+            {"fit", "Fitness"},
+            {"x", "Paranormal"},
+            {"lit", "Literature"},
+            {"adv", "Advice"},
+            {"lgbt", "LGBT"},
+            {"mlp", "Pony"},
+            // Misc.
+            {"b", "Random"},
+            {"r", "Request"},
+            {"r9k", "ROBOT9001"},
+            {"pol", "Politically Incorrect"},
+            {"soc", "Cams & Meetups"},
+            {"s4s", "Shit 4chan Says"}
+        };
+
+
         // Overloaded methods to wrap GetThreadOP and present a nice interface to the outside.
-        public static string[] GetThreadOP(string url)
+        public static ChanPost GetThreadOP(string url)
         {
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return GetThreadOP(url, Source.Fourchan);
@@ -175,36 +252,22 @@ namespace WebToolsModule
                 return null;
         }
 
-        public static string[] GetThreadOP(string url, Source source)
+        public static ChanPost GetThreadOP(string url, Source source)
         {
             string[] boardAndThread = GetBoardAndThreadNo(url, source);
 
             if (boardAndThread == null)
-                return new string[] {null, null};
+                return null;
             else
                 return GetThreadOP(boardAndThread[0], int.Parse(boardAndThread[1]), source);
         }
 
 
-        public static string[] GetThreadOP(string board, int thread, Source source)
+        public static ChanPost GetThreadOP(string board, int thread, Source source)
         {
-            // Construct query.
-            string jsonReq;
-            if (source == Source.Fourchan)
-                jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, thread);
-            else if (source == Source.Foolz)
-                jsonReq = string.Format("http://archive.foolz.us/_/api/chan/post/?board={0}&num={1}", board, thread);
-            else
-                throw new ArgumentException("Source is not supported");
-
-            // Debug
-            Console.WriteLine("JSON Request: {0}", jsonReq);
-
-            // Download the JSON into a string.
-            string jsonStr = WebTools.SimpleGetString(jsonReq);
-            // If we couldn't get it, return nulls.
-            if (jsonStr == null)
-                return new string[] {null, null};
+            string jsonStr = GetJsonString(board, thread, source);
+            if (string.IsNullOrWhiteSpace(jsonStr))
+                return null;
 
             dynamic threadJson = JsonConvert.DeserializeObject(jsonStr);
 
@@ -227,7 +290,31 @@ namespace WebToolsModule
                     opComment = null;
             }
 
-            return new string[] {opSubject, opComment};
+            var threadOp = new ChanPost();
+            threadOp.Board = board;
+            threadOp.BoardName = GetBoardName(board);
+            threadOp.PostNo = threadOp.ThreadNo = thread;
+            threadOp.Subject = opSubject;
+            threadOp.Comment = opComment;
+
+            return threadOp;
+        }
+
+        static string GetJsonString(string board, int thread, Source source)
+        {
+            // Construct query.
+            string jsonReq;
+            if (source == Source.Fourchan)
+                jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, thread);
+            else if (source == Source.Foolz)
+                jsonReq = string.Format("http://archive.foolz.us/_/api/chan/post/?board={0}&num={1}", board, thread);
+            else
+                throw new ArgumentException("Source is not supported");
+            
+            // Debug
+            Console.WriteLine("JSON Request: {0}", jsonReq);
+
+            return WebTools.SimpleGetString(jsonReq);
         }
 
         static string Fix4chanPost(string post)
@@ -250,10 +337,19 @@ namespace WebToolsModule
             else
                 groups = foolzUrlRegexp.Match(url).Groups;
 
-            if (groups[1].Success == true && groups[2].Success == true)
+            if (groups[1].Success && groups[2].Success)
                 return new string[] {groups[1].Value, groups[2].Value};
             else
                 return null;
+        }
+
+        static string GetBoardName(string board)
+        {
+            string name;
+            if (boardMapping.TryGetValue(board, out name))
+                return name;
+            else
+                return "Unknown";
         }
 
 
@@ -268,17 +364,17 @@ namespace WebToolsModule
             string[] postLines = post.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
 
             string shortPost;
-            if (shortenLines == true && postLines.Length > maxLines)
+            if (shortenLines && postLines.Length > maxLines)
                 shortPost = string.Join(" ", postLines, 0, maxLines);
             else
                 shortPost = string.Join(" ", postLines);
 
-            if (shortenChars == true && shortPost.Length > maxChar)
+            if (shortenChars && shortPost.Length > maxChar)
             {
                 shortPost = shortPost.Substring(0, maxChar);
                 return string.Concat(shortPost, contSymbol);
             }
-            else if (shortenLines == true && postLines.Length > maxLines)
+            else if (shortenLines && postLines.Length > maxLines)
                 return string.Concat(shortPost, " ", contSymbol);
             else
                 return shortPost;
@@ -297,6 +393,17 @@ namespace WebToolsModule
 
             return spoilerRegexp.Replace(post, string.Concat(beginReplacement, "$2", endReplacement));
         }
+    }
+
+
+    public class ChanPost
+    {
+        public string Board { get; set; }
+        public string BoardName { get; set; }
+        public int ThreadNo { get; set; }
+        public int PostNo { get; set; }
+        public string Subject { get; set; }
+        public string Comment { get; set; }
     }
 
 
@@ -333,7 +440,7 @@ namespace WebToolsModule
 
             dynamic postJson = JsonConvert.DeserializeObject(jsonStr);
 
-            Dictionary<string, string> postInfo = new Dictionary<string, string>();
+            var postInfo = new Dictionary<string, string>();
             postInfo["id"] = postNo.ToString();
             postInfo["characters"] = postJson.tag_string_character;
             postInfo["copyrights"] = postJson.tag_string_copyright;

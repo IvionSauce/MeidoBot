@@ -22,7 +22,7 @@ public class UrlTitler : IMeidoHook
     }
     public string Version
     {
-        get { return "1.0 RC1"; }
+        get { return "1.0 RC2"; }
     }
 
     public Dictionary<string,string> Help
@@ -138,7 +138,8 @@ static class ChannelThreadManager
     static public Whitelist Whitelist { get; set; }
     static public Config Conf { get; set; }
 
-    static Dictionary<string, ChannelThread> channelThreads = new Dictionary<string, ChannelThread>();
+    static Dictionary<string, ChannelThread> channelThreads =
+        new Dictionary<string, ChannelThread>(StringComparer.OrdinalIgnoreCase);
 
 
     static public void EnqueueUrl(string channel, string nick, string url)
@@ -154,15 +155,13 @@ static class ChannelThreadManager
 
     static ChannelThread GetThread(string channel)
     {
-        string chanLow = channel.ToLower();
-
         ChannelThread thread;
-        if (channelThreads.TryGetValue(chanLow, out thread))
+        if (channelThreads.TryGetValue(channel, out thread))
             return thread;
         else
         {
-            channelThreads.Add(chanLow, new ChannelThread(channel));
-            return channelThreads[chanLow];
+            channelThreads.Add(channel, new ChannelThread(channel));
+            return channelThreads[channel];
         }
     }
 
@@ -198,11 +197,9 @@ static class ChannelThreadManager
             if (inWhite == null)
             {
                 if ( Blacklist.IsInList(url, Channel, nick) )
-                {
                     Console.WriteLine("Blacklisted: " + url);
-                    return;
-                }
-                OutputUrl(url);
+                else
+                    OutputUrl(url);
             }
             // If in whitelist, go directly to output and skip blacklist.
             else if (inWhite == true)

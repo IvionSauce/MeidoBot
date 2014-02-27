@@ -41,6 +41,13 @@ namespace WebIrc
             {
                 return Danbo.PostToIrc(url);
             }
+            // Foolz and 4chan handling.
+            else if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase) ||
+                     url.Contains("archive.foolz.us/", StringComparison.OrdinalIgnoreCase))
+            {
+                return Chan.ThreadTopicToIrc(url);
+            }
+
 
             // ----- Above: Don't Need HTML and/or Title -----
             // -----------------------------------------------
@@ -59,12 +66,6 @@ namespace WebIrc
             // ----- Below: Need HTML and/or Title -----
 
 
-            // Foolz and 4chan handling.
-            if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase) || 
-                url.Contains("archive.foolz.us/", StringComparison.OrdinalIgnoreCase))
-            {
-                return Chan.ThreadTopicToIrc(url, htmlTitle);
-            }
             // Youtube handling.
             else if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) || 
                      url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
@@ -181,34 +182,27 @@ namespace WebIrc
             set { _cont = value; }
         }
 
-        public string ThreadTopicToIrc(string url, string htmlTitle)
+        public string ThreadTopicToIrc(string url)
         {
-            string[] opPost;
-            string title = htmlTitle;
-            if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
-                opPost = ChanTools.GetThreadOP(url, ChanTools.Source.Fourchan);
-            else
-            {
-                opPost = ChanTools.GetThreadOP(url, ChanTools.Source.Foolz);
-                // Remove the "» Thread #num" stuff.
-                title = title.Split('»')[0];
-                title = title.Substring(0, title.Length - 1);
-            }
+            ChanPost opPost = ChanTools.GetThreadOP(url);
+
+            if (opPost == null)
+                return null;
 
             string topic;
             // Prefer subject as topic, if the post has one. Else reform the message into a topic.
             // If a post has neither subject or comment/message, return null.
-            if (opPost[0] != null)
-                topic = opPost[0];
-            else if (opPost[1] != null)
+            if (opPost.Subject != null)
+                topic = opPost.Subject;
+            else if (opPost.Comment != null)
             {
-                topic = ChanTools.RemoveSpoilerTags(opPost[1]);
+                topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
                 topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
             }
             else
                 return null;
 
-            return string.Format("[ {0} ] [ {1} ]", title, topic);
+            return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
         }
     }
 
@@ -282,7 +276,7 @@ namespace WebIrc
             for (int i = 0; i < postArr.Length; i++)
             {
                 postArr[i] = DanboTools.ShortenTagList(postArr[i], MaxTagCount, ContinuationSymbol);
-                if (Colourize == true)
+                if (Colourize)
                     postArr[i] = ColourizeTags(postArr[i], codes[i]);
             }
 
