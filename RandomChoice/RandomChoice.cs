@@ -198,8 +198,10 @@ static class RandomChoice
             if (begin > end)
                 return null;
             else
+            {
                 lock (rnd)
                     return Convert.ToString( rnd.Next(begin, (end + 1)) );
+            }
         }
         // Else assume that it's a collection of options, so extract those options into an array and choose
         // a random member.
