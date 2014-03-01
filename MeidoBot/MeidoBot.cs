@@ -154,6 +154,8 @@ namespace MeidoBot
             {
                 // This somehow doesn't end the main thread. Just another episode in "shit I don't get".
                 irc.Disconnect();
+                // Maybe this will make the main thread exit...
+                plugins.StopPlugins();
             }
 
             else if (e.Data.MessageArray[0] == "part" &&

@@ -45,12 +45,18 @@ namespace MeidoBot
             Count = count;
         }
 
+        public void StopPlugins()
+        {
+            foreach (var plugin in pluginContainer)
+                plugin.Stop();
+        }
+
         public string[] GetDescriptions()
         {
             var descriptions = new string[Count];
 
             int i = 0;
-            foreach (IMeidoHook plugin in pluginContainer)
+            foreach (var plugin in pluginContainer)
             {
                 descriptions[i] = string.Concat(plugin.Name, " ", plugin.Version);
                 i++;
@@ -62,7 +68,7 @@ namespace MeidoBot
         public string[] GetHelpSubjects()
         {
             var keys = new List<string>();
-            foreach (IMeidoHook plugin in pluginContainer)
+            foreach (var plugin in pluginContainer)
                 foreach (string key in plugin.Help.Keys)
                     keys.Add(key);
 
@@ -79,7 +85,7 @@ namespace MeidoBot
                 helpSubject = subject;
 
             string help;
-            foreach (IMeidoHook plugin in pluginContainer)
+            foreach (var plugin in pluginContainer)
                 if (plugin.Help.TryGetValue(helpSubject, out help))
                     return help;
 
