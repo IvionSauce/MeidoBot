@@ -43,6 +43,9 @@ public class IrcRandom : IMeidoHook
     }
 
 
+    public void Stop()
+    {}
+
     [ImportingConstructor]
     public IrcRandom(IIrcComm ircComm, IMeidoComm meidoComm)
     {

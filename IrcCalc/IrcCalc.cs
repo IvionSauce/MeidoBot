@@ -34,6 +34,9 @@ public class Calc : IMeidoHook
     }
 
 
+    public void Stop()
+    {}
+
     [ImportingConstructor]
     public Calc(IIrcComm ircComm)
     {
@@ -43,7 +46,7 @@ public class Calc : IMeidoHook
 
     public void HandleChannelMessage(IIrcMessage e)
     {
-        if (e.MessageArray[0] == ".calc" && e.MessageArray.Length > 1)
+        if (e.MessageArray[0] == Prefix + "calc" && e.MessageArray.Length > 1)
         {
             var expr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             string [] tokenizedExpr;

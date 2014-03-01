@@ -36,6 +36,10 @@ public class IrcChainey : IMeidoHook
             return new Dictionary<string, string>();
         }
     }
+
+
+    public void Stop()
+    {}
     
     [ImportingConstructor]
     public IrcChainey(IIrcComm ircComm)

@@ -33,6 +33,9 @@ public class IrcVoting : IMeidoHook
     }
 
 
+    public void Stop()
+    {}
+
     [ImportingConstructor]
     public IrcVoting(IIrcComm ircComm)
     {
