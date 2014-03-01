@@ -26,7 +26,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.38"; }
+        get { return "0.39"; }
     }
     
     public Dictionary<string,string> Help
@@ -174,7 +174,8 @@ public class IrcChainey : IMeidoHook
     {
         if (!config.Learning)
             return false;
-        return config.LearningChannels.Contains(channel.ToLower());
+        else
+            return config.LearningChannels.Contains(channel);
     }
 }
 
@@ -205,7 +206,7 @@ class Config
         Order = 3;
 
         Learning = true;
-        LearningChannels = new HashSet<string>() {"#sankakucomplex"};
+        LearningChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {"#sankakucomplex"};
 
         MaxWords = 40;
         ResponseTries = 4;
@@ -214,28 +215,5 @@ class Config
 
         MaxConsecutive = 3;
         MaxTotal = 5;
-    }
-}
-
-
-static class ExtensionMethods
-{
-    public static bool Contains(this string source, string value, StringComparison comp)
-    {
-        return source.IndexOf(value, comp) >= 0;
-    }
-
-    // Fisher–Yates shuffle
-    // http://stackoverflow.com/questions/108819/
-    public static void Shuffle<T> (this Random rng, T[] array)
-    {
-        int n = array.Length;
-        while (n > 1) 
-        {
-            int k = rng.Next(n--);
-            T temp = array[n];
-            array[n] = array[k];
-            array[k] = temp;
-        }
     }
 }

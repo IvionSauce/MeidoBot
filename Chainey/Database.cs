@@ -192,8 +192,8 @@ namespace Chainey
                 "ORDER BY RANDOM() LIMIT 1";
             if (cmd.CommandText != seedSql)
             {
-                cmd.CommandText = "PRAGMA case_sensitive_like=ON";
-                cmd.ExecuteNonQuery();
+                /* cmd.CommandText = "PRAGMA case_sensitive_like=ON";
+                cmd.ExecuteNonQuery(); */
                 cmd.CommandText = seedSql;
                 cmd.Prepare();
             }
