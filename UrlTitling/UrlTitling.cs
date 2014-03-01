@@ -38,6 +38,11 @@ public class UrlTitler : IMeidoHook
     }
 
 
+    public void Stop()
+    {
+        ChannelThreadManager.StopAll();
+    }
+
     [ImportingConstructor]
     public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
     {
@@ -153,6 +158,18 @@ static class ChannelThreadManager
         }
     }
 
+    static public void StopAll()
+    {
+        foreach (ChannelThread thread in channelThreads.Values)
+        {
+            lock (thread._channelLock)
+            {
+                thread.UrlQueue.Enqueue(null);
+                Monitor.Pulse(thread._channelLock);
+            }
+        }
+    }
+
     static ChannelThread GetThread(string channel)
     {
         ChannelThread thread;
@@ -231,7 +248,10 @@ static class ChannelThreadManager
 
                     item = UrlQueue.Dequeue();
                 }
-                Consumer(item);
+                if (item != null)
+                    Consumer(item);
+                else
+                    return;
             }
         }
     }

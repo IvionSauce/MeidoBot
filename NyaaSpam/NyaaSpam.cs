@@ -46,11 +46,14 @@ public class NyaaSpam : IMeidoHook
     }
 
 
+    public void Stop()
+    {
+        feedReader.Stop();
+    }
+
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
-
         string nyaaFile = meidoComm.ConfDir + "/_nyaa";
         try
         {
@@ -62,6 +65,7 @@ public class NyaaSpam : IMeidoHook
             nyaa.LoadFromFile(nyaaFile);
         }
 
+        var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
         feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
         feedReader.Start();
 

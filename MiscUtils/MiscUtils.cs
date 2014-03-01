@@ -11,6 +11,8 @@ public class MiscUtils : IMeidoHook
 {
     IIrcComm irc;
 
+    List<Timer> timers = new List<Timer>();
+
     public string Prefix { get; set; }
 
     public string Name
@@ -35,6 +37,12 @@ public class MiscUtils : IMeidoHook
         }
     }
 
+
+    public void Stop()
+    {
+        foreach (Timer tmr in timers)
+            tmr.Dispose();
+    }
 
     [ImportingConstructor]
     public MiscUtils(IIrcComm ircComm)
@@ -67,7 +75,7 @@ public class MiscUtils : IMeidoHook
                 string[] info = {e.Channel, e.Nick};
                 var time = TimeSpan.FromMinutes(minutes);
 
-                new Timer(IrcTimer, info, time, TimeSpan.Zero);
+                timers.Add( new Timer(IrcTimer, info, time, TimeSpan.Zero) );
                 irc.SendMessage( e.Channel, string.Format("{0}: Your timer has started.", e.Nick) );
             }
         }
