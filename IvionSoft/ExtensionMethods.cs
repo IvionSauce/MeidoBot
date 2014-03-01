@@ -2,7 +2,7 @@ using System;
 
 namespace IvionSoft
 {
-    static class ExtensionMethods
+    public static class ExtensionMethods
     {
         public static bool Contains(this string source, string value, StringComparison comp)
         {
