@@ -4,6 +4,7 @@ using System.Xml;
 using System.Threading;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
+using IvionSoft;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -13,10 +14,9 @@ public class TimeLeft : IMeidoHook
 {
     IIrcComm irc;
 
-    TimeLeftStorage storage;
-    // Timer tmr;
+    Storage<TimeLeftUnit> storage;
+    Timer cleaner;
 
-    DataContractSerializer dcs = new DataContractSerializer( typeof(TimeLeftStorage) );
     const string loc = "conf/_timeleft.xml";
     
     public string Prefix { get; set; }
@@ -36,7 +36,7 @@ public class TimeLeft : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"timeleft set", "timeleft set <name> <date> - Date must be in YYYY-MM-DD. Will replace entry if" +
+                {"timeleft set", "timeleft set <name> <date> - Date must be in YYYY-MM-DD. Will replace entry if " +
                     "already exists."},
                 {"timeleft del", "timeleft del <name> - Removes exact name (case insensitive) from tracking."},
                 {"timeleft", "timeleft [name] - Check on the timeleft of name, name doesn't have to be exact. " +
@@ -44,25 +44,28 @@ public class TimeLeft : IMeidoHook
             };
         }
     }
+
+
+    public void Stop()
+    {
+        cleaner.Dispose();
+    }
     
     [ImportingConstructor]
     public TimeLeft(IIrcComm ircComm)
     {
-        storage = new TimeLeftStorage();
+        storage = new Storage<TimeLeftUnit>();
 
         try
         {
-            using (var stream = File.Open(loc, FileMode.Open))
-                storage = (TimeLeftStorage)dcs.ReadObject(stream);
+            storage = Storage<TimeLeftUnit>.Deserialize(loc);
         }
         catch (FileNotFoundException)
-        {
-            File.Create(loc).Dispose();
-        }
+        {}
         catch (XmlException)
         {}
 
-        new Timer(Cleaner, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+        cleaner = new Timer(Cleaner, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
@@ -116,12 +119,12 @@ public class TimeLeft : IMeidoHook
             {
                 return;
             }
-            // Subtract 3 from count, since we don't want the final argument - the date.
+            // Subtract 3 from length, since we don't want the final argument - the date.
             var name = string.Join(" ", message, 2, message.Length - 3);
-            
-            storage.Set(name, date);
-            WriteFile();
+            var unit = new TimeLeftUnit(name, date);
 
+            storage.Set(name, unit);
+            storage.Serialize(loc);
             irc.SendNotice( nick, string.Format("Set \"{0}\" :: {1}", name, date.ToString("MMMM dd, yyyy")) );
         }
     }
@@ -131,7 +134,7 @@ public class TimeLeft : IMeidoHook
         var name = string.Join(" ", message, 2, message.Length - 2);
         if (storage.Remove(name))
         {
-            WriteFile();
+            storage.Serialize(loc);
             irc.SendNotice( nick, string.Format("Deleted: {0}", name) );
         }
     }
@@ -152,31 +155,55 @@ public class TimeLeft : IMeidoHook
     void SendTime(string channel, string name, DateTime date)
     {
         TimeSpan timeLeft = date - DateTime.UtcNow;
-        var message = string.Format("Days: {0}, Hours: {1} :: {2}", timeLeft.Days, timeLeft.Hours, name);
+        string message;
+        if (timeLeft.Days >= 2)
+        {
+            message = string.Format("Days: {0} :: {1} [{2}]",
+                                    timeLeft.Days, name, date.ToString("MMMM dd, yyyy"));
+        }
+        else
+        {
+            message = string.Format("Hours: {0:0.#} :: {1} [{2}]",
+                                    timeLeft.TotalHours, name, date.ToString("MMMM dd, yyyy"));
+        }
         
         irc.SendMessage(channel, message);
     }
 
     void Cleaner(object data)
     {
+        bool modified = false;
+
         foreach ( TimeLeftUnit unit in storage.GetAll() )
         {
             if (DateTime.UtcNow > unit.Date)
             {
                 TimeSpan timePassed = DateTime.UtcNow - unit.Date;
                 if (timePassed >= TimeSpan.FromDays(2))
+                {
                     storage.Remove(unit.Name);
+                    modified = true;
+                }
             }
         }
-        WriteFile();
+        if (modified)
+            storage.Serialize(loc);
     }
+}
 
-    void WriteFile()
+
+[DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
+public class TimeLeftUnit
+{
+    [DataMember]
+    public string Name { get; private set; }
+    [DataMember]
+    public DateTime Date { get; set; }
+    
+    
+    public TimeLeftUnit(string name, DateTime date)
     {
-        var settings = new XmlWriterSettings() { Indent = true };
-
-        using (var stream = File.Open(loc, FileMode.Open))
-        using (var writer = XmlWriter.Create(stream, settings))
-            dcs.WriteObject(writer, storage);
+        Name = name;
+        Date = date;
     }
 }
