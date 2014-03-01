@@ -206,7 +206,7 @@ namespace MeidoBot
             this.nick = nick;
 
             // Setting some SmartIrc4Net options.
-            irc.CtcpVersion = "MeidoBot v0.87.8";
+            irc.CtcpVersion = "MeidoBot v0.88.0";
             irc.AutoJoinOnInvite = true;
             irc.Encoding = Encoding.UTF8;
             irc.ActiveChannelSyncing = true;
