@@ -5,11 +5,17 @@ namespace MeidoCommon
 {
     public interface IMeidoHook
     {
+        // Things the plugin provides us with.
         string Name { get; }
         string Version { get; }
         Dictionary<string, string> Help { get; }
 
+        // Things we provide to the plugin.
         string Prefix { set; }
+
+        // Method to signal to the plugins they need to stop whatever seperate threads they have running.
+        // As well as to save/deserialize whatever it needs to.
+        void Stop();
     }
 
     public interface IIrcMessage
