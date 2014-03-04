@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Linq;
+using System.Xml.Serialization;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
@@ -11,8 +13,8 @@ namespace IvionSoft
     public class Storage<T>
     {
         [DataMember]
-        public Dictionary<string, T> Items { get; set; }
-
+        public Dictionary<string, T> Items { get; private set; }
+        [DataMember]
         public T DefaultValue { get; set; }
 
         static DataContractSerializer dcs = new DataContractSerializer( typeof(Storage<T>) );
@@ -24,9 +26,23 @@ namespace IvionSoft
             DefaultValue = default(T);
         }
 
+        [OnDeserialized]
+        void OnDeserialized(StreamingContext context)
+        {
+            // Sadly serializing doesn't write the EqualityComparer, so when deserializing it will initiate the
+            // dictionary with the wrong comparer. So we can't avoid this O(n) cost.
+            Items = new Dictionary<string, T>(Items, StringComparer.OrdinalIgnoreCase);
+        }
+
+
         public void Set(string id, T item)
         {
             Items[id] = item;
+        }
+
+        public bool Contains(string id)
+        {
+            return Items.ContainsKey(id);
         }
 
         public T Get(string id)
