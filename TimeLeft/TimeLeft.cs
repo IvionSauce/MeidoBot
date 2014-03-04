@@ -16,6 +16,7 @@ public class TimeLeft : IMeidoHook
 
     Storage<TimeLeftUnit> storage;
     Timer cleaner;
+    object _locker = new object();
 
     const string loc = "conf/_timeleft.xml";
     
@@ -93,8 +94,7 @@ public class TimeLeft : IMeidoHook
 
             else
             {
-                foreach ( TimeLeftUnit unit in storage.GetAll() )
-                    SendTime(e.Channel, unit.Name, unit.Date);
+                ShowAll(e.Channel);
             }
         }
     }
@@ -123,8 +123,11 @@ public class TimeLeft : IMeidoHook
             var name = string.Join(" ", message, 2, message.Length - 3);
             var unit = new TimeLeftUnit(name, date);
 
-            storage.Set(name, unit);
-            storage.Serialize(loc);
+            lock (_locker)
+            {
+                storage.Set(name, unit);
+                storage.Serialize(loc);
+            }
             irc.SendNotice( nick, string.Format("Set \"{0}\" :: {1}", name, date.ToString("MMMM dd, yyyy")) );
         }
     }
@@ -132,23 +135,45 @@ public class TimeLeft : IMeidoHook
     void Del(string nick, string[] message)
     {
         var name = string.Join(" ", message, 2, message.Length - 2);
-        if (storage.Remove(name))
+
+        bool removed;
+        lock (_locker)
         {
-            storage.Serialize(loc);
-            irc.SendNotice( nick, string.Format("Deleted: {0}", name) );
+            removed = storage.Remove(name);
+            if (removed)
+                storage.Serialize(loc);
         }
+
+        if (removed)
+            irc.SendNotice( nick, string.Format("Deleted: {0}", name) );
     }
 
     void Show(string channel, string name)
     {
-        TimeLeftUnit unit = storage.Get(name);
+        TimeLeftUnit unit;
+        lock (_locker)
+            unit = storage.Get(name);
+
         if (unit != null)
             SendTime(channel, unit.Name, unit.Date);
+
         // If no exact match, try to search for it.
         else
         {
-            foreach (TimeLeftUnit tlu in storage.Search(name))
-                SendTime(channel, tlu.Name, tlu.Date);
+            lock (_locker)
+            {
+                foreach (TimeLeftUnit tlu in storage.Search(name))
+                    SendTime(channel, tlu.Name, tlu.Date);
+            }
+        }
+    }
+
+    void ShowAll(string channel)
+    {
+        lock (_locker)
+        {
+            foreach ( TimeLeftUnit unit in storage.GetAll() )
+                SendTime(channel, unit.Name, unit.Date);
         }
     }
 
@@ -172,35 +197,35 @@ public class TimeLeft : IMeidoHook
 
     void Cleaner(object data)
     {
-        bool modified = false;
-
-        foreach ( TimeLeftUnit unit in storage.GetAll() )
+        lock (_locker)
         {
-            if (DateTime.UtcNow > unit.Date)
+            bool modified = false;
+
+            foreach ( TimeLeftUnit unit in storage.GetAll() )
             {
-                TimeSpan timePassed = DateTime.UtcNow - unit.Date;
-                if (timePassed >= TimeSpan.FromDays(2))
+                if (DateTime.UtcNow > unit.Date)
                 {
-                    storage.Remove(unit.Name);
-                    modified = true;
+                    TimeSpan timePassed = DateTime.UtcNow - unit.Date;
+                    if (timePassed >= TimeSpan.FromDays(2))
+                    {
+                        storage.Remove(unit.Name);
+                        modified = true;
+                    }
                 }
             }
+            if (modified)
+                storage.Serialize(loc);
         }
-        if (modified)
-            storage.Serialize(loc);
     }
 }
-
 
 [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
 public class TimeLeftUnit
 {
-    [DataMember]
     public string Name { get; private set; }
-    [DataMember]
     public DateTime Date { get; set; }
-    
-    
+
+
     public TimeLeftUnit(string name, DateTime date)
     {
         Name = name;
