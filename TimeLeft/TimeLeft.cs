@@ -222,7 +222,9 @@ public class TimeLeft : IMeidoHook
 [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
 public class TimeLeftUnit
 {
+    [DataMember]
     public string Name { get; private set; }
+    [DataMember]
     public DateTime Date { get; set; }
 
 
