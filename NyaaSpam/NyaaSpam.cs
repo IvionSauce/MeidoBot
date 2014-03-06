@@ -54,16 +54,13 @@ public class NyaaSpam : IMeidoHook
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        string nyaaFile = meidoComm.ConfDir + "/_nyaa";
+        string nyaaFile = meidoComm.ConfDir + "/_nyaapatterns.xml";
         try
         {
-            nyaa.LoadFromFile(nyaaFile);
+            nyaa.Deserialize(nyaaFile);
         }
         catch (FileNotFoundException)
-        {
-            File.Create(nyaaFile).Dispose();
-            nyaa.LoadFromFile(nyaaFile);
-        }
+        {}
 
         var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
         feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
@@ -82,12 +79,14 @@ public class NyaaSpam : IMeidoHook
 
             else if (e.MessageArray[1] == "add" && e.MessageArray.Length > 2)
             {
-                Add( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+                Add( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2),
+                    null);
             }
 
             else if (e.MessageArray[1] == "del" && e.MessageArray.Length > 2)
             {
-                Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
+                Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2),
+                    null);
             }
 
             else if (e.MessageArray[1] == "show")
@@ -95,92 +94,177 @@ public class NyaaSpam : IMeidoHook
                 if (e.MessageArray.Length > 2)
                     Show( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
                 else
-                    Show(e.Channel, e.Nick);
+                    ShowAll(e.Channel, e.Nick, null);
             }
 
-            /* else if (e.MessageArray[1] == "reload")
+            // nyaa ex <add|del|show>
+            // nyaa ex <assocPat> <add|del|show>
+            else if (e.MessageArray[1] == "ex" && e.MessageArray.Length > 2)
             {
-                nyaa.ReloadFile();
-                irc.SendMessage(e.Channel, "Patterns reloaded from disk.");
+                int assocPatInt;
+                string command;
+                string input = "";
+                // Exclude Patterns associated with a pattern.
+                if (int.TryParse(e.MessageArray[2], out assocPatInt) && e.MessageArray.Length > 3)
+                {
+                    command = e.MessageArray[3];
+                    if (e.MessageArray.Length > 4)
+                        input = string.Join(" ", e.MessageArray, 4, e.MessageArray.Length - 4);
+                }
+                // Global Exclude Patterns.
+                else
+                {
+                    assocPatInt = -1;
+                    command = e.MessageArray[2];
+                    if (e.MessageArray.Length > 3)
+                        input = string.Join(" ", e.MessageArray, 3, e.MessageArray.Length - 3);
+                }
+
+                if (command == "add")
+                {
+                    Add(e.Channel, e.Nick, input, assocPatInt);
+                }
+                else if (command == "del")
+                {
+                    Del(e.Channel, e.Nick, input, assocPatInt);
+                }
+                else if (command == "show")
+                {
+                    ShowAll(e.Channel, e.Nick, assocPatInt);
+                }
             }
-            else if (e.MessageArray[1] == "save")
-            {
-                nyaa.WriteFile();
-                irc.SendMessage(e.Channel, "Patterns saved to disk.");
-            } */
         }
     }
 
-    void Add(string channel, string nick, string patternsStr)
+    void Add(string channel, string nick, string patternsStr, int? assocPat)
     {
-        int amount = 0;
+        var patterns = new List<string>();
         // If enclosed in quotation marks, add string within the marks verbatim.
         if ( patternsStr.StartsWith("\"") && patternsStr.EndsWith("\"") )
         {
             // Slice off the quotation marks.
             string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
-            if (nyaa.Add(channel, pattern) != -1)
-                amount++;
+            patterns.Add(pattern);
         }
         // Else interpret comma's as seperators between different titles.
         else
         {
-            string[] patterns = patternsStr.Split(',');
-            int index;
-            foreach (string pattern in patterns)
-            {
-                if (pattern.StartsWith(" "))
-                    index = nyaa.Add(channel, pattern.Substring(1));
-                else
-                    index = nyaa.Add(channel, pattern);
-
-                if (index != -1)
-                    amount++;
-            }
+            foreach ( string pattern in patternsStr.Split(',') )
+                patterns.Add( pattern.Trim() );
         }
-        irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
+
+        int amount = 0;
+        if (assocPat == null)
+        {
+            foreach (var pattern in patterns)
+                if (nyaa.Add(channel, pattern) != -1)
+                    amount++;
+        }
+        else
+        {
+            foreach (var pattern in patterns)
+                if (nyaa.AddExclude(channel, assocPat.Value, pattern) != -1)
+                    amount++;
+        }
+
+        if (assocPat == null)
+            irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
+        else if (assocPat >= 0)
+            irc.SendNotice( nick, string.Format("Added {0} exclude pattern(s)", amount) );
+        else
+            irc.SendNotice( nick, string.Format("Added {0} global exclude pattern(s)", amount) );
     }
 
-    void Del(string channel, string nick, string numbersStr)
+
+    void Del(string channel, string nick, string numbersStr, int? assocPat)
     {
         int[] numbers = GetNumbers(numbersStr);
         Array.Reverse(numbers);
 
-        string removedPattern = null;
-        foreach (int i in numbers)
+        string removedPattern;
+        if (assocPat == null)
         {
-            removedPattern = nyaa.Remove(channel, i);
-            if (removedPattern != null)
-                irc.SendNotice( nick, string.Format("Deleted: {0}", removedPattern) );
+            foreach (int n in numbers)
+            {
+                removedPattern = nyaa.Remove(channel, n);
+                if (removedPattern != null)
+                    irc.SendNotice( nick, string.Format("Deleted pattern: {0}", removedPattern) );
+            }
         }
-        if (removedPattern != null)
-            irc.SendNotice(nick, " -----");
+        else if (assocPat >= 0)
+        {
+            foreach (int n in numbers)
+            {
+                removedPattern = nyaa.RemoveExclude(channel, assocPat.Value, n);
+                if (removedPattern != null)
+                    irc.SendNotice( nick, string.Format("Removed exclude pattern: {0}", removedPattern) );
+            }
+        }
+        else
+        {
+            foreach (int n in numbers)
+            {
+                removedPattern = nyaa.RemoveGlobalExclude(channel, n);
+                if (removedPattern != null)
+                    irc.SendNotice( nick, string.Format("Removed global exclude pattern: {0}", removedPattern) );
+            }
+        }
+        irc.SendNotice(nick, " -----");
     }
+
 
     void Show(string channel, string nick, string numbersStr)
     {
         int[] numbers = GetNumbers(numbersStr);
+        var patterns = new List<string>();
 
-        string pattern = null;
-        foreach (int i in numbers)
+        string pat;
+        foreach (int n in numbers)
         {
-            pattern = nyaa.Get(channel, i);
-            if (pattern != null)
-                irc.SendNotice( nick, string.Format("[{0}] \"{1}\"", i, pattern) );
+            pat = nyaa.Get(channel, n);
+            if (pat != null)
+                patterns.Add(pat);
         }
-        if (pattern != null)
-            irc.SendNotice(nick, " -----");
+
+        IrcShow(nick, patterns.ToArray());
     }
 
-    void Show(string channel, string nick)
+    void ShowAll(string channel, string nick, int? assocPat)
     {
-        irc.SendNotice( nick, string.Format("Patterns for {0}:", channel) );
+        string[] patterns;
+        if (assocPat == null)
+        {
+            irc.SendNotice( nick, string.Format("Patterns for {0}:", channel) );
+            
+            patterns = nyaa.GetPatterns(channel);
+            IrcShow(nick, patterns);
+        }
+        else if (assocPat >= 0)
+        {
+            string pattern = nyaa.Get(channel, assocPat.Value);
+            if (pattern != null)
+            {
+                irc.SendNotice( nick, string.Format("Exclude patterns associated with \"{0}\":", pattern) );
 
-        string[] patterns = nyaa.GetPatterns(channel);
-        if (patterns != null)
+                patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
+                IrcShow(nick, patterns);
+            }
+        }
+        else
+        {
+            irc.SendNotice( nick, string.Format("Global exclude patterns for {0}:", channel) );
+
+            patterns = nyaa.GetGlobalExcludePatterns(channel);
+            IrcShow(nick, patterns);
+        }
+    }
+
+    void IrcShow(string nick, string[] patterns)
+    {
+        if (patterns.Length > 0)
         {
             int half = (int)Math.Ceiling(patterns.Length / 2d);
-
+            
             int j;
             for (int i = 0; i < half; i++)
             {
@@ -191,21 +275,23 @@ public class NyaaSpam : IMeidoHook
                     irc.SendNotice( nick, string.Format("[{0}] {1}", i, patterns[i]) );
             }
         }
-
+        
         irc.SendNotice(nick, " -----");
     }
 
+
     int[] GetNumbers(string numbersStr)
     {
-        List<int> numbers = new List<int>();
+        if (string.IsNullOrWhiteSpace(numbersStr))
+            return new int[0];
+
+        var numbers = new List<int>();
+
         int num;
         foreach (string s in numbersStr.Split(','))
         {
             if (s.Contains("-"))
-            {
-                int[] range = GetRange(s);
-                numbers.AddRange(range);
-            }
+                numbers.AddRange( GetRange(s) );
             else if (int.TryParse(s, out num))
                 numbers.Add(num);
         }
@@ -214,15 +300,16 @@ public class NyaaSpam : IMeidoHook
         return numbers.ToArray();
     }
 
-    // Return array of ints for a range given as "x-y".
-    int[] GetRange(string rangeStr)
+    // Return list of ints for a range given as "x-y".
+    List<int> GetRange(string rangeStr)
     {
+        var numbers = new List<int>();
+
         string[] startEnd = rangeStr.Split('-');
         if (startEnd.Length != 2)
-            return new int[] {};
+            return numbers;
 
         int start, end;
-        var numbers = new List<int>();
 
         if ( int.TryParse(startEnd[0], out start) && int.TryParse(startEnd[1], out end) )
         {
@@ -233,7 +320,7 @@ public class NyaaSpam : IMeidoHook
                 num++;
             }
         }
-        return numbers.ToArray();
+        return numbers;
     }
 }
 
@@ -272,10 +359,7 @@ class NyaaFeedReader
     }
 
     void ReadFeed(object data)
-    {                    
-        if (Nyaa.ChangedSinceLastSave() == true)
-            Nyaa.WriteFile();
-        
+    {        
         SyndicationFeed feed;
         try
         {
@@ -307,11 +391,10 @@ class NyaaFeedReader
                 continue;
             
             string[] channels = Nyaa.PatternMatch(item.Title.Text);
-            if (channels != null)
+            foreach (string channel in channels)
             {
-                foreach (string channel in channels)
-                    irc.SendMessage(channel, string.Format("号外! 号外! 号外! \u0002:: {0} ::\u000F {1}",
-                                                           item.Title.Text, item.Id));
+                irc.SendMessage(channel, string.Format("号外! 号外! 号外! \u0002:: {0} ::\u000F {1}",
+                                                       item.Title.Text, item.Id));
             }
         }
         lastPrintedTime = latestPublish;
