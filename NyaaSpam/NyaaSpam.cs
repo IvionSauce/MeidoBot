@@ -159,20 +159,25 @@ public class NyaaSpam : IMeidoHook
             foreach (var pattern in patterns)
                 if (nyaa.Add(channel, pattern) != -1)
                     amount++;
+
+            irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
         }
-        else
+        else if (assocPat >= 0)
         {
             foreach (var pattern in patterns)
                 if (nyaa.AddExclude(channel, assocPat.Value, pattern) != -1)
                     amount++;
-        }
 
-        if (assocPat == null)
-            irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
-        else if (assocPat >= 0)
             irc.SendNotice( nick, string.Format("Added {0} exclude pattern(s)", amount) );
+        }
         else
+        {
+            foreach (var pattern in patterns)
+                if (nyaa.AddGlobalExclude(channel, pattern) != -1)
+                    amount++;
+
             irc.SendNotice( nick, string.Format("Added {0} global exclude pattern(s)", amount) );
+        } 
     }
 
 

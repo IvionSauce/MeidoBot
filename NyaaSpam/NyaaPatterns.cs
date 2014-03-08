@@ -46,9 +46,9 @@ public class NyaaPatterns
         lock (_locker)
         {
             ChannelPatterns chanPat = GetOrAdd(channel);
-            List<string[]> exPatterns = GetExPatterns(chanPat, assocPat);
 
-            if (exPatterns != null)
+            List<string[]> exPatterns;
+            if (TryGetExPatterns(chanPat, assocPat, out exPatterns))
             {
                 exPatterns.Add(split);
                 Write();
@@ -92,9 +92,9 @@ public class NyaaPatterns
         lock (_locker)
         {
             ChannelPatterns chanPat = storage.Get(channel);
-            List<string[]> exPatterns = GetExPatterns(chanPat, assocPat);
 
-            if (exPatterns != null && iExclude < exPatterns.Count)
+            List<string[]> exPatterns;
+            if (TryGetExPatterns(chanPat, assocPat, out exPatterns) && iExclude < exPatterns.Count)
                 exPattern = exPatterns[iExclude];
         }
         if (exPattern == null)
@@ -129,9 +129,9 @@ public class NyaaPatterns
         lock (_locker)
         {
             ChannelPatterns chanPat = storage.Get(channel);
-            List<string[]> exPatterns = GetExPatterns(chanPat, assocPat);
 
-            if (exPatterns != null && iExclude < exPatterns.Count)
+            List<string[]> exPatterns;
+            if (TryGetExPatterns(chanPat, assocPat, out exPatterns) && iExclude < exPatterns.Count)
             {
                 exPattern = exPatterns[iExclude];
                 exPatterns.RemoveAt(iExclude);
@@ -248,8 +248,8 @@ public class NyaaPatterns
             }
             else
             {
-                List<string[]> exPatterns = GetExPatterns(chanPat, assocPat);
-                if (exPatterns != null)
+                List<string[]> exPatterns;
+                if (TryGetExPatterns(chanPat, assocPat, out exPatterns))
                 {
                     patternsToRead = new string[exPatterns.Count];
 
@@ -266,16 +266,25 @@ public class NyaaPatterns
     }
 
 
-    List<string[]> GetExPatterns(ChannelPatterns chanPat, int assocPat)
+    bool TryGetExPatterns(ChannelPatterns chanPat, int assocPat, out List<string[]> exPatterns)
     {
         // Get all Exclude Patterns associated with a certain Include Pattern.
         if ( IndexExists(chanPat, assocPat) )
-            return chanPat.Patterns[assocPat].ExcludePatterns;
+        {
+            exPatterns = chanPat.Patterns[assocPat].ExcludePatterns;
+            return true;
+        }
         // Get all Global Exclude Patterns.
         else if ( GlobalRequest(chanPat, assocPat) )
-            return chanPat.GlobalExcludePatterns;
+        {
+            exPatterns = chanPat.GlobalExcludePatterns;
+            return true;
+        }
         else
-            return null;
+        {
+            exPatterns = null;
+            return false;
+        }
     }
 
     bool IndexExists(ChannelPatterns chanPat, int index)
@@ -430,7 +439,7 @@ class ChannelPatterns
 // it's Patterns or ExcludePatterns or GlobalExcludePatterns) deletes that Pattern Array (the pointer to it), that which
 // it points to will continue to exist (as long as references/pointers to it exist).
 // But then, maybe, what it points to can be changed. Since what it points to is an array of strings, each index in the
-// array could be changed, replaced with a different string.
+// array could be changed, assigned a different string.
 // Luckily this is no worry, since the Pattern Arrays are either added or deleted in their entirety and are not modified
 // during their lifetime.
 
