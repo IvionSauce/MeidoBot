@@ -1,155 +1,31 @@
 using System;
-using System.Threading;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Collections.Generic;
 
 
 namespace IvionSoft
 {
-    public class DomainListsReader
+    public class DomainLists
     {
-        protected List<string> globalList = new List<string>();
-        protected Dictionary<string,List<string>> domainSpecific = new Dictionary<string, List<string>>();
-
-        protected string filename;
-        protected bool changedSinceLastSave = false;
-
-        protected ReaderWriterLockSlim _rwlock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        List<string> globalList = new List<string>();
+        Dictionary< string, List<string> > domainSpecific =
+            new Dictionary< string, List<string> >(StringComparer.OrdinalIgnoreCase);
 
 
-        public string Get(int index)
-        {
-            string value = null;
-
-            _rwlock.EnterReadLock();
-            if (index < globalList.Count)
-                value = globalList[index];
-
-            _rwlock.ExitReadLock();
-            return value;
-        }
-
-        public string Get(string domain, int index)
-        {
-            string domLow = domain.ToLower();
-
-            List<string> domainList;
-            string value = null;
-
-            _rwlock.EnterReadLock();
-            if (domainSpecific.TryGetValue(domLow, out domainList))
-            {
-                if (index < domainList.Count)
-                    value = domainList[index];
-            }
-
-            _rwlock.ExitReadLock();
-            return value;
-        }
-
-        public int Add(string line)
-        {
-            if ( string.IsNullOrWhiteSpace(line) || line[0] == '#' || line[0] == ':' )
-                return -1;
-
-            _rwlock.EnterWriteLock();
-            globalList.Add(line);
-            int index = globalList.Count - 1;
-
-            if (changedSinceLastSave == false)
-                changedSinceLastSave = true;
-
-            _rwlock.ExitWriteLock();
-            return index;
-        }
-
-        public int Add(string domain, string line)
-        {
-            if ( string.IsNullOrWhiteSpace(line) || line[0] == '#' || line[0] == ':' )
-                return -1;
-
-            string domLow = domain.ToLower();
-
-            List<string> domainList;
-
-            _rwlock.EnterWriteLock();
-            if (domainSpecific.TryGetValue(domLow, out domainList))
-                domainList.Add(line);
-            else
-            {
-                domainSpecific.Add(domLow, new List<string>());
-                domainList = domainSpecific[domLow];
-                domainList.Add(line);
-            }
-            int index = domainList.Count - 1;
-
-            if (changedSinceLastSave == false)
-                changedSinceLastSave = true;
-
-            _rwlock.ExitWriteLock();
-            return index;
-        }
-
-        public void Add(string[] domains, string line)
-        {
-            foreach (string domain in domains)
-            {
-                Add(domain, line);
-            }
-        }
-
-        // Returns removed string, returns null if nothing was removed.
-        public string Remove(string domain, int index)
-        {
-            string domLow = domain.ToLower();
-
-            List<string> domainList;
-            string value = null;
-
-            _rwlock.EnterWriteLock();
-            if (domainSpecific.TryGetValue(domLow, out domainList))
-            {
-                if (index < domainList.Count)
-                {
-                    value = domainList[index];
-                    domainList.RemoveAt(index);
-                }
-            }
-
-            if (changedSinceLastSave == false)
-                changedSinceLastSave = true;
-
-            _rwlock.ExitWriteLock();
-            return value;
-        }
-
-        public bool ChangedSinceLastSave()
-        {
-            _rwlock.EnterReadLock();
-            bool value = changedSinceLastSave;
-            _rwlock.ExitReadLock();
-            return value;
-        }
-
-        public void LoadFromFile(string file)
+        public DomainLists(string file)
         {
             using (var fileStream = new StreamReader(file))
             {
-                // Just keep the write lock for the entire reading cycle.
-                _rwlock.EnterWriteLock();
-                
-                filename = file;
-                globalList.Clear();
-                domainSpecific.Clear();
-
                 // Applicable domain of the lines yet to read, start of in 'global' mode - meaning that read
-                // lines are applicable to all channels. Gets changed whenever instructed to by ":".
+                // lines are applicable to all domains. Gets changed whenever instructed to by ":".
                 string[] domain = {"_all"};
-
+                
                 while (fileStream.Peek() >= 0)
                 {
                     string line = fileStream.ReadLine();
-
+                    
                     // Ignore empty lines or comments.
                     if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
                         continue;
@@ -159,7 +35,7 @@ namespace IvionSoft
                     // The rest will be treated as relevant and added to the list.
                     else
                     {
-                        if (domain[0] == "_all")
+                        if (domain.Contains("_all"))
                             Add(line);
                         else if (domain.Length == 1)
                             Add(domain[0], line);
@@ -168,40 +44,61 @@ namespace IvionSoft
                     }
                 }
             }
-            changedSinceLastSave = false;
-            _rwlock.ExitWriteLock();
         }
 
-        public void ReloadFile()
+
+        public bool? IsInDomainList(string domain, string line)
         {
-            if (filename != null)
-                LoadFromFile(filename);
+            List<string> domainList;
+            if (domainSpecific.TryGetValue(domain, out domainList))
+            {
+                foreach (string s in domainList)
+                    if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                // Return false if the domain does have an entry, but the line isn't in the list.
+                return false;
+            }
+
+            // Return null if the domain doesn't even have an entry.
+            return null;
         }
-    }
-
-
-    public class DomainListsReadWriter : DomainListsReader
-    {
-        public void WriteFile()
+        
+        public bool IsInGlobalList(string line)
         {
-            _rwlock.EnterUpgradeableReadLock();
-            using (var fileStream = new StreamWriter(filename))
-            {
-                foreach (string domain in domainSpecific.Keys)
-                {
-                    fileStream.WriteLine(":{0}", domain);
-                    foreach (string pattern in domainSpecific[domain])
-                        fileStream.WriteLine(pattern);
-                }
-            }
-            if (changedSinceLastSave == true)
-            {
-                _rwlock.EnterWriteLock();
-                changedSinceLastSave = false;
-                _rwlock.ExitWriteLock();
-            }
+            foreach (string s in globalList)
+                if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
+                    return true;
             
-            _rwlock.ExitUpgradeableReadLock();
+            return false;
+        }
+
+
+        void Add(string line)
+        {
+            globalList.Add(line);
+        }
+
+        void Add(string domain, string line)
+        {
+            List<string> domainList;
+
+            if (domainSpecific.TryGetValue(domain, out domainList))
+                domainList.Add(line);
+            else
+            {
+                domainSpecific.Add(domain, new List<string>());
+                domainList = domainSpecific[domain];
+                domainList.Add(line);
+            }
+        }
+
+        void Add(string[] domains, string line)
+        {
+            foreach (string domain in domains)
+            {
+                Add(domain, line);
+            }
         }
     }
 }

@@ -118,7 +118,8 @@ public class UrlTitler : IMeidoHook
         bool printedDetection = false;
         foreach (string s in e.MessageArray)
         {
-            if (s.StartsWith("http://") || s.StartsWith("https://"))
+            if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
                 if (!printedDetection)
                 {

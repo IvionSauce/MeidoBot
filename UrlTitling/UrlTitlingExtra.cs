@@ -7,13 +7,9 @@ using IvionSoft;
 public class Whitelist : ControlList
 {
     public bool? IsInList(string url, string channel, string nick)
-    {
-        /* bool inGlobal = IsInGlobalList(url);
-        if (inGlobal)
-            return true; */
-        
-        bool? inChannelList = IsInDomainList(url, channel);
-        bool? inNickList = IsInDomainList(url, nick);
+    {        
+        bool? inChannelList = IsInDomainList(channel, url);
+        bool? inNickList = IsInDomainList(nick, url);
 
         if (inChannelList == true || inNickList == true)
             return true;
@@ -33,8 +29,8 @@ public class Blacklist : ControlList
         if (inGlobal)
             return true;
 
-        bool? inChannelList = IsInDomainList(url, channel);
-        bool? inNickList = IsInDomainList(url, nick);
+        bool? inChannelList = IsInDomainList(channel, url);
+        bool? inNickList = IsInDomainList(nick, url);
 
         if (inChannelList == true || inNickList == true)
             return true;
@@ -44,63 +40,61 @@ public class Blacklist : ControlList
 }
 
 
-public class ControlList : DomainListsReader
+public class ControlList
 {
-    public bool? IsInDomainList(string url, string domain)
+    DomainLists domLists = null;
+    string path = null;
+    
+    
+    protected bool IsInGlobalList(string url)
     {
-        _rwlock.EnterReadLock();
-        List<string> domainList;
-        if (domainSpecific.TryGetValue(domain.ToLower(), out domainList))
-        {
-            foreach (string s in domainList)
-            {
-                if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
-                {
-                    _rwlock.ExitReadLock();
-                    return true;
-                }
-            }
-            _rwlock.ExitReadLock();
-            // Return false if it does have an entry, but the URL isn't in the list.
+        if (domLists != null)
+            return domLists.IsInGlobalList(url);
+        else
             return false;
-        }
-
-        _rwlock.ExitReadLock();
-        // Return null if it doesn't even have an entry.
-        return null;
     }
 
-    public bool IsInGlobalList(string url)
+    protected bool? IsInDomainList(string domain, string url)
     {
-        _rwlock.EnterReadLock();
-        foreach (string s in globalList)
-        {
-            if (url.Contains(s, StringComparison.OrdinalIgnoreCase))
-            {
-                _rwlock.ExitReadLock();
-                return true;
-            }
-        }
-        _rwlock.ExitReadLock();
+        if (domLists != null)
+            return domLists.IsInDomainList(domain, url);
+        else
+            return null;
+    }
 
-        return false;
+    public void LoadFromFile(string path)
+    {
+        if (path != null)
+            path = null;
+
+        var tmpDomLists = new DomainLists(path);
+        domLists = tmpDomLists;
+        this.path = path;
+    }
+
+    public void ReloadFile()
+    {
+        if (path != null)
+        {
+            var tmpDomLists = new DomainLists(path);
+            domLists = tmpDomLists;
+        }
     }
 }
 
 
 public class NickDisable
 {
-    Dictionary<string, HashSet<string>> disabledNicks = new Dictionary<string, HashSet<string>>();
+    Dictionary< string, HashSet<string> > disabledNicks =
+        new Dictionary< string, HashSet<string> >(StringComparer.OrdinalIgnoreCase);
     object _locker = new object();
 
     public bool IsNickDisabled(string nick, string channel)
     {
-        string chanLow = channel.ToLower();
-
         lock (_locker)
         {
             HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(chanLow, out nickHashes))
+            if (disabledNicks.TryGetValue(channel, out nickHashes))
                 return nickHashes.Contains(nick);
             else
                 return false;
@@ -109,29 +103,25 @@ public class NickDisable
 
     public bool Add(string nick, string channel)
     {
-        string chanLow = channel.ToLower();
-
         lock (_locker)
         {
             HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(chanLow, out nickHashes))
+            if (disabledNicks.TryGetValue(channel, out nickHashes))
                 return nickHashes.Add(nick);
             else
             {
-                disabledNicks.Add(chanLow, new HashSet<string>());
-                return disabledNicks[chanLow].Add(nick);
+                disabledNicks.Add(channel, new HashSet<string>());
+                return disabledNicks[channel].Add(nick);
             }
         }
     }
 
     public bool Remove(string nick, string channel)
     {
-        string chanLow = channel.ToLower();
-
         lock (_locker)
         {
             HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(chanLow, out nickHashes))
+            if (disabledNicks.TryGetValue(channel, out nickHashes))
                 return nickHashes.Remove(nick);
             else
                 return false;
