@@ -10,24 +10,22 @@ namespace HtmlHelp
 {
     public class HtmlEncodingHelper
     {
-        string headersCharset;
-        string prelimHtmlString;
-
-        // Time out with a default value of 30 seconds.
-        int _timeout = 30000;
-        public int Timeout
-        {
-            get { return _timeout; }
-            set { _timeout = value; }
-        }
+        public int Timeout { get; set; }
 
         public byte[] HtmlData { get; private set; }
+
         public Encoding UsedEncoding { get; private set; }
+
+        public string HeadersCharset { get; private set; }
         public Encoding EncHeaders { get; private set; }
+
+        public string HtmlCharset { get; private set; }
         public Encoding EncHtml { get; private set; }
 
+        string prelimHtmlString;
+
         // If key exists, return the value that properly designates the intended charset.
-        static readonly Dictionary<string, string> charsetReplace = new Dictionary<string, string> ()
+        static readonly Dictionary<string, string> charsetReplace = new Dictionary<string, string>()
         {
             // Japanese
             {"x-jis", "shift_jis"},
@@ -43,6 +41,13 @@ namespace HtmlHelp
         };
 
 
+        public HtmlEncodingHelper()
+        {
+            // Time out with a default value of 30 seconds.
+            Timeout = 30000;
+        }
+
+
         // If charset exists in charsetReplace dict, return proper charset. Else return the string in lowercase.
         static string FixCharset(string charset)
         {
@@ -54,6 +59,7 @@ namespace HtmlHelp
                 return charsetLow;
         }
 
+
         // Return an absolute URL from a relative Meta Refresh URL. If already absolute, return as-is.
         static Uri FixRefreshUrl(string refreshUrl, Uri refUrl)
         {
@@ -62,6 +68,7 @@ namespace HtmlHelp
             else
                 return new Uri(refUrl, refreshUrl);
         }
+
 
         // http://www.yoda.arachsys.com/csharp/readbinary.html
         static byte[] ReadFully(Stream stream)
@@ -81,26 +88,6 @@ namespace HtmlHelp
             }
         }
 
-        // Forge preliminary string according to HTTP headers charset.
-        void ForgePrelimString()
-        {
-            if (HtmlData != null)
-            {
-                // Encoding according to HTTP Headers.
-                // Fall back to ISO-8859-1 in case of encoding not being supported.
-                string fixedCharset = FixCharset(headersCharset);
-                try
-                {
-                    EncHeaders = Encoding.GetEncoding(fixedCharset);
-                }
-                catch(ArgumentException)
-                {
-                    EncHeaders = Encoding.GetEncoding("ISO-8859-1");
-                }
-
-                prelimHtmlString = EncHeaders.GetString(HtmlData);
-            }
-        }
 
         public void Load(Uri url)
         {
@@ -109,7 +96,7 @@ namespace HtmlHelp
 
         public void Load(Uri url, CookieContainer cookies)
         {
-            prelimHtmlString = null;
+            HtmlCharset = prelimHtmlString = null;
             UsedEncoding = EncHtml = null;
             Load(url, cookies, 0);
         }
@@ -123,7 +110,7 @@ namespace HtmlHelp
 
             // Clear fields from (possible) previous Load call(s).
             HtmlData = null;
-            headersCharset = prelimHtmlString = null;
+            HeadersCharset = prelimHtmlString = null;
             EncHeaders = null;
 
             // Create the HTTP request and set some options.
@@ -132,12 +119,12 @@ namespace HtmlHelp
             // Get HTTP response and stream and read the stream into a byte array if it's a HTML file.
             using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
             {
-                headersCharset = httpResponse.CharacterSet;
+                HeadersCharset = httpResponse.CharacterSet;
 
                 // Debug
                 // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
 
-                if (httpResponse.ContentType.StartsWith("text/html"))
+                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
                 {
                     using (Stream httpStream = httpResponse.GetResponseStream())
                         HtmlData = ReadFully(httpStream);
@@ -177,43 +164,34 @@ namespace HtmlHelp
             req.Timeout = Timeout;
             req.KeepAlive = true;
             // Some sites will only respond (correctly) if they get fooled.
-            req.UserAgent = "Mozilla/5.0 HTMLHelper/0.90";
+            req.UserAgent = "Mozilla/5.0 HTMLHelper/1.0";
             // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
             req.CookieContainer = cookies;
 
             return req;
         }
 
-        public static Encoding DetectEncodingHtml(string htmlString)
+        // Forge preliminary string according to HTTP headers charset.
+        void ForgePrelimString()
         {
-            Encoding htmlEncoding = null;
-
-            // First try to get the charset from Meta tag, then try the XML/XHTML approach.
-            string htmlCharset = HtmlTagExtract.GetMetaCharset(htmlString);
-            if (htmlCharset == null)
+            if (HtmlData != null)
             {
-                htmlCharset = HtmlTagExtract.GetXmlCharset(htmlString);
-                // If both were unsuccesful, return null.
-                if (htmlCharset == null)
-                    return null;
+                // Encoding according to HTTP Headers.
+                // Fall back to ISO-8859-1 in case of encoding not being supported.
+                string fixedCharset = FixCharset(HeadersCharset);
+                try
+                {
+                    EncHeaders = Encoding.GetEncoding(fixedCharset);
+                }
+                catch(ArgumentException)
+                {
+                    EncHeaders = Encoding.GetEncoding("ISO-8859-1");
+                }
+                
+                prelimHtmlString = EncHeaders.GetString(HtmlData);
             }
-
-            string fixedCharset = FixCharset(htmlCharset);
-
-            // Debug
-            // Console.WriteLine("HTML charset string: " + fixedCharset);
-
-            try
-            {
-                htmlEncoding = Encoding.GetEncoding(fixedCharset);
-            }
-            catch (ArgumentException)
-            {
-                return null;
-            }
-
-            return htmlEncoding;
         }
+
 
         // What it says on the tin. ;D
         public string GetHtmlAsString()
@@ -224,10 +202,7 @@ namespace HtmlHelp
             {
                 // Encoding according to HTML.
                 EncHtml = DetectEncodingHtml(prelimHtmlString);
-
-                // Debug
-                Console.WriteLine("(HTTP) {0} -> {1} ;(HTML) {2}", headersCharset, EncHeaders, EncHtml);
-
+                
                 // If they are in agreement, return already forged string.
                 // Or if the HTML doesn't have a charset declaration, return already forged string.
                 if (EncHtml == EncHeaders || EncHtml == null)
@@ -250,6 +225,35 @@ namespace HtmlHelp
                     return EncHtml.GetString(HtmlData);
                 }
             }
+        }
+
+        Encoding DetectEncodingHtml(string htmlString)
+        {
+            Encoding htmlEncoding = null;
+
+            // First try to get the charset from Meta tag, then try the XML/XHTML approach.
+            string htmlCharset = HtmlTagExtract.GetMetaCharset(htmlString);
+            if (htmlCharset == null)
+            {
+                htmlCharset = HtmlTagExtract.GetXmlCharset(htmlString);
+                // If both were unsuccesful, return null.
+                if (htmlCharset == null)
+                    return null;
+            }
+            HtmlCharset = htmlCharset;
+
+            string fixedCharset = FixCharset(htmlCharset);
+
+            try
+            {
+                htmlEncoding = Encoding.GetEncoding(fixedCharset);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+
+            return htmlEncoding;
         }
     }
 

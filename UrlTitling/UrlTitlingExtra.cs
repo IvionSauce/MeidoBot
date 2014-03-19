@@ -1,4 +1,3 @@
-// using System.Threading;
 using System;
 using System.Collections.Generic;
 using IvionSoft;
@@ -40,13 +39,15 @@ public class Blacklist : ControlList
 }
 
 
+// Common methods for both Black- and Whitelist.
+// Also wrap access to DomainLists to provide a workable (not exploding) interface even if there's nothing loaded.
 public class ControlList
 {
     DomainLists domLists = null;
     string path = null;
     
     
-    protected bool IsInGlobalList(string url)
+    public bool IsInGlobalList(string url)
     {
         if (domLists != null)
             return domLists.IsInGlobalList(url);
@@ -54,7 +55,7 @@ public class ControlList
             return false;
     }
 
-    protected bool? IsInDomainList(string domain, string url)
+    public bool? IsInDomainList(string domain, string url)
     {
         if (domLists != null)
             return domLists.IsInDomainList(domain, url);
@@ -64,8 +65,8 @@ public class ControlList
 
     public void LoadFromFile(string path)
     {
-        if (path != null)
-            path = null;
+        if (this.path != null)
+            this.path = null;
 
         var tmpDomLists = new DomainLists(path);
         domLists = tmpDomLists;

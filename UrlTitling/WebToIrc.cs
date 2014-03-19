@@ -143,11 +143,16 @@ namespace WebIrc
             string htmlString = htmlEncHelper.GetHtmlAsString();
             if (htmlString == null)
             {
-                Console.WriteLine("Non-HTML URL: " + url);
+                Console.WriteLine("Non-HTML: " + url);
                 return null;
             }
             else
+            {
+                Console.WriteLine("(HTTP) {0} -> {1} ; (HTML) {2} -> {3}",
+                                  htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
+                                  htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
                 return htmlString;
+            }
         }
 
         // Implement an ACCEPT ALL Certificate Policy (for SSL).
