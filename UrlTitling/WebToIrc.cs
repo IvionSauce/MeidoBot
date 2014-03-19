@@ -26,6 +26,9 @@ namespace WebIrc
 
         static WebToIrc()
         {
+            // State we want to use our ACCEPT ALL implementation.
+            ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
+
             Cookies = new CookieContainer();
         }
         public WebToIrc()
@@ -33,6 +36,7 @@ namespace WebIrc
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
         }
+
 
         public string GetWebInfo(string url)
         {
@@ -84,24 +88,20 @@ namespace WebIrc
             // Other URLs.
             else
             {                
-                double urlAndTitleSimilarity = urlTitleComp.CompareUrlAndTitle(url, htmlTitle);
-
-                // Debug
-                Console.WriteLine("URL-Title Similarity: " + urlAndTitleSimilarity);
+                double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(url, htmlTitle);
+                Console.WriteLine("URL-Title Similarity: " + urlTitleSimilarity);
 
                 // If the URL and Title are too similar, don't return HTML info for printing to IRC.
-                if (urlAndTitleSimilarity > Threshold)
+                if (urlTitleSimilarity < Threshold)
+                    return string.Format("[ {0} ]", htmlTitle);
+                else
                     return null;
-
-                return string.Format("[ {0} ]", htmlTitle);
             }
         }
 
+
         string GetHtmlString(string url)
         {
-            // State we want to use our ACCEPT ALL implementation.
-            ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
-
             Uri uri;
             try
             {
@@ -154,6 +154,7 @@ namespace WebIrc
                 return htmlString;
             }
         }
+
 
         // Implement an ACCEPT ALL Certificate Policy (for SSL).
         // What we're going to do is not security sensitive. SSL or not, we don't care,
