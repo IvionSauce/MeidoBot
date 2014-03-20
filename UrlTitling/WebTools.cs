@@ -3,6 +3,7 @@ using System.Text;
 using System.Net;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using WebResources;
 // For `HttpUtility.HtmlDecode`
 using System.Web;
 // HTML Agility Pack
@@ -24,6 +25,9 @@ namespace WebToolsModule
         // Returns null if <title> cannot be found.
         public static string GetTitle(string htmlString)
         {
+            if (string.IsNullOrWhiteSpace(htmlString))
+                return null;
+
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(htmlString);
             HtmlNode titleNode = htmlDoc.DocumentNode.SelectSingleNode("//title");
@@ -48,6 +52,9 @@ namespace WebToolsModule
         // Return length in seconds of a YouTube URL. Returns -1 if the length cannot be found.
         public static int GetYoutubeTime(string htmlString)
         {
+            if (htmlString == null)
+                return -1;
+
             Match timeMatch = ytRegexp.Match(htmlString);
             if (timeMatch.Success)
                 return int.Parse(timeMatch.Value);
@@ -55,19 +62,31 @@ namespace WebToolsModule
                 return -1;
         }
 
-        public static string SimpleGetString(string url)
+        public static WebString SimpleGetString(string url)
         {
+            if (url == null)
+                throw new ArgumentNullException("url");
+
+            Uri uri;
+            try
+            {
+                uri = new Uri(url);
+            }
+            catch (UriFormatException ex)
+            {
+                return new WebString(null, ex);
+            }
+
             var wc = new WebClient();
             try
             {
-                string jsonStr = wc.DownloadString(url);
-                return jsonStr;
+                var document = wc.DownloadString(uri);
+                return new WebString(uri, document);
 
             }
             catch (WebException ex)
             {
-                Console.WriteLine("WebException in SimpleGetWebString: " + ex.Message);
-                return null;
+                return new WebString(uri, ex);
             }
         }
     }
@@ -75,26 +94,21 @@ namespace WebToolsModule
 
     public class UrlTitleComparer
     {
-        // First line is normal punctuation. The second line has punctutation common in titles of webpages.
-        // Third line is similar, but contains Unicode characters.
-        HashSet<char> _charIgnore = new HashSet<char>(new char[] {'.', ',', '!', '?', ':', ';', '&', '\'',
-            '-', '|', '<', '>',
-            '—', '–', '·', '«', '»'}
-        );
-        public HashSet<char> CharIgnore
-        {
-            get { return _charIgnore; }
-            set { _charIgnore = value; }
-        }
-
-        HashSet<string> _stringIgnore = new HashSet<string>();
-        public HashSet<string> StringIgnore
-        {
-            get { return _stringIgnore; }
-            set { _stringIgnore = value; }
-        }
+        public HashSet<char> CharIgnore { get; set; }
+        public HashSet<string> StringIgnore { get; set; }
 
         const int maxCharCode = 127;
+
+
+        public UrlTitleComparer()
+        {
+            // First line is normal punctuation. The second line has punctutation common in titles of webpages.
+            // Third line is similar, but contains Unicode characters.
+            CharIgnore = new HashSet<char>(new char[] {'.', ',', '!', '?', ':', ';', '&', '\'',
+                '-', '|', '<', '>',
+                '—', '–', '·', '«', '»'});
+            StringIgnore = new HashSet<string>();
+        }
 
 
         // Compare the title of webpage and its URL. It will return a double relating how many words from the title
@@ -126,7 +140,7 @@ namespace WebToolsModule
             {
                 if (StringIgnore.Contains(word))
                 {
-                    totalWords -= 1;
+                    totalWords--;
                     continue;
                 }
                 if (url.Contains(word, StringComparison.OrdinalIgnoreCase))
@@ -152,17 +166,17 @@ namespace WebToolsModule
             Foolz
         }
 
-        static readonly Regex chanUrlRegexp = new Regex(@"boards\.4chan\.org/([a-z0-9]+)/res/(\d+)");
-        static readonly Regex foolzUrlRegexp = new Regex(@"archive\.foolz\.us/([a-z0-9]+)/thread/(\d+)");
+        static readonly Regex chanUrlRegexp = new Regex(@"(?i)boards\.4chan\.org/([a-z0-9]+)/res/(\d+)");
+        static readonly Regex foolzUrlRegexp = new Regex(@"(?i)archive\.foolz\.us/([a-z0-9]+)/thread/(\d+)");
  
         // <span class="quote">Quote</span>
         // <a href="bla">Bla</a>
         // <wbr>
-        static readonly Regex fixPostRegexp = new Regex(@"<span ?[^<>]*>|</span>|" +
+        static readonly Regex fixPostRegexp = new Regex(@"(?i)<span ?[^<>]*>|</span>|" +
                                                         @"<a href=""[^<>""]*"">|</a>|" +
                                                         @"<wbr>");
 
-        static readonly Regex spoilerRegexp =  new Regex(@"(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
+        static readonly Regex spoilerRegexp =  new Regex(@"(?i)(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
 
 
         static readonly Dictionary<string, string> boardMapping = new Dictionary<string, string>()
@@ -244,20 +258,26 @@ namespace WebToolsModule
         // Overloaded methods to wrap GetThreadOP and present a nice interface to the outside.
         public static ChanPost GetThreadOP(string url)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return GetThreadOP(url, Source.Fourchan);
             else if (url.Contains("archive.foolz.us/", StringComparison.OrdinalIgnoreCase))
                 return GetThreadOP(url, Source.Foolz);
             else
-                return null;
+                throw new ArgumentException("Address not supported", "url");
         }
 
         public static ChanPost GetThreadOP(string url, Source source)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+
             string[] boardAndThread = GetBoardAndThreadNo(url, source);
 
             if (boardAndThread == null)
-                return null;
+                return new ChanPost();
             else
                 return GetThreadOP(boardAndThread[0], int.Parse(boardAndThread[1]), source);
         }
@@ -265,12 +285,14 @@ namespace WebToolsModule
 
         public static ChanPost GetThreadOP(string board, int thread, Source source)
         {
-            string jsonStr = GetJsonString(board, thread, source);
-            if (string.IsNullOrWhiteSpace(jsonStr))
-                return null;
+            if (string.IsNullOrWhiteSpace(board))
+                throw new ArgumentException("Cannot be null, empty or whitespace", "board");
 
-            dynamic threadJson = JsonConvert.DeserializeObject(jsonStr);
+            WebString jsonStr = GetJsonString(board, thread, source);
+            if (!jsonStr.Succes)
+                return new ChanPost(jsonStr);
 
+            dynamic threadJson = JsonConvert.DeserializeObject(jsonStr.Document);
             string opSubject, opComment;
             if (source == Source.Fourchan)
             {
@@ -290,17 +312,15 @@ namespace WebToolsModule
                     opComment = null;
             }
 
-            var threadOp = new ChanPost();
-            threadOp.Board = board;
-            threadOp.BoardName = GetBoardName(board);
-            threadOp.PostNo = threadOp.ThreadNo = thread;
-            threadOp.Subject = opSubject;
-            threadOp.Comment = opComment;
+            var opPost = new ChanPost(jsonStr,
+                                      board, GetBoardName(board),
+                                      thread, thread,
+                                      opSubject, opComment);
 
-            return threadOp;
+            return opPost;
         }
 
-        static string GetJsonString(string board, int thread, Source source)
+        static WebString GetJsonString(string board, int thread, Source source)
         {
             // Construct query.
             string jsonReq;
@@ -310,9 +330,7 @@ namespace WebToolsModule
                 jsonReq = string.Format("http://archive.foolz.us/_/api/chan/post/?board={0}&num={1}", board, thread);
             else
                 throw new ArgumentException("Source is not supported");
-            
-            // Debug
-            Console.WriteLine("JSON Request: {0}", jsonReq);
+
 
             return WebTools.SimpleGetString(jsonReq);
         }
@@ -396,58 +414,66 @@ namespace WebToolsModule
     }
 
 
-    public class ChanPost
+    internal static class ExtensionMethods
     {
-        public string Board { get; set; }
-        public string BoardName { get; set; }
-        public int ThreadNo { get; set; }
-        public int PostNo { get; set; }
-        public string Subject { get; set; }
-        public string Comment { get; set; }
+        internal static bool Contains(this string source, string value, StringComparison comp)
+        {
+            return source.IndexOf(value, comp) >= 0;
+        }
     }
 
 
     public static class DanboTools
     {
-        static readonly Regex danboUrlRegexp = new Regex(@"donmai.us/posts/(\d+)");
+        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
 
         // Matches the "_(source)" part that is sometimes present with character tags.
         static readonly Regex charSourceRegexp = new Regex(@"_\([^) ]+\)");
 
 
-        public static Dictionary<string, string> GetPostInfo(string url)
+        public static DanboPost GetPostInfo(string url)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+
             string postNo = GetPostNo(url);
 
             if (postNo == null)
-                return null;
+                return new DanboPost();
             else
                 return GetPostInfo(int.Parse(postNo));
         }
 
-        public static Dictionary<string, string> GetPostInfo(int postNo)
+        public static DanboPost GetPostInfo(int postNo)
         {
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
+            WebString jsonStr = WebTools.SimpleGetString(jsonReq);
+            if (!jsonStr.Succes)
+                return new DanboPost(jsonStr);
 
-            // Debug
-            Console.WriteLine("JSON Request: {0}", jsonReq);
+            dynamic postJson = JsonConvert.DeserializeObject(jsonStr.Document);
 
-            // Download the JSON into a string.
-            string jsonStr = WebTools.SimpleGetString(jsonReq);
-            // If we couldn't get it, return null.
-            if (jsonStr == null)
-                return null;
+            string[] copyrights = postJson.tag_string_copyright.Split(' ');
+            string[] characters = postJson.tag_string_character.Split(' ');
+            string[] artists = postJson.tag_string_artist.Split(' ');
+            string[] other = postJson.tag_string_general.Split(' ');
+            string[] all = postJson.tag_string.Split(' ');
 
-            dynamic postJson = JsonConvert.DeserializeObject(jsonStr);
+            DanboPost.Rating rated;
+            if (postJson.rating == "s")
+                rated = DanboPost.Rating.Safe;
+            else if (postJson.rating == "q")
+                rated = DanboPost.Rating.Questionable;
+            else
+                rated = DanboPost.Rating.Explicit;
 
-            var postInfo = new Dictionary<string, string>();
-            postInfo["id"] = postNo.ToString();
-            postInfo["characters"] = postJson.tag_string_character;
-            postInfo["copyrights"] = postJson.tag_string_copyright;
-            postInfo["artists"] = postJson.tag_string_artist;
+            var postInfo = new DanboPost(jsonStr, postNo,
+                                         copyrights, characters, artists, other,
+                                         all, rated);
 
             return postInfo;
         }
+
 
         static string GetPostNo(string url)
         {
@@ -458,6 +484,7 @@ namespace WebToolsModule
             else
                 return null;
         }
+
 
         public static string ShortenTagList(string tags, int amount, string contSymbol)
         {
@@ -474,18 +501,53 @@ namespace WebToolsModule
                 return tags;
         }
 
+        public static string[] ShortenTagArray(string[] tags, int amount)
+        {
+            if (tags == null)
+                return new string[0];
+            else if ( amount > 0 && tags.Length > amount )
+                return tags.Slice(0, amount);
+            else
+                return tags;
+        }
+
+
         public static string CleanupCharacterTags(string charTags)
         {
-            return charSourceRegexp.Replace(charTags, "");
+            if (string.IsNullOrEmpty(charTags))
+                return charTags;
+            else
+                return charSourceRegexp.Replace(charTags, "");
         }
-    }
 
-
-    static class ExtensionMethods
-    {
-        public static bool Contains(this string source, string value, StringComparison comp)
+        // In-place modification.
+        public static void CleanupCharacterTags(string[] charTags)
         {
-            return source.IndexOf(value, comp) >= 0;
+            if (charTags == null)
+                return;
+
+            for (int i = 0; i < charTags.Length; i++)
+                charTags[i] = charSourceRegexp.Replace(charTags[i], "");
+        }
+
+
+        // http://www.dotnetperls.com/array-slice
+        static T[] Slice<T>(this T[] source, int start, int end)
+        {
+            // Handles negative ends.
+            if (end < 0)
+            {
+                end = source.Length + end;
+            }
+            int len = end - start;
+            
+            // Return new array.
+            T[] res = new T[len];
+            for (int i = 0; i < len; i++)
+            {
+                res[i] = source[i + start];
+            }
+            return res;
         }
     }
 }

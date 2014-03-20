@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using HtmlHelp;
 // Various website utilities, both generic and specific.
 using WebToolsModule;
+using WebResources;
 
 namespace WebIrc
 {
@@ -167,6 +168,15 @@ namespace WebIrc
     }
 
 
+    internal static class ExtensionMethods
+    {
+        internal static bool Contains(this string source, string value, StringComparison comp)
+        {
+            return source.IndexOf(value, comp) >= 0;
+        }
+    }
+
+
     public class ChanHandler
     {
         int _maxLines = 2;
@@ -192,23 +202,30 @@ namespace WebIrc
         {
             ChanPost opPost = ChanTools.GetThreadOP(url);
 
-            if (opPost == null)
-                return null;
-
-            string topic;
-            // Prefer subject as topic, if the post has one. Else reform the message into a topic.
-            // If a post has neither subject or comment/message, return null.
-            if (opPost.Subject != null)
-                topic = opPost.Subject;
-            else if (opPost.Comment != null)
+            if (opPost.Succes)
             {
-                topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
-                topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
+                string topic;
+                // Prefer subject as topic, if the post has one. Else reform the message into a topic.
+                // If a post has neither subject or comment/message, return null.
+                if (opPost.Subject != null)
+                    topic = opPost.Subject;
+                else
+                {
+                    topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
+                    topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
+                }
+                
+                return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
             }
             else
+            {
+                string message = "Unable to get Board and/or Thread No. from URL";
+                if (opPost.Exception != null)
+                    message = opPost.Exception.Message;
+                
+                Console.WriteLine("--- Error getting {0}: {1}", url, message);
                 return null;
-
-            return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
+            }
         }
     }
 
@@ -265,18 +282,32 @@ namespace WebIrc
 
         public string PostToIrc(string url)
         {
-            Dictionary<string, string> postInfo = DanboTools.GetPostInfo(url);
+            DanboPost postInfo = DanboTools.GetPostInfo(url);
 
-            if (postInfo == null)
+            if (!postInfo.Succes)
+            {
+                string message = "Unable to extract Post No. from the URL";
+                if (postInfo.Exception != null)
+                    message = postInfo.Exception.Message;
+
+                Console.WriteLine("--- Error getting {0}: {1}", url, message);
                 return null;
+            }
+            // If image has no character, copyright or artist tags, return just the post ID.
+            else if (postInfo.CopyrightTags.Length == 0 &&
+                     postInfo.CharacterTags.Length == 0 &&
+                     postInfo.ArtistTags.Length == 0)
+            {
+                return string.Format("{0}[ #{1} ]", NormalCode, postInfo.PostNo);
+            }
 
-            string[] postArr = {postInfo["characters"], postInfo["copyrights"], postInfo["artists"]};
-
-            // If image had no character, copyright or artist tags, return just the post ID.
-            if (string.IsNullOrEmpty(postArr[0]) &&
-                string.IsNullOrEmpty(postArr[1]) &&
-                string.IsNullOrEmpty(postArr[2]))
-                return string.Format("{0}[ #{1} ]", NormalCode, postInfo["id"]);
+            // Put the tags into an array for easy processing.
+            string[] postArr = 
+            {
+                string.Join(" ", postInfo.CopyrightTags),
+                string.Join(" ", postInfo.CharacterTags),
+                string.Join(" ", postInfo.ArtistTags)
+            };
 
             // Shorten and colourize the tags.
             for (int i = 0; i < postArr.Length; i++)
@@ -330,14 +361,5 @@ namespace WebIrc
             else
                 return string.Concat(colour, tags, resetCode, NormalCode);
         }
-    }
-}
-
-
-static class ExtensionMethods
-{
-    public static bool Contains(this string source, string value, StringComparison comp)
-    {
-        return source.IndexOf(value, comp) >= 0;
     }
 }
