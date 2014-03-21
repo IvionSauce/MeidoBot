@@ -72,7 +72,7 @@ namespace WebIrc
 
 
             // Youtube handling.
-            else if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) || 
+            if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) || 
                      url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
             {
                 // If duration can be found, change the html info to include that. Else return normal info.
@@ -219,7 +219,7 @@ namespace WebIrc
             }
             else
             {
-                string message = "Unable to get Board and/or Thread No. from URL";
+                string message = "Unable to extract Board and/or Thread No. from URL";
                 if (opPost.Exception != null)
                     message = opPost.Exception.Message;
                 
@@ -284,42 +284,54 @@ namespace WebIrc
         {
             DanboPost postInfo = DanboTools.GetPostInfo(url);
 
-            if (!postInfo.Succes)
+            if (postInfo.Succes)
+            {
+                // If image has no character, copyright or artist tags, return just the post ID.
+                if (postInfo.CopyrightTags.Length == 0 &&
+                    postInfo.CharacterTags.Length == 0 &&
+                    postInfo.ArtistTags.Length == 0)
+                {
+                    return string.Format("{0}[ #{1} ]", NormalCode, postInfo.PostNo);
+                }
+
+                // Convert to string and limit the number of tags as specified in `MaxTagCount`.
+                var characters =
+                    DanboTools.TagArrayToString( postInfo.CharacterTags, MaxTagCount, ContinuationSymbol );
+                var copyrights =
+                    DanboTools.TagArrayToString( postInfo.CopyrightTags, MaxTagCount, ContinuationSymbol );
+                var artists =
+                    DanboTools.TagArrayToString( postInfo.ArtistTags, MaxTagCount, ContinuationSymbol );
+                // Colourize the tags.
+                if (Colourize)
+                {
+                    characters = ColourizeTags(characters, CharacterCode);
+                    copyrights = ColourizeTags(copyrights, CopyrightCode);
+                    artists = ColourizeTags(artists, ArtistCode);
+                }
+                
+                string danbo = FormatDanboInfo(characters, copyrights, artists);
+                
+                return string.Format("{0}[ {1} ]", NormalCode, danbo);
+            }
+            else
             {
                 string message = "Unable to extract Post No. from the URL";
                 if (postInfo.Exception != null)
                     message = postInfo.Exception.Message;
-
+                
                 Console.WriteLine("--- Error getting {0}: {1}", url, message);
                 return null;
             }
-            // If image has no character, copyright or artist tags, return just the post ID.
-            else if (postInfo.CopyrightTags.Length == 0 &&
-                     postInfo.CharacterTags.Length == 0 &&
-                     postInfo.ArtistTags.Length == 0)
-            {
-                return string.Format("{0}[ #{1} ]", NormalCode, postInfo.PostNo);
-            }
+        }
 
-            // Put the tags into an array for easy processing.
-            string[] postArr = 
-            {
-                string.Join(" ", postInfo.CopyrightTags),
-                string.Join(" ", postInfo.CharacterTags),
-                string.Join(" ", postInfo.ArtistTags)
-            };
-
-            // Shorten and colourize the tags.
-            for (int i = 0; i < postArr.Length; i++)
-            {
-                postArr[i] = DanboTools.ShortenTagList(postArr[i], MaxTagCount, ContinuationSymbol);
-                if (Colourize)
-                    postArr[i] = ColourizeTags(postArr[i], codes[i]);
-            }
-
-            string danbo = FormatDanboInfo(postArr[0], postArr[1], postArr[2]);
-
-            return string.Format("{0}[ {1} ]", NormalCode, danbo);
+        static string ResolveRating(DanboPost.Rating rating)
+        {
+            if (rating == DanboPost.Rating.Safe)
+                return "Safe";
+            else if (rating == DanboPost.Rating.Questionable)
+                return "Questionable";
+            else
+                return "Explicit";
         }
 
         static string FormatDanboInfo(string characters, string copyrights, string artists)

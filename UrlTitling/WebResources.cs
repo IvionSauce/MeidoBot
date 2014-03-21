@@ -3,8 +3,14 @@ using System.Collections.Generic;
 
 namespace WebResources
 {
+    /// <summary>
+    /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
+    /// check the Exception property. If Exception is null and Succes is false it means something went wrong extracting
+    /// the post number from the URL.
+    /// </summary>
     public class DanboPost : WebResource
     {
+        [Flags]
         public enum Rating
         {
             Safe,
@@ -45,6 +51,11 @@ namespace WebResources
     }
 
 
+    /// <summary>
+    /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
+    /// check the Exception property. If Exception is null and Succes is false it means something went wrong extracting
+    /// the board and/or thread number from the URL.
+    /// </summary>
     public class ChanPost : WebResource
     {
         public string Board { get; private set; }

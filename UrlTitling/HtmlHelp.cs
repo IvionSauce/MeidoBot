@@ -8,18 +8,51 @@ using System.Text.RegularExpressions;
 
 namespace HtmlHelp
 {
+    /// <summary>
+    /// (X)HTML encoding helper. A class to help you get the content of a webpage as a string, decoded correctly.
+    /// It will take both the character set reported by the HTTP headers as well as the one (if defined) in the (X)HTML
+    /// document and use that information to return a correct string of the content.
+    /// </summary>
     public class HtmlEncodingHelper
     {
+        /// <summary>
+        /// Gets or sets the timout of the HTTP request.
+        /// </summary>
+        /// <value>Timeout in milliseconds.</value>
         public int Timeout { get; set; }
 
+        /// <summary>
+        /// The (X)HTML data used for constructing the (X)HTML content string.
+        /// </summary>
+        /// <value>(X)HTML data as byte array.</value>
         public byte[] HtmlData { get; private set; }
 
+        /// <summary>
+        /// The encoding that got used for the forging of the (X)HTML content string.
+        /// </summary>
         public Encoding UsedEncoding { get; private set; }
 
+        /// <summary>
+        /// HTTP headers character set.
+        /// </summary>
+        /// <value>Verbatim string of the character set reported by the HTTP server.</value>
         public string HeadersCharset { get; private set; }
+        /// <summary>
+        /// The encoding as indicated by the HTTP headers. If the headers charset didn't map to an encoding it will
+        /// default to ISO-8859-1.
+        /// </summary>
         public Encoding EncHeaders { get; private set; }
 
+        /// <summary>
+        /// (X)HTML character set.
+        /// </summary>
+        /// <value>Verbatim string of the character set defined in the (X)HTML document. If not defined or found this
+        /// will be null.</value>
         public string HtmlCharset { get; private set; }
+        /// <summary>
+        /// The encoding as indicated by the (X)HTML document. If the (X)HTML charset was not defined or couldn't be
+        /// found this will be null.
+        /// </summary>
         public Encoding EncHtml { get; private set; }
 
         string prelimHtmlString;
@@ -48,6 +81,135 @@ namespace HtmlHelp
         }
 
 
+        /// <summary>
+        /// Load the specified URL into HtmlData.
+        /// </summary>
+        /// <param name="url">URL</param>
+        public void Load(Uri url)
+        {
+            Load(url, null);
+        }
+
+        /// <summary>
+        /// Load the specified URL into HtmlData. Uses provided <see cref="CookieContainer">cookies</see> in the HTTP
+        /// request.
+        /// </summary>
+        /// <param name="url">URL</param>
+        /// <param name="cookies">Cookies</param>
+        public void Load(Uri url, CookieContainer cookies)
+        {
+            HtmlCharset = prelimHtmlString = null;
+            UsedEncoding = EncHtml = null;
+            Load(url, cookies, 0);
+        }
+        
+        // Load a HTML file, pointed to by an URL, into a byte array. If URL doesn't point to a HTML document
+        // don't load it (we don't want to load some huge binary file).
+        void Load(Uri url, CookieContainer cookies, int redirects)
+        {
+            // Store previous loaded HTML page for later comparison, only used in case of Meta Refresh 'redirects'.
+            string oldString = prelimHtmlString;
+            
+            // Clear fields from (possible) previous Load call(s).
+            HtmlData = null;
+            HeadersCharset = prelimHtmlString = null;
+            EncHeaders = null;
+            
+            // Create the HTTP request and set some options.
+            HttpWebRequest req = CreateRequest(url, cookies);
+            
+            // Get HTTP response and stream and read the stream into a byte array if it's an HTML file.
+            using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
+            {
+                HeadersCharset = httpResponse.CharacterSet;
+                
+                // Debug
+                // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
+                
+                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
+                {
+                    using (Stream httpStream = httpResponse.GetResponseStream())
+                        HtmlData = ReadFully(httpStream);
+                }
+                // If not text/html, return without doing anything (leaving HtmlData null).
+                else
+                    return;
+            }
+            
+            // Forge preliminary HTML string based on the charset reported by the HTTP headers.
+            ForgePrelimString();
+            
+            string refreshUrl = HtmlTagExtract.GetMetaRefresh(prelimHtmlString);
+            if (refreshUrl != null)
+            {
+                Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
+                
+                // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
+                if (redirects < 10)
+                {    
+                    // If during the redirects we get a different page/HTML string, refrain from following more redirects.
+                    // It probably means we've arrived, but only more real world testing will tell us if that's true.
+                    if (redirects > 0 && prelimHtmlString != oldString)
+                        return;
+                    
+                    // Otherwise keep trying to follow the redirects, keeping the same cookie container.
+                    Load(redirectUrl, cookies, redirects + 1);
+                }
+            }
+        }
+
+        HttpWebRequest CreateRequest(Uri url, CookieContainer cookies)
+        {
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+            
+            req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            req.Timeout = Timeout;
+            req.KeepAlive = true;
+            // Some sites will only respond (correctly) if they get fooled.
+            req.UserAgent = "Mozilla/5.0 HTMLHelper/1.0";
+            // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
+            req.CookieContainer = cookies;
+            
+            return req;
+        }
+
+        // http://www.yoda.arachsys.com/csharp/readbinary.html
+        static byte[] ReadFully(Stream stream)
+        {
+            const int BufferSize = 32768;
+            
+            byte[] buffer = new byte[BufferSize];
+            using (var ms = new MemoryStream())
+            {
+                while (true)
+                {
+                    int read = stream.Read(buffer, 0, buffer.Length);
+                    if (read <= 0)
+                        return ms.ToArray();
+                    ms.Write(buffer, 0, read);
+                }
+            }
+        }
+
+        // Forge preliminary string according to HTTP headers charset.
+        void ForgePrelimString()
+        {
+            // Encoding according to HTTP Headers.
+            // Fall back to ISO-8859-1 in case of encoding not being supported.
+            string fixedCharset = FixCharset(HeadersCharset);
+            try
+            {
+                EncHeaders = Encoding.GetEncoding(fixedCharset);
+            }
+            catch(ArgumentException)
+            {
+                EncHeaders = Encoding.GetEncoding("ISO-8859-1");
+            }
+            
+            prelimHtmlString = EncHeaders.GetString(HtmlData);
+        }
+
+
         // If charset exists in charsetReplace dict, return proper charset. Else return the string in lowercase.
         static string FixCharset(string charset)
         {
@@ -70,130 +232,10 @@ namespace HtmlHelp
         }
 
 
-        // http://www.yoda.arachsys.com/csharp/readbinary.html
-        static byte[] ReadFully(Stream stream)
-        {
-            const int BufferSize = 32768;
-
-            byte[] buffer = new byte[BufferSize];
-            using (var ms = new MemoryStream())
-            {
-                while (true)
-                {
-                    int read = stream.Read(buffer, 0, buffer.Length);
-                    if (read <= 0)
-                        return ms.ToArray();
-                    ms.Write(buffer, 0, read);
-                }
-            }
-        }
-
-
-        public void Load(Uri url)
-        {
-            Load(url, null);
-        }
-
-        public void Load(Uri url, CookieContainer cookies)
-        {
-            HtmlCharset = prelimHtmlString = null;
-            UsedEncoding = EncHtml = null;
-            Load(url, cookies, 0);
-        }
-
-        // Load a HTML file, pointed to by an URL, into a byte array. If URL doesn't point to a HTML document
-        // don't load it (we don't want to load some huge binary file).
-        void Load(Uri url, CookieContainer cookies, int redirects)
-        {
-            // Store previous loaded HTML page for later comparison, only used in case of Meta Refresh 'redirects'.
-            string oldString = prelimHtmlString;
-
-            // Clear fields from (possible) previous Load call(s).
-            HtmlData = null;
-            HeadersCharset = prelimHtmlString = null;
-            EncHeaders = null;
-
-            // Create the HTTP request and set some options.
-            HttpWebRequest req = CreateRequest(url, cookies);
-
-            // Get HTTP response and stream and read the stream into a byte array if it's a HTML file.
-            using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
-            {
-                HeadersCharset = httpResponse.CharacterSet;
-
-                // Debug
-                // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
-
-                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
-                {
-                    using (Stream httpStream = httpResponse.GetResponseStream())
-                        HtmlData = ReadFully(httpStream);
-                }
-                // If not text/html, return without doing anything (leaving HtmlData null).
-                else
-                    return;
-            }
-
-            // Forge preliminary HTML string based on the charset reported by the HTTP headers.
-            ForgePrelimString();
-
-            string refreshUrl = HtmlTagExtract.GetMetaRefresh(prelimHtmlString);
-            if (refreshUrl != null)
-            {
-                Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
-
-                // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
-                if (redirects < 10)
-                {    
-                    // If during the redirects we get a different page/HTML string, refrain from following more redirects.
-                    // It probably means we've arrived, but only more real world testing will tell us if that's true.
-                    if (redirects > 0 && prelimHtmlString != oldString)
-                        return;
-
-                    // Otherwise keep trying to follow the redirects, keeping the same cookie container.
-                    Load(redirectUrl, cookies, redirects + 1);
-                }
-            }
-        }
-
-        HttpWebRequest CreateRequest(Uri url, CookieContainer cookies)
-        {
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-            
-            req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            req.Timeout = Timeout;
-            req.KeepAlive = true;
-            // Some sites will only respond (correctly) if they get fooled.
-            req.UserAgent = "Mozilla/5.0 HTMLHelper/1.0";
-            // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
-            req.CookieContainer = cookies;
-
-            return req;
-        }
-
-        // Forge preliminary string according to HTTP headers charset.
-        void ForgePrelimString()
-        {
-            if (HtmlData != null)
-            {
-                // Encoding according to HTTP Headers.
-                // Fall back to ISO-8859-1 in case of encoding not being supported.
-                string fixedCharset = FixCharset(HeadersCharset);
-                try
-                {
-                    EncHeaders = Encoding.GetEncoding(fixedCharset);
-                }
-                catch(ArgumentException)
-                {
-                    EncHeaders = Encoding.GetEncoding("ISO-8859-1");
-                }
-                
-                prelimHtmlString = EncHeaders.GetString(HtmlData);
-            }
-        }
-
-
-        // What it says on the tin. ;D
+        /// <summary>
+        /// Forges the HTML content as a string from HtmlData.
+        /// </summary>
+        /// <returns>HTML content string.</returns>
         public string GetHtmlAsString()
         {
             if (HtmlData == null)
@@ -229,8 +271,6 @@ namespace HtmlHelp
 
         Encoding DetectEncodingHtml(string htmlString)
         {
-            Encoding htmlEncoding = null;
-
             // First try to get the charset from Meta tag, then try the XML/XHTML approach.
             string htmlCharset = HtmlTagExtract.GetMetaCharset(htmlString);
             if (htmlCharset == null)
@@ -243,21 +283,22 @@ namespace HtmlHelp
             HtmlCharset = htmlCharset;
 
             string fixedCharset = FixCharset(htmlCharset);
-
             try
             {
-                htmlEncoding = Encoding.GetEncoding(fixedCharset);
+                Encoding htmlEncoding = Encoding.GetEncoding(fixedCharset);
+                return htmlEncoding;
             }
             catch (ArgumentException)
             {
                 return null;
             }
-
-            return htmlEncoding;
         }
     }
 
 
+    /// <summary>
+    /// Various functions for extracting the content between certain (X)HTML/XML tags.
+    /// </summary>
     public static class HtmlTagExtract
     {
         // XML and alternative XHTML style.
@@ -306,7 +347,11 @@ namespace HtmlHelp
         };
 
 
-        // Returns charset defined in the (X)HTML/XML string, if not defined or found returns null.
+        /// <summary>
+        /// Returns charset defined in the (X)HTML/XML string, if not defined or found returns null.
+        /// </summary>
+        /// <returns>XML charset as string.</returns>
+        /// <param name="docString">String content of a document.</param>
         public static string GetXmlCharset(string docString)
         {
             Match charset = xmlCharsetRegexp.Match(docString);
@@ -317,7 +362,12 @@ namespace HtmlHelp
                 return null;
         }
 
-        // Try to isolate the head of the HTML document.
+
+        /// <summary>
+        /// Returns the head of an HTML document, if not defined or found returns null.
+        /// </summary>
+        /// <returns>The content between &lthead&gt and &lt/head&gt.</returns>
+        /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetHtmlHead(string htmlString)
         {
             Match head = headRegexp.Match(htmlString);
@@ -328,7 +378,12 @@ namespace HtmlHelp
                 return null;
         }
 
-        // Returns charset defined in the (X)HTML string, if not defined or found returns null.
+
+        /// <summary>
+        /// Returns charset defined in the (X)HTML string, if not defined or found returns null.
+        /// </summary>
+        /// <returns>The (X)HTML charset as string.</returns>
+        /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetMetaCharset(string htmlString)
         {
             string head = GetHtmlHead(htmlString);
@@ -345,7 +400,12 @@ namespace HtmlHelp
             return null;
         }
 
-        // Returns refresh/'redirect' URL if defined in the HTML string, if not returns null.
+
+        /// <summary>
+        /// Returns refresh/'redirect' URL if defined in the HTML string, if not returns null.
+        /// </summary>
+        /// <returns>The Meta Refresh URL as string.</returns>
+        /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetMetaRefresh(string htmlString)
         {
             string head = GetHtmlHead(htmlString);
@@ -360,30 +420,6 @@ namespace HtmlHelp
                     return metaRefresh.Value;
             }
             return null;
-        }
-    }
-
-/* using System.Net.Security;
-using System.Security.Cryptography.X509Certificates; */
-
-    class Test
-    {
-        /* static bool TrustAllCertificates(object sender, X509Certificate cert, X509Chain chain,
-                                         SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        } */
-
-        static void Main(string[] args)
-        {
-            // ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
-
-            var bla = new HtmlEncodingHelper();
-            bla.Load( new Uri(args[0]) );
-
-            string htmlString = bla.GetHtmlAsString();
-            if (htmlString != null)
-                Console.WriteLine(htmlString);
         }
     }
 }

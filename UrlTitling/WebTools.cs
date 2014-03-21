@@ -13,6 +13,9 @@ using Newtonsoft.Json;
 
 namespace WebToolsModule
 {
+    /// <summary>
+    /// Generic web tools.
+    /// </summary>
     public static class WebTools
     {
         // groups leading/trailing whitespace and intertextual newlines and carriage returns.
@@ -21,8 +24,13 @@ namespace WebToolsModule
         static readonly Regex ytRegexp = new Regex(@"(?<=""length_seconds"":\s)\d+(?=[,}])");
 
 
-        // Get the contents of <title> of the HTML corresponding to passed HTML string.
-        // Returns null if <title> cannot be found.
+        /// <summary>
+        /// Gets the title of a webpage.
+        /// </summary>
+        /// <returns>The title, with leading/trailing whitespace removed. In-title newlines and carriage
+        /// returns are also removed. HTML escape codes are decoded to 'normal' characters.
+        /// Returns null if the title can't be found.</returns>
+        /// <param name="htmlString">String content of an HTML page.</param>
         public static string GetTitle(string htmlString)
         {
             if (string.IsNullOrWhiteSpace(htmlString))
@@ -49,7 +57,12 @@ namespace WebToolsModule
             return sanitizedTitle;
         }
 
-        // Return length in seconds of a YouTube URL. Returns -1 if the length cannot be found.
+
+        /// <summary>
+        /// Gets the duration of a YouTube movie.
+        /// </summary>
+        /// <returns>The duration in seconds. If unable to determine duration it will return -1.</returns>
+        /// <param name="htmlString">String content of the HTML page with the YouTube video.</param>
         public static int GetYoutubeTime(string htmlString)
         {
             if (htmlString == null)
@@ -92,9 +105,18 @@ namespace WebToolsModule
     }
 
 
+    /// <summary>
+    /// URL-Title comparer.
+    /// </summary>
     public class UrlTitleComparer
     {
+        /// <summary>
+        /// Set which characters the comparer should ignore.
+        /// </summary>
         public HashSet<char> CharIgnore { get; set; }
+        /// <summary>
+        /// Set which strings/words the comparer should ignore.
+        /// </summary>
         public HashSet<string> StringIgnore { get; set; }
 
         const int maxCharCode = 127;
@@ -111,11 +133,22 @@ namespace WebToolsModule
         }
 
 
-        // Compare the title of webpage and its URL. It will return a double relating how many words from the title
-        // occur in the URL. It will range from 0 to 1, 0 meaning no words from the title ara present in the URL and
-        // 1 meaning all words from the title are present in the URL.
+        /// <summary>
+        /// Compare the title of a webpage and its URL
+        /// </summary>
+        /// <returns>A double relating how many words from the title occur in the URL. It will range from 0 to 1,
+        /// 0 meaning no words from the title are present in the URL and 1 meaning all words from the title are
+        /// present in the URL.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if url or title is null.</exception>
+        /// <param name="url">URL</param>
+        /// <param name="title">Title</param>
         public double CompareUrlAndTitle(string url, string title)
         {
+            if (url == null)
+                throw new ArgumentNullException("url");
+            else if (title == null)
+                throw new ArgumentNullException("title");
+
             // Replace punctuation with a space, so as to not accidently meld words together. We'll have string.Split
             // take care of any double, or more, spaces.
             StringBuilder cleanedTitle = new StringBuilder();
@@ -157,6 +190,9 @@ namespace WebToolsModule
     }
 
 
+    /// <summary>
+    /// Collection of tools dealing with 4chan and/or Foolz.us.
+    /// </summary>
     public static class ChanTools
     {
         [Flags]
@@ -255,11 +291,17 @@ namespace WebToolsModule
         };
 
 
-        // Overloaded methods to wrap GetThreadOP and present a nice interface to the outside.
+        /// <summary>
+        /// Get the post of the OP of the thread.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the OP's comment.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url does not point to 4chan or foolz.us.</exception>
+        /// <param name="url">URL pointing to thread.</param>
         public static ChanPost GetThreadOP(string url)
         {
-            if (string.IsNullOrWhiteSpace(url))
-                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+            if (url == null)
+                throw new ArgumentNullException("url");
 
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return GetThreadOP(url, Source.Fourchan);
@@ -269,10 +311,18 @@ namespace WebToolsModule
                 throw new ArgumentException("Address not supported", "url");
         }
 
+        /// <summary>
+        /// Get the post of the OP of the thread.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the OP's comment.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if source is not supported.</exception>
+        /// <param name="url">URL pointing to thread.</param>
+        /// <param name="source">Whether it's a 4chan or foolz.us post.</param>
         public static ChanPost GetThreadOP(string url, Source source)
         {
-            if (string.IsNullOrWhiteSpace(url))
-                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+            if (url == null)
+                throw new ArgumentNullException("url");
 
             string[] boardAndThread = GetBoardAndThreadNo(url, source);
 
@@ -283,10 +333,19 @@ namespace WebToolsModule
         }
 
 
+        /// <summary>
+        /// Get the post of the OP of the thread.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the OP's comment.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if source is not supported.</exception>
+        /// <param name="board">Board where thread is located.</param>
+        /// <param name="thread">Thread number.</param>
+        /// <param name="source">Whether it's a 4chan or foolz.us post.</param>
         public static ChanPost GetThreadOP(string board, int thread, Source source)
         {
-            if (string.IsNullOrWhiteSpace(board))
-                throw new ArgumentException("Cannot be null, empty or whitespace", "board");
+            if (board == null)
+                throw new ArgumentNullException("board");
 
             WebString jsonStr = GetJsonString(board, thread, source);
             if (!jsonStr.Succes)
@@ -370,7 +429,16 @@ namespace WebToolsModule
                 return "Unknown";
         }
 
-
+        /// <summary>
+        /// Shortens the post and replaces newlines with spaces. Multiple newlines are squashed.
+        /// </summary>
+        /// <returns>The shortened post. Returns post as-is if null or empty.</returns>
+        /// <param name="post">String content of a post.</param>
+        /// <param name="maxLines">If more lines than maxLines, shorten to maxLines.
+        /// Disable by passing <= 0.</param>
+        /// <param name="maxChar">If more characters than maxChar, shorten to maxChar.
+        /// Disable by passing <= 0.</param>
+        /// <param name="contSymbol">String to append to the returned string if it was shortened.</param>
         public static string ShortenPost(string post, int maxLines, int maxChar, string contSymbol)
         {
             if (string.IsNullOrEmpty(post))
@@ -398,12 +466,25 @@ namespace WebToolsModule
                 return shortPost;
         }
 
-
+        /// <summary>
+        /// Removes spoiler tags.
+        /// </summary>
+        /// <returns>String content of the post without spoiler tags.
+        /// Returns post as-is if null or empty.</returns>
+        /// <param name="post">String content of a post.</param>
         public static string RemoveSpoilerTags(string post)
         {
             return ReplaceSpoilerTags(post, "", "");
         }
 
+        /// <summary>
+        /// Replaces spoiler tags.
+        /// </summary>
+        /// <returns>String content of the post with spoiler tags replaced.
+        /// Returns post as-is if null or empty.</returns>
+        /// <param name="post">String content of a post.</param>
+        /// <param name="beginReplacement">What to replace the opening spoiler tag with.</param>
+        /// <param name="endReplacement">What to replace the closing spoiler tag with.</param>
         public static string ReplaceSpoilerTags(string post, string beginReplacement, string endReplacement)
         {
             if (string.IsNullOrEmpty(post))
@@ -423,6 +504,9 @@ namespace WebToolsModule
     }
 
 
+    /// <summary>
+    /// Collection of tools dealing with Danbooru.
+    /// </summary>
     public static class DanboTools
     {
         static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
@@ -431,10 +515,16 @@ namespace WebToolsModule
         static readonly Regex charSourceRegexp = new Regex(@"_\([^) ]+\)");
 
 
+        /// <summary>
+        /// Get info of a Danbooru post.
+        /// </summary>
+        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <param name="url">URL pointing to a post.</param>
         public static DanboPost GetPostInfo(string url)
         {
-            if (string.IsNullOrWhiteSpace(url))
-                throw new ArgumentException("Cannot be null, empty or whitespace", "url");
+            if (url == null)
+                throw new ArgumentNullException("url");
 
             string postNo = GetPostNo(url);
 
@@ -444,6 +534,11 @@ namespace WebToolsModule
                 return GetPostInfo(int.Parse(postNo));
         }
 
+        /// <summary>
+        /// Get info of a Danbooru post.
+        /// </summary>
+        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
+        /// <param name="postNo">Post number.</param>
         public static DanboPost GetPostInfo(int postNo)
         {
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
@@ -486,32 +581,70 @@ namespace WebToolsModule
         }
 
 
-        public static string ShortenTagList(string tags, int amount, string contSymbol)
+        /// <summary>
+        /// Converts an array of tags into a tag string.
+        /// </summary>
+        /// <returns>A string of tags.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
+        /// <param name="tags">An array of tags.</param>
+        /// <param name="maxTags">Don't make the returned string contain more tags than maxTags.
+        /// Disable by passing <= 0.</param>
+        public static string TagArrayToString(string[] tags, int maxTags)
         {
-            if (string.IsNullOrEmpty(tags) || amount < 1)
-                return tags;
+            return TagArrayToString(tags, maxTags, "");
+        }
 
-            string[] tagArray = tags.Split(' ');
-            if (tagArray.Length > amount)
+        /// <summary>
+        /// Converts an array of tags into a tag string.
+        /// </summary>
+        /// <returns>A string of tags.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
+        /// <param name="tags">An array of tags.</param>
+        /// <param name="maxTags">Don't make the returned string contain more tags than maxTags.
+        /// Disable by passing <= 0.</param>
+        /// <param name="contSymbol">String to append to the returned string if it was shortened.</param>
+        public static string TagArrayToString(string[] tags, int maxTags, string contSymbol)
+        {
+            string[] shortened = ShortenTagArray(tags, maxTags);
+            var tagStr = string.Join(" ", shortened);
+
+            if (shortened.Length != tags.Length)
+                return string.Concat(tagStr, contSymbol);
+            else
+                return tagStr;
+        }
+
+        /// <summary>
+        /// Shortens an array of tags.
+        /// </summary>
+        /// <returns>An array of strings equal or shorter than amount.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
+        /// <param name="tags">An array of tags.</param>
+        /// <param name="amount">Maximum amount of items the array should have.</param>
+        public static string[] ShortenTagArray(string[] tags, int amount)
+        {
+            if (tags == null)
+                throw new ArgumentNullException("tags");
+
+            if ( amount > 0 && tags.Length > amount )
             {
-                var newTags = string.Join(" ", tagArray, 0, amount);
-                return string.Concat(newTags, contSymbol);
+                var shortened = new string[amount];
+                for (int i = 0; i < amount; i++)
+                    shortened[i] = tags[i];
+
+                return shortened;
             }
             else
                 return tags;
         }
 
-        public static string[] ShortenTagArray(string[] tags, int amount)
-        {
-            if (tags == null)
-                return new string[0];
-            else if ( amount > 0 && tags.Length > amount )
-                return tags.Slice(0, amount);
-            else
-                return tags;
-        }
 
-
+        /// <summary>
+        /// Cleans up the character tags. Removes the "_(source)" part of the tags.
+        /// Returns charTags as-is if null or empty.
+        /// </summary>
+        /// <returns>Cleaned up character tags.</returns>
+        /// <param name="charTags">A tag string of character tags.</param>
         public static string CleanupCharacterTags(string charTags)
         {
             if (string.IsNullOrEmpty(charTags))
@@ -520,34 +653,19 @@ namespace WebToolsModule
                 return charSourceRegexp.Replace(charTags, "");
         }
 
-        // In-place modification.
+        /// <summary>
+        /// Cleans up the character tags. Removes the "_(source)" part of the tags.
+        /// Modifies charTags in-place.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
+        /// <param name="charTags">A tag array of character tags.</param>
         public static void CleanupCharacterTags(string[] charTags)
         {
             if (charTags == null)
-                return;
+                throw new ArgumentNullException("charTags");
 
             for (int i = 0; i < charTags.Length; i++)
                 charTags[i] = charSourceRegexp.Replace(charTags[i], "");
-        }
-
-
-        // http://www.dotnetperls.com/array-slice
-        static T[] Slice<T>(this T[] source, int start, int end)
-        {
-            // Handles negative ends.
-            if (end < 0)
-            {
-                end = source.Length + end;
-            }
-            int len = end - start;
-            
-            // Return new array.
-            T[] res = new T[len];
-            for (int i = 0; i < len; i++)
-            {
-                res[i] = source[i + start];
-            }
-            return res;
         }
     }
 }
