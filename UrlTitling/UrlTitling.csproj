@@ -46,7 +46,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="UrlTitling.cs" />
-    <Compile Include="UrlTitlingExtra.cs" />
     <Compile Include="WebToIrc.cs" />
     <Compile Include="WebTools.cs" />
     <Compile Include="HtmlHelp.cs" />
@@ -54,6 +53,7 @@
     <Compile Include="WebResources.cs" />
     <Compile Include="ChanTools.cs" />
     <Compile Include="DanboTools.cs" />
+    <Compile Include="ControlList.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
