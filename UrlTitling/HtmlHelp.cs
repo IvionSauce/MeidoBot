@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using IvionSoft;
 
 
-namespace HtmlHelp
+namespace WebHelp
 {
     /// <summary>
     /// (X)HTML encoding helper. A class to help you get the content of a webpage as a string, decoded correctly.
@@ -82,27 +83,97 @@ namespace HtmlHelp
 
 
         /// <summary>
-        /// Load the specified URL into HtmlData.
+        /// Download target URL into a <see cref="WebString">WebString</see>.
         /// </summary>
-        /// <param name="url">URL</param>
-        public void Load(Uri url)
+        /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL to download.</param>
+        public WebString GetWebString(string url)
         {
-            Load(url, null);
+            return GetWebString(url, null);
         }
 
         /// <summary>
-        /// Load the specified URL into HtmlData. Uses provided <see cref="CookieContainer">cookies</see> in the HTTP
-        /// request.
+        /// Download target URL into a <see cref="WebString">WebString</see>. Uses provided
+        /// <see cref="CookieContainer">cookies</see> in the HTTP request.
         /// </summary>
-        /// <param name="url">URL</param>
+        /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL to download.</param>
         /// <param name="cookies">Cookies</param>
-        public void Load(Uri url, CookieContainer cookies)
+        public WebString GetWebString(string url, CookieContainer cookies)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+
+            Uri uri;
+            try
+            {
+                uri = new Uri(url);
+            }
+            catch (UriFormatException ex)
+            {
+                return new WebString(null, ex);
+            }
+
+            return GetWebString(uri, cookies);
+        }
+
+
+        /// <summary>
+        /// Download target URL into a <see cref="WebString">WebString</see>.
+        /// </summary>
+        /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// 
+        /// <param name="url">URL to download.</param>
+        public WebString GetWebString(Uri url)
+        {
+            return GetWebString(url, null);
+        }
+
+        /// <summary>
+        /// Download target URL into a <see cref="WebString">WebString</see>. Uses provided
+        /// <see cref="CookieContainer">cookies</see> in the HTTP request.
+        /// </summary>
+        /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// 
+        /// <param name="url">URL to download.</param>
+        /// <param name="cookies">Cookies</param>
+        public WebString GetWebString(Uri url, CookieContainer cookies)
+        {
+            if (url == null)
+                throw new ArgumentNullException("url");
+
+            try
+            {
+                Load(url, cookies);
+            }
+            catch (WebException ex)
+            {
+                return new WebString(url, ex);
+            }
+
+            string htmlContent = GetHtmlAsString();
+            return new WebString(url, htmlContent);
+        }
+
+
+        void Load(Uri url, CookieContainer cookies)
         {
             HtmlCharset = prelimHtmlString = null;
             UsedEncoding = EncHtml = null;
             Load(url, cookies, 0);
         }
-        
+
         // Load a HTML file, pointed to by an URL, into a byte array. If URL doesn't point to a HTML document
         // don't load it (we don't want to load some huge binary file).
         void Load(Uri url, CookieContainer cookies, int redirects)
@@ -114,29 +185,8 @@ namespace HtmlHelp
             HtmlData = null;
             HeadersCharset = prelimHtmlString = null;
             EncHeaders = null;
-            
-            // Create the HTTP request and set some options.
-            HttpWebRequest req = CreateRequest(url, cookies);
-            
-            // Get HTTP response and stream and read the stream into a byte array if it's an HTML file.
-            using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
-            {
-                HeadersCharset = httpResponse.CharacterSet;
-                
-                // Debug
-                // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
-                
-                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
-                {
-                    using (Stream httpStream = httpResponse.GetResponseStream())
-                        HtmlData = ReadFully(httpStream);
-                }
-                // If not text/html, return without doing anything (leaving HtmlData null).
-                else
-                    return;
-            }
-            
-            // Forge preliminary HTML string based on the charset reported by the HTTP headers.
+
+            HtmlData = DownloadContent(url, cookies);
             ForgePrelimString();
             
             string refreshUrl = HtmlTagExtract.GetMetaRefresh(prelimHtmlString);
@@ -158,7 +208,8 @@ namespace HtmlHelp
             }
         }
 
-        HttpWebRequest CreateRequest(Uri url, CookieContainer cookies)
+        // Set options and load the response stream into a byte array if it's text/html.
+        byte[] DownloadContent(Uri url, CookieContainer cookies)
         {
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
             
@@ -169,9 +220,27 @@ namespace HtmlHelp
             req.UserAgent = "Mozilla/5.0 HTMLHelper/1.0";
             // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
             req.CookieContainer = cookies;
-            
-            return req;
+
+            using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
+            {
+                HeadersCharset = httpResponse.CharacterSet;
+                
+                // Debug
+                // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
+                
+                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
+                {
+                    byte[] data;
+                    using (Stream httpStream = httpResponse.GetResponseStream())
+                        data = ReadFully(httpStream);
+
+                    return data;
+                }
+                else
+                    throw new WebException("Target's content-type wasn't text/html.");
+            }
         }
+
 
         // http://www.yoda.arachsys.com/csharp/readbinary.html
         static byte[] ReadFully(Stream stream)
@@ -190,6 +259,7 @@ namespace HtmlHelp
                 }
             }
         }
+
 
         // Forge preliminary string according to HTTP headers charset.
         void ForgePrelimString()
@@ -225,22 +295,17 @@ namespace HtmlHelp
         // Return an absolute URL from a relative Meta Refresh URL. If already absolute, return as-is.
         static Uri FixRefreshUrl(string refreshUrl, Uri refUrl)
         {
-            if (refreshUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            if (refreshUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                refreshUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 return new Uri(refreshUrl);
             else
                 return new Uri(refUrl, refreshUrl);
         }
 
 
-        /// <summary>
-        /// Forges the HTML content as a string from HtmlData.
-        /// </summary>
-        /// <returns>HTML content string.</returns>
-        public string GetHtmlAsString()
+        string GetHtmlAsString()
         {
-            if (HtmlData == null)
-                return null;
-            else
+            if (HtmlData != null)
             {
                 // Encoding according to HTML.
                 EncHtml = DetectEncodingHtml(prelimHtmlString);
@@ -267,7 +332,11 @@ namespace HtmlHelp
                     return EncHtml.GetString(HtmlData);
                 }
             }
+            else
+                throw new InvalidOperationException("HtmlData is null. Load failed or GetHtmlString was called" +
+                    "prematurely.");
         }
+
 
         Encoding DetectEncodingHtml(string htmlString)
         {
@@ -351,9 +420,13 @@ namespace HtmlHelp
         /// Returns charset defined in the (X)HTML/XML string, if not defined or found returns null.
         /// </summary>
         /// <returns>XML charset as string.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if docString is null.</exception>
         /// <param name="docString">String content of a document.</param>
         public static string GetXmlCharset(string docString)
         {
+            if (docString == null)
+                throw new ArgumentNullException("docString");
+
             Match charset = xmlCharsetRegexp.Match(docString);
 
             if (charset.Success)
@@ -367,9 +440,13 @@ namespace HtmlHelp
         /// Returns the head of an HTML document, if not defined or found returns null.
         /// </summary>
         /// <returns>The content between &lthead&gt and &lt/head&gt.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if htmlString is null.</exception>
         /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetHtmlHead(string htmlString)
         {
+            if (htmlString == null)
+                throw new ArgumentNullException("htmlString");
+
             Match head = headRegexp.Match(htmlString);
 
             if (head.Success)
@@ -383,9 +460,13 @@ namespace HtmlHelp
         /// Returns charset defined in the (X)HTML string, if not defined or found returns null.
         /// </summary>
         /// <returns>The (X)HTML charset as string.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if htmlString is null.</exception>
         /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetMetaCharset(string htmlString)
         {
+            if (htmlString == null)
+                throw new ArgumentNullException("htmlString");
+
             string head = GetHtmlHead(htmlString);
             if (head == null)
                 return null;
@@ -405,9 +486,13 @@ namespace HtmlHelp
         /// Returns refresh/'redirect' URL if defined in the HTML string, if not returns null.
         /// </summary>
         /// <returns>The Meta Refresh URL as string.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if htmlString is null.</exception>
         /// <param name="htmlString">String content of an (X)HTML document.</param>
         public static string GetMetaRefresh(string htmlString)
         {
+            if (htmlString == null)
+                throw new ArgumentNullException("htmlString");
+
             string head = GetHtmlHead(htmlString);
             if (head == null)
                 return null;

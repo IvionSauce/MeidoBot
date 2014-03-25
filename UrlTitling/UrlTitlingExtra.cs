@@ -43,8 +43,8 @@ public class Blacklist : ControlList
 // Also wrap access to DomainLists to provide a workable (not exploding) interface even if there's nothing loaded.
 public class ControlList
 {
-    DomainLists domLists = null;
-    string path = null;
+    DomainLists domLists;
+    string path;
     
     
     public bool IsInGlobalList(string url)
@@ -79,53 +79,6 @@ public class ControlList
         {
             var tmpDomLists = new DomainLists(path);
             domLists = tmpDomLists;
-        }
-    }
-}
-
-
-public class NickDisable
-{
-    Dictionary< string, HashSet<string> > disabledNicks =
-        new Dictionary< string, HashSet<string> >(StringComparer.OrdinalIgnoreCase);
-    object _locker = new object();
-
-    public bool IsNickDisabled(string nick, string channel)
-    {
-        lock (_locker)
-        {
-            HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(channel, out nickHashes))
-                return nickHashes.Contains(nick);
-            else
-                return false;
-        }
-    }
-
-    public bool Add(string nick, string channel)
-    {
-        lock (_locker)
-        {
-            HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(channel, out nickHashes))
-                return nickHashes.Add(nick);
-            else
-            {
-                disabledNicks.Add(channel, new HashSet<string>());
-                return disabledNicks[channel].Add(nick);
-            }
-        }
-    }
-
-    public bool Remove(string nick, string channel)
-    {
-        lock (_locker)
-        {
-            HashSet<string> nickHashes;
-            if (disabledNicks.TryGetValue(channel, out nickHashes))
-                return nickHashes.Remove(nick);
-            else
-                return false;
         }
     }
 }

@@ -52,6 +52,8 @@
     <Compile Include="HtmlHelp.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="WebResources.cs" />
+    <Compile Include="ChanTools.cs" />
+    <Compile Include="DanboTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

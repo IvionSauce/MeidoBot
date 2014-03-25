@@ -6,10 +6,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 // My personal help for dealing with the pesky world of HTTP/HTML and the idiots that misuse it.
-using HtmlHelp;
-// Various website utilities, both generic and specific.
-using WebToolsModule;
-using WebResources;
+using WebHelp;
 
 namespace WebIrc
 {
@@ -47,8 +44,7 @@ namespace WebIrc
                 return Danbo.PostToIrc(url);
             }
             // Foolz and 4chan handling.
-            else if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase) ||
-                     url.Contains("archive.foolz.us/", StringComparison.OrdinalIgnoreCase))
+            else if (ChanTools.IsAddressSupported(url))
             {
                 return Chan.ThreadTopicToIrc(url);
             }
@@ -56,7 +52,7 @@ namespace WebIrc
 
             // ----- Above: Don't Need HTML and/or Title -----
             // -----------------------------------------------
-            string htmlString = GetHtmlString(url);
+            string htmlString = GetHtmlContent(url);
             if (htmlString == null)
                 // Something went wrong in GetHtmlString, which should've already printed the error.
                 return null;
@@ -72,8 +68,8 @@ namespace WebIrc
 
 
             // Youtube handling.
-            if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) || 
-                     url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
+            if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) ||
+                url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
             {
                 // If duration can be found, change the html info to include that. Else return normal info.
                 int ytTime = WebTools.GetYoutubeTime(htmlString);
@@ -100,59 +96,27 @@ namespace WebIrc
             }
         }
 
-
-        string GetHtmlString(string url)
+        string GetHtmlContent(string url)
         {
-            Uri uri;
-            try
+            var webStr = htmlEncHelper.GetWebString(url, Cookies);
+
+            if (!webStr.Succes && webStr.Exception.InnerException is CookieException)
             {
-                uri = new Uri(url);
-            }
-            catch (UriFormatException)
-            {
-                Console.WriteLine("--- UriFormatException, URL was malformed.");
-                return null;
+                Console.WriteLine("--- CookieException caught! Trying without cookies.");
+                webStr = htmlEncHelper.GetWebString(url);
             }
 
-            try
+            if (webStr.Succes)
             {
-                htmlEncHelper.Load(uri, Cookies);
-            }
-            catch (WebException webex)
-            {
-                // Some ugly stuff to work around .NET being very strict about cookies and their domains.
-                if (webex.InnerException is CookieException)
-                {
-                    Console.WriteLine("--- CookieException caught! Trying without cookies.");
-                    try
-                    {
-                        htmlEncHelper.Load(uri);
-                    }
-                    catch (WebException webex2)
-                    {
-                        Console.WriteLine("--- WebException at htmlEncHelper.Load(url): " + webex2.Message);
-                        return null;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("--- WebException at htmlEncHelper.Load(url): " + webex.Message);
-                    return null;
-                }
-            }
-
-            string htmlString = htmlEncHelper.GetHtmlAsString();
-            if (htmlString == null)
-            {
-                Console.WriteLine("Non-HTML: " + url);
-                return null;
+                Console.WriteLine("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
+                                  htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
+                                  htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
+                return webStr.Document;
             }
             else
             {
-                Console.WriteLine("(HTTP) {0} -> {1} ; (HTML) {2} -> {3}",
-                                  htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
-                                  htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
-                return htmlString;
+                Console.WriteLine("--- Error getting {0} ({1})", url, webStr.Exception.Message);
+                return null;
             }
         }
 
@@ -204,18 +168,21 @@ namespace WebIrc
 
             if (opPost.Succes)
             {
-                string topic;
+                string topic = null;
                 // Prefer subject as topic, if the post has one. Else reform the message into a topic.
                 // If a post has neither subject or comment/message, return null.
                 if (opPost.Subject != null)
                     topic = opPost.Subject;
-                else
+                else if (opPost.Comment != null)
                 {
                     topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
                     topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
                 }
-                
-                return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
+
+                if (string.IsNullOrWhiteSpace(topic))
+                    return null;
+                else
+                    return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
             }
             else
             {
@@ -223,7 +190,7 @@ namespace WebIrc
                 if (opPost.Exception != null)
                     message = opPost.Exception.Message;
                 
-                Console.WriteLine("--- Error getting {0}: {1}", url, message);
+                Console.WriteLine("--- Error getting {0} ({1})", url, message);
                 return null;
             }
         }
@@ -286,12 +253,14 @@ namespace WebIrc
 
             if (postInfo.Succes)
             {
-                // If image has no character, copyright or artist tags, return just the post ID.
+                string rating = ResolveRating(postInfo.Rated);
+
+                // If image has no character, copyright or artist tags, return just the post ID and rating.
                 if (postInfo.CopyrightTags.Length == 0 &&
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    return string.Format("{0}[ #{1} ]", NormalCode, postInfo.PostNo);
+                    return string.Format("{0}[ #{1} ] [{2}]", NormalCode, postInfo.PostNo, rating);
                 }
 
                 // Convert to string and limit the number of tags as specified in `MaxTagCount`.
@@ -311,7 +280,7 @@ namespace WebIrc
                 
                 string danbo = FormatDanboInfo(characters, copyrights, artists);
                 
-                return string.Format("{0}[ {1} ]", NormalCode, danbo);
+                return string.Format("{0}[ {1} ] [{2}]", NormalCode, danbo, rating);
             }
             else
             {
@@ -319,7 +288,7 @@ namespace WebIrc
                 if (postInfo.Exception != null)
                     message = postInfo.Exception.Message;
                 
-                Console.WriteLine("--- Error getting {0}: {1}", url, message);
+                Console.WriteLine("--- Error getting {0} ({1})", url, message);
                 return null;
             }
         }

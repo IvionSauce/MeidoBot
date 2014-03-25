@@ -12,8 +12,6 @@ public class UrlTitler : IMeidoHook
 {
     IIrcComm irc;
 
-    NickDisable nickDisable = new NickDisable();
-
     public string Prefix { get; set; }
 
     public string Name
@@ -64,7 +62,7 @@ public class UrlTitler : IMeidoHook
     {
         ChannelThreadManager.Blacklist = new Blacklist();
         ChannelThreadManager.Whitelist = new Whitelist();
-        if (!string.IsNullOrEmpty(conf.BlacklistLocation))
+        if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
         {
             try
             {
@@ -76,7 +74,7 @@ public class UrlTitler : IMeidoHook
             catch (DirectoryNotFoundException)
             {}
         }
-        if (!string.IsNullOrEmpty(conf.WhitelistLocation))
+        if (!string.IsNullOrWhiteSpace(conf.WhitelistLocation))
         {
             try
             {
@@ -102,12 +100,12 @@ public class UrlTitler : IMeidoHook
         }
         else if (index0 == Prefix + "disable")
         {
-            nickDisable.Add(e.Nick, e.Channel);
+            ChannelThreadManager.DisableNick(e.Channel, e.Nick);
             irc.SendNotice(e.Nick, string.Format("Disabling URL-Titling for you. (In {0})", e.Channel));
         }
         else if (index0 == Prefix + "enable")
         {
-            if (nickDisable.Remove(e.Nick, e.Channel))
+            if ( ChannelThreadManager.EnableNick(e.Channel, e.Nick ) )
                 irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
         }
         // Do nothing if it might be a trigger we're not associated with.
@@ -121,16 +119,13 @@ public class UrlTitler : IMeidoHook
             if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
+                ChannelThreadManager.EnqueueUrl(e.Channel, e.Nick, s);
+
                 if (!printedDetection)
                 {
                     Console.WriteLine("\nURL(s) detected - {0}/{1} {2}", e.Channel, e.Nick, e.Message);
                     printedDetection = true;
                 }
-
-                if (nickDisable.IsNickDisabled(e.Nick, e.Channel))
-                    Console.WriteLine("Titling disabled for {0}.", e.Nick);
-                else
-                    ChannelThreadManager.EnqueueUrl(e.Channel, e.Nick, s);
             }
         }
     }
@@ -159,6 +154,7 @@ static class ChannelThreadManager
         }
     }
 
+
     static public void StopAll()
     {
         foreach (ChannelThread thread in channelThreads.Values)
@@ -170,6 +166,28 @@ static class ChannelThreadManager
             }
         }
     }
+
+
+    static public bool DisableNick(string channel, string nick)
+    {
+        ChannelThread thread = GetThread(channel);
+
+        lock (thread._channelLock)
+        {
+            return thread.DisabledNicks.Add(nick);
+        }
+    }
+
+    static public bool EnableNick(string channel, string nick)
+    {
+        ChannelThread thread = GetThread(channel);
+
+        lock (thread._channelLock)
+        {
+            return thread.DisabledNicks.Remove(nick);
+        }
+    }
+
 
     static ChannelThread GetThread(string channel)
     {
@@ -188,6 +206,7 @@ static class ChannelThreadManager
     {
         public string Channel { get; private set; }
         public Queue<string[]> UrlQueue { get; private set; }
+        public HashSet<string> DisabledNicks { get; private set; }
 
         public object _channelLock { get; private set; }
 
@@ -198,6 +217,7 @@ static class ChannelThreadManager
         {
             Channel = channel;
             UrlQueue = new Queue<string[]>();
+            DisabledNicks = new HashSet<string>();
             _channelLock = new object();
 
             webToIrc = Conf.ConstructWebToIrc(channel);
@@ -210,21 +230,26 @@ static class ChannelThreadManager
             string nick = item[0];
             string url = item[1];
 
-            bool? inWhite = Whitelist.IsInList(url, Channel, nick);
-            // If whitelist not applicable.
-            if (inWhite == null)
+            if (!DisabledNicks.Contains(nick))
             {
-                if ( Blacklist.IsInList(url, Channel, nick) )
-                    Console.WriteLine("Blacklisted: " + url);
-                else
+                bool? inWhite = Whitelist.IsInList(url, Channel, nick);
+                // If whitelist not applicable.
+                if (inWhite == null)
+                {
+                    if ( Blacklist.IsInList(url, Channel, nick) )
+                        Console.WriteLine("Blacklisted: " + url);
+                    else
+                        OutputUrl(url);
+                }
+                // If in whitelist, go directly to output and skip blacklist.
+                else if (inWhite == true)
                     OutputUrl(url);
+                // If the whitelist was applicable, but the URL wasn't found in it.
+                else
+                    Console.WriteLine("Not whitelisted: " + url);
             }
-            // If in whitelist, go directly to output and skip blacklist.
-            else if (inWhite == true)
-                OutputUrl(url);
-            // If the whitelist was applicable, but the URL wasn't found in it.
             else
-                Console.WriteLine("Not whitelisted: " + url);
+                Console.WriteLine("Titling disabled for {0}.", nick);
         }
 
         void OutputUrl(string url)
