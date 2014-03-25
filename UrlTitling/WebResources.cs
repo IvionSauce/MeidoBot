@@ -14,7 +14,7 @@ namespace WebHelp
         public WebString(Uri uri, Exception ex) :
         this(uri, false, ex, null) {}
         
-        public WebString(Uri uri, bool succes, Exception ex, string doc) : base(uri, succes, ex)
+        public WebString(Uri uri, bool success, Exception ex, string doc) : base(uri, success, ex)
         {
             Document = doc;
         }
@@ -24,26 +24,26 @@ namespace WebHelp
     public class WebResource
     {
         public Uri Location { get; private set; }
-        public bool Succes { get; private set; }
+        public bool Success { get; private set; }
         public Exception Exception { get; private set; }
         
 
         public WebResource()
         {
-            Succes = false;
+            Success = false;
         }
 
-        public WebResource(Uri uri, bool succes, Exception ex)
+        public WebResource(Uri uri, bool success, Exception ex)
         {
             Location = uri;
-            Succes = succes;
+            Success = success;
             Exception = ex;
         }
 
         public WebResource(WebResource resource)
         {
             Location = resource.Location;
-            Succes = resource.Succes;
+            Success = resource.Success;
             Exception = resource.Exception;
         }
     }

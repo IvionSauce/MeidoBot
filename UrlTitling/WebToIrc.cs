@@ -100,13 +100,13 @@ namespace WebIrc
         {
             var webStr = htmlEncHelper.GetWebString(url, Cookies);
 
-            if (!webStr.Succes && webStr.Exception.InnerException is CookieException)
+            if (!webStr.Success && webStr.Exception.InnerException is CookieException)
             {
                 Console.WriteLine("--- CookieException caught! Trying without cookies.");
                 webStr = htmlEncHelper.GetWebString(url);
             }
 
-            if (webStr.Succes)
+            if (webStr.Success)
             {
                 Console.WriteLine("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
                                   htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
@@ -166,7 +166,7 @@ namespace WebIrc
         {
             ChanPost opPost = ChanTools.GetThreadOP(url);
 
-            if (opPost.Succes)
+            if (opPost.Success)
             {
                 string topic = null;
                 // Prefer subject as topic, if the post has one. Else reform the message into a topic.
@@ -251,7 +251,7 @@ namespace WebIrc
         {
             DanboPost postInfo = DanboTools.GetPostInfo(url);
 
-            if (postInfo.Succes)
+            if (postInfo.Success)
             {
                 string rating = ResolveRating(postInfo.Rated);
 

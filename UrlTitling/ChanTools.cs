@@ -212,7 +212,7 @@ namespace WebHelp
             
             // GetJsonString checks whether we got passed a valid Source value.
             WebString jsonStr = GetJsonString(board, thread, source);
-            if (!jsonStr.Succes)
+            if (!jsonStr.Success)
                 return new ChanPost(jsonStr);
             
             dynamic threadJson = JsonConvert.DeserializeObject(jsonStr.Document);

@@ -66,7 +66,7 @@ namespace WebHelp
             
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
             WebString jsonStr = WebTools.SimpleGetString(jsonReq);
-            if (!jsonStr.Succes)
+            if (!jsonStr.Success)
                 return new DanboPost(jsonStr);
             
             dynamic postJson = JsonConvert.DeserializeObject(jsonStr.Document);
