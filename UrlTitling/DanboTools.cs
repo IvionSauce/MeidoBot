@@ -23,33 +23,30 @@ namespace WebHelp
         /// </summary>
         /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// <param name="url">URL pointing to a post.</param>
         public static DanboPost GetPostInfo(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
-            
-            string postNo = GetPostNo(url);
-            
-            if (postNo == null)
-                return new DanboPost();
+
+            int postNo = ExtractPostNo(url);
+            if (postNo > 0)
+                return GetPostInfo(postNo);
             else
             {
-                int post = int.Parse(postNo);
-                if (post > 0)
-                    return GetPostInfo(int.Parse(postNo));
-                else
-                    return new DanboPost();
+                var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
+                return new DanboPost(ex);
             }
         }
 
-        static string GetPostNo(string url)
+        static int ExtractPostNo(string url)
         {
             GroupCollection groups = danboUrlRegexp.Match(url).Groups;
             
-            if (groups[1].Success == true)
-                return groups[1].Value;
+            if (groups[1].Success)
+                return int.Parse(groups[1].Value);
             else
-                return null;
+                return -1;
         }
 
         
@@ -65,11 +62,11 @@ namespace WebHelp
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
             
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
-            WebString jsonStr = WebTools.SimpleGetString(jsonReq);
-            if (!jsonStr.Success)
-                return new DanboPost(jsonStr);
+            WebString json = WebTools.SimpleGetString(jsonReq);
+            if (!json.Success)
+                return new DanboPost(json);
             
-            dynamic postJson = JsonConvert.DeserializeObject(jsonStr.Document);
+            dynamic postJson = JsonConvert.DeserializeObject(json.Document);
             string copyrights = postJson.tag_string_copyright;
             string characters = postJson.tag_string_character;
             string artists = postJson.tag_string_artist;
@@ -84,7 +81,7 @@ namespace WebHelp
             else
                 rated = DanboPost.Rating.Explicit;
             
-            var postInfo = new DanboPost(jsonStr, postNo,
+            var postInfo = new DanboPost(json, postNo,
                                          copyrights.Split(' '),
                                          characters.Split(' '),
                                          artists.Split(' '),
@@ -207,11 +204,11 @@ namespace WebHelp
         public string[] GeneralTags { get; private set; }
         public string[] AllTags { get; private set; }
         public Rating Rated { get; private set; }
-        
-        
-        public DanboPost() : base() {}
+
         
         public DanboPost(WebResource resource) : base(resource) {}
+
+        public DanboPost(Exception ex) : base(null, false, ex) {}
         
         public DanboPost(WebResource resource,
                          int postNo,

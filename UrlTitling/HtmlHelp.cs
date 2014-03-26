@@ -9,6 +9,18 @@ using IvionSoft;
 
 namespace WebHelp
 {
+    [Serializable()]
+    public class UrlNotHtmlException : Exception
+    {
+        public UrlNotHtmlException() : base() {}
+        public UrlNotHtmlException(string message) : base(message) {}
+        public UrlNotHtmlException(string message, Exception inner) : base(message, inner) {}
+
+        protected UrlNotHtmlException (System.Runtime.Serialization.SerializationInfo info,
+                                       System.Runtime.Serialization.StreamingContext context) {}
+    }
+
+
     /// <summary>
     /// (X)HTML encoding helper. A class to help you get the content of a webpage as a string, decoded correctly.
     /// It will take both the character set reported by the HTTP headers as well as the one (if defined) in the (X)HTML
@@ -157,9 +169,12 @@ namespace WebHelp
             {
                 Load(url, cookies);
             }
-            catch (WebException ex)
+            catch (Exception ex)
             {
-                return new WebString(url, ex);
+                if (ex is WebException || ex is UrlNotHtmlException)
+                    return new WebString(url, ex);
+                else
+                    throw;
             }
 
             string htmlContent = GetHtmlAsString();
@@ -195,7 +210,8 @@ namespace WebHelp
                 Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
                 
                 // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
-                if (redirects < 10)
+                const int maxRedirects = 10;
+                if (redirects < maxRedirects)
                 {    
                     // If during the redirects we get a different page/HTML string, refrain from following more redirects.
                     // It probably means we've arrived, but only more real world testing will tell us if that's true.
@@ -237,7 +253,7 @@ namespace WebHelp
                     return data;
                 }
                 else
-                    throw new WebException("Target's content-type wasn't text/html.");
+                    throw new UrlNotHtmlException("Content-Type is not text/html.");
             }
         }
 

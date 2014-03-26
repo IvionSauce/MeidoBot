@@ -131,17 +131,14 @@ namespace WebHelp
             if (src == null)
                 throw new NotSupportedException("Address is not supported.");
             
-            string[] boardAndThread = GetBoardAndThreadNo(url, src.Value);
+            var boardAndThread = ExtractBoardAndThreadNo(url, src.Value);
             
-            if (boardAndThread == null)
-                return new ChanPost();
+            if (boardAndThread.Item2 > 0)
+                return GetThreadOP(boardAndThread.Item1, boardAndThread.Item2, src.Value);
             else
             {
-                int thread = int.Parse(boardAndThread[1]);
-                if (thread > 0)
-                    return GetThreadOP(boardAndThread[0], thread, src.Value);
-                else
-                    return new ChanPost();
+                var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
+                return new ChanPost(ex);
             }
         }
         
@@ -155,20 +152,23 @@ namespace WebHelp
             else
                 return null;
         }
-        
-        
-        static string[] GetBoardAndThreadNo(string url, Source source)
+
+
+        static Tuple<string, int> ExtractBoardAndThreadNo(string url, Source source)
         {
             GroupCollection groups;
             if (source == Source.Fourchan)
                 groups = chanUrlRegexp.Match(url).Groups;
             else
                 groups = foolzUrlRegexp.Match(url).Groups;
-            
+
             if (groups[1].Success && groups[2].Success)
-            return new string[] {groups[1].Value, groups[2].Value};
+            {
+                var threadNo = int.Parse(groups[2].Value);
+                return new Tuple<string, int>(groups[1].Value, threadNo);
+            }
             else
-                return null;
+                return new Tuple<string, int>("", -1);
         }
         
         
@@ -211,11 +211,11 @@ namespace WebHelp
                 throw new ArgumentOutOfRangeException("thread", "Can't be 0 or negative.");
             
             // GetJsonString checks whether we got passed a valid Source value.
-            WebString jsonStr = GetJsonString(board, thread, source);
-            if (!jsonStr.Success)
-                return new ChanPost(jsonStr);
+            WebString json = GetJsonString(board, thread, source);
+            if (!json.Success)
+                return new ChanPost(json);
             
-            dynamic threadJson = JsonConvert.DeserializeObject(jsonStr.Document);
+            dynamic threadJson = JsonConvert.DeserializeObject(json.Document);
             string opSubject, opComment;
             if (source == Source.Fourchan)
             {
@@ -235,7 +235,7 @@ namespace WebHelp
                     opComment = null;
             }
             
-            var opPost = new ChanPost(jsonStr,
+            var opPost = new ChanPost(json,
                                       board, GetBoardName(board),
                                       thread, thread,
                                       opSubject, opComment);
@@ -356,11 +356,11 @@ namespace WebHelp
         public int PostNo { get; private set; }
         public string Subject { get; private set; }
         public string Comment { get; private set; }
-        
-        
-        public ChanPost() : base() {}
+
         
         public ChanPost(WebResource resource) : base(resource) {}
+
+        public ChanPost(Exception ex) : base(null, false, ex) {}
         
         public ChanPost(WebResource resource,
                         string board, string boardName,

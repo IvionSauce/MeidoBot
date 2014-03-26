@@ -113,11 +113,13 @@ namespace WebIrc
                                   htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
                 return webStr.Document;
             }
+
+            else if (webStr.Exception is UrlNotHtmlException)
+                Console.WriteLine("Non-(X)HTML: " + url);
             else
-            {
                 Console.WriteLine("--- Error getting {0} ({1})", url, webStr.Exception.Message);
-                return null;
-            }
+
+            return null;
         }
 
 
@@ -186,7 +188,7 @@ namespace WebIrc
             }
             else
             {
-                string message = "Unable to extract Board and/or Thread No. from URL";
+                string message = "Unknown error, contact software author.";
                 if (opPost.Exception != null)
                     message = opPost.Exception.Message;
                 
@@ -260,7 +262,7 @@ namespace WebIrc
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    return string.Format("{0}[ #{1} ] [{2}]", NormalCode, postInfo.PostNo, rating);
+                    return string.Format("{0}[{1}] [ #{2} ]", NormalCode, rating, postInfo.PostNo);
                 }
 
                 // Convert to string and limit the number of tags as specified in `MaxTagCount`.
@@ -280,11 +282,11 @@ namespace WebIrc
                 
                 string danbo = FormatDanboInfo(characters, copyrights, artists);
                 
-                return string.Format("{0}[ {1} ] [{2}]", NormalCode, danbo, rating);
+                return string.Format("{0}[{1}] [ {2} ]", NormalCode, rating, danbo);
             }
             else
             {
-                string message = "Unable to extract Post No. from the URL";
+                string message = "Unknown error, contact software author.";
                 if (postInfo.Exception != null)
                     message = postInfo.Exception.Message;
                 
@@ -296,11 +298,11 @@ namespace WebIrc
         static string ResolveRating(DanboPost.Rating rating)
         {
             if (rating == DanboPost.Rating.Safe)
-                return "Safe";
+                return "s";
             else if (rating == DanboPost.Rating.Questionable)
-                return "Questionable";
+                return "q";
             else
-                return "Explicit";
+                return "e";
         }
 
         static string FormatDanboInfo(string characters, string copyrights, string artists)
