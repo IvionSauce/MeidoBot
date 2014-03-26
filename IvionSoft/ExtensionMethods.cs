@@ -57,5 +57,13 @@ namespace IvionSoft
             else if (source == string.Empty || source.Trim() == string.Empty)
                 throw new ArgumentException("Can't be empty or whitespace.", argName);
         }
+
+        public static bool IsEmptyOrWhiteSpace(this string source)
+        {
+            if (source == string.Empty || source.Trim() == string.Empty)
+                return true;
+            else
+                return false;
+        }
     }
 }

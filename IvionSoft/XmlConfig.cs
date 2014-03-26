@@ -52,6 +52,8 @@ namespace IvionSoft
                 else
                     throw;
             }
+            // Dereference the XML tree, it's not needed after this point and it's just taking up space.
+            Config = null;
         }
         
         public abstract void LoadConfig();
