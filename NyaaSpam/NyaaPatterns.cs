@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
 using IvionSoft;
@@ -7,16 +8,19 @@ using IvionSoft;
 public class NyaaPatterns
 {
     public bool SerializeOnModification { get; set; }
+    public TimeSpan BufferTime { get; set; }
+    volatile int ticker;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
     object _locker = new object();
 
-    string path = null;
+    string path;
 
 
     public NyaaPatterns()
     {
         SerializeOnModification = true;
+        BufferTime = TimeSpan.Zero;
     }
 
 
@@ -385,9 +389,28 @@ public class NyaaPatterns
 
     void Write()
     {
-        if (SerializeOnModification && path != null)
+        if (path == null || !SerializeOnModification)
+            return;
+
+        if (BufferTime == TimeSpan.Zero)
             storage.Serialize(path);
+        else
+        {
+            ticker++;
+            new Timer(BufferedWrite, null, BufferTime, TimeSpan.Zero);
+        }
     }
+
+    void BufferedWrite(object data)
+    {
+        ticker--;
+        if (ticker == 0 && path != null)
+        {
+            lock (_locker)
+                storage.Serialize(path);
+        }
+    }
+
 
     public void Serialize()
     {

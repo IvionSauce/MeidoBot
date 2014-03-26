@@ -59,6 +59,7 @@ public class NyaaSpam : IMeidoHook
         }
         catch (FileNotFoundException)
         {}
+        nyaa.BufferTime = TimeSpan.FromMinutes(1);
 
         var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
         feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
