@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Linq;
 using System.Threading;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
@@ -153,28 +154,38 @@ public class TimeLeft : IMeidoHook
         TimeLeftUnit unit;
         lock (_locker)
             unit = storage.Get(name);
-
         if (unit != null)
             SendTime(channel, unit.Name, unit.Date);
 
         // If no exact match, try to search for it.
         else
         {
+            TimeLeftUnit[] sortedByTime;
             lock (_locker)
-            {
-                foreach (TimeLeftUnit tlu in storage.Search(name))
-                    SendTime(channel, tlu.Name, tlu.Date);
-            }
+                sortedByTime = SortByDate( storage.GetAll() );
+
+            foreach (var tlu in sortedByTime)
+                SendTime(channel, tlu.Name, tlu.Date);
         }
     }
 
     void ShowAll(string channel)
     {
+        TimeLeftUnit[] sortedByTime;
         lock (_locker)
-        {
-            foreach ( TimeLeftUnit unit in storage.GetAll() )
-                SendTime(channel, unit.Name, unit.Date);
-        }
+            sortedByTime = SortByDate( storage.GetAll() );
+
+        foreach (var unit in sortedByTime)
+            SendTime(channel, unit.Name, unit.Date);
+    }
+
+    TimeLeftUnit[] SortByDate(IEnumerable<TimeLeftUnit> tlunits)
+    {
+        var sorted = (from tlu in tlunits
+                      orderby tlu.Date
+                      select tlu);
+
+        return sorted.ToArray();
     }
 
     void SendTime(string channel, string name, DateTime date)
