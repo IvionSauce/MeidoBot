@@ -145,24 +145,9 @@ namespace WebIrc
 
     public class ChanHandler
     {
-        int _maxLines = 2;
-        int _maxChars = 128;
-        public int TopicMaxLines
-        {
-            get { return _maxLines; }
-            set { _maxLines = value; }
-        }
-        public int TopicMaxChars
-        {
-            get { return _maxChars; }
-            set { _maxChars = value; }
-        }
-        string _cont = "…";
-        public string ContinuationSymbol
-        {
-            get { return _cont; }
-            set { _cont = value; }
-        }
+        public int TopicMaxLines { get; set; }
+        public int TopicMaxChars { get; set; }
+        public string ContinuationSymbol { get; set; }
 
         public string ThreadTopicToIrc(string url)
         {
@@ -201,26 +186,9 @@ namespace WebIrc
 
     public class DanboHandler
     {
-        int _maxTagCount = 5;
-        public int MaxTagCount
-        {
-            get { return _maxTagCount; }
-            set { _maxTagCount = value; }
-        }
-
-        string _cont = "[...]";
-        public string ContinuationSymbol
-        {
-            get { return _cont; }
-            set { _cont = value; }
-        }
-
-        bool _colourize = true;
-        public bool Colourize
-        {
-            get { return _colourize; }
-            set { _colourize = value; }
-        }
+        public int MaxTagCount { get; set; }
+        public string ContinuationSymbol { get; set; }
+        public bool Colourize { get; set; }
 
         string[] codes = {"\u000303", "\u000306", "\u000305"};
         public string CharacterCode

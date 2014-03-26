@@ -129,10 +129,10 @@ namespace WebHelp
         /// <summary>
         /// Shortens an array of tags.
         /// </summary>
-        /// <returns>An array of strings equal or shorter than amount.</returns>
+        /// <returns>An array of strings equal or shorter than amount. Returns as-is if amount &lt= 0.</returns>
         /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
         /// <param name="tags">An array of tags.</param>
-        /// <param name="amount">Maximum amount of items the array should have.</param>
+        /// <param name="amount">Maximum amount of items the array should have. Disable by passing &lt= 0.</param>
         public static string[] ShortenTagArray(string[] tags, int amount)
         {
             if (tags == null)

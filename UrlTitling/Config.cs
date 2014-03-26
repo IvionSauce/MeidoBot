@@ -14,18 +14,6 @@ class WebToIrcConfig
     public int? MaxLines { get; set; }
     public int? MaxCharacters { get; set; }
     public string ChanContSym { get; set; }
-    
-    
-    public WebToIrcConfig()
-    {
-        MaxTags = null;
-        DanboContSym = null;
-        Colourize = null;
-        
-        MaxLines = null;
-        MaxCharacters = null;
-        ChanContSym = null;
-    }
 }
 
 
@@ -47,7 +35,7 @@ class Config : XmlConfig
     
     public WebToIrc ConstructWebToIrc(string channel)
     {
-        var value = new WebToIrc();
+        var webIrc = new WebToIrc();
         var global = GetChannelConfig("_all");
         var specific = GetChannelConfig(channel);
         
@@ -59,71 +47,33 @@ class Config : XmlConfig
         // ----------------
         
         // Max Tag Count (for shortening characters, copyrights and artist tags).
-        // ---
-        if (specific.MaxTags == null)
-        {
-            if (global.MaxTags != null)
-                value.Danbo.MaxTagCount = (int)global.MaxTags;
-        }
-        else
-            value.Danbo.MaxTagCount = (int)specific.MaxTags;
-        // ---
+        webIrc.Danbo.MaxTagCount =
+            specific.MaxTags ?? global.MaxTags ?? 5;
+
         // Continuation Symbol.
-        // ---
-        if (specific.DanboContSym == null)
-        {
-            if (global.DanboContSym != null)
-                value.Danbo.ContinuationSymbol = global.DanboContSym;
-        }
-        else
-            value.Danbo.ContinuationSymbol = specific.DanboContSym;
-        // ---
+        webIrc.Danbo.ContinuationSymbol =
+            specific.DanboContSym ?? global.DanboContSym ?? string.Empty;
+
         // Colourize.
-        // ---
-        if (specific.Colourize == null)
-        {
-            if (global.Colourize != null)
-                value.Danbo.Colourize = (bool)global.Colourize;
-        }
-        else
-            value.Danbo.Colourize = (bool)specific.Colourize;
-        // ---
+        webIrc.Danbo.Colourize = 
+            specific.Colourize ?? global.Colourize ?? false;
         
         // --- 4chan & Foolz ---
         // ---------------------
         
         // Max Lines (for shortening the post).
-        // ---
-        if (specific.MaxLines == null)
-        {
-            if (global.MaxLines != null)
-                value.Chan.TopicMaxLines = (int)global.MaxLines;
-        }
-        else
-            value.Chan.TopicMaxLines = (int)specific.MaxLines;
-        // ---
+        webIrc.Chan.TopicMaxLines =
+            specific.MaxLines ?? global.MaxLines ?? 2;
+
         // Max Characters (for shortening the post).
-        // ---
-        if (specific.MaxCharacters == null)
-        {
-            if (global.MaxCharacters != null)
-                value.Chan.TopicMaxChars = (int)global.MaxCharacters;
-        }
-        else
-            value.Chan.TopicMaxChars = (int)specific.MaxCharacters;
-        // ---
+        webIrc.Chan.TopicMaxChars =
+            specific.MaxCharacters ?? global.MaxCharacters ?? 128;
+
         // Continuation Symbol.
-        // ---
-        if (specific.ChanContSym == null)
-        {
-            if (global.ChanContSym != null)
-                value.Chan.ContinuationSymbol = global.ChanContSym;
-        }
-        else
-            value.Chan.ContinuationSymbol = specific.ChanContSym;
-        // ---
+        webIrc.Chan.ContinuationSymbol =
+            specific.ChanContSym ?? global.ChanContSym ?? string.Empty;
         
-        return value;
+        return webIrc;
     }
     
     public override void LoadConfig ()
