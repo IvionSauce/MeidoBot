@@ -76,7 +76,7 @@ class Config : XmlConfig
         return webIrc;
     }
     
-    public override void LoadConfig ()
+    public override void LoadConfig()
     {
         Threshold = (double)Config.Element("threshold");
         BlacklistLocation = (string)Config.Element("blacklist-location");

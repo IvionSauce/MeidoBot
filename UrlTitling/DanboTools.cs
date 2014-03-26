@@ -153,16 +153,16 @@ namespace WebHelp
         
         /// <summary>
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
-        /// Returns charTags as-is if null or empty.
         /// </summary>
         /// <returns>Cleaned up character tags.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
         /// <param name="charTags">A tag string of character tags.</param>
         public static string CleanupCharacterTags(string charTags)
         {
-            if (string.IsNullOrEmpty(charTags))
-                return charTags;
-            else
-                return charSourceRegexp.Replace(charTags, "");
+            if (charTags == null)
+                throw new ArgumentNullException("charTags");
+
+            return charSourceRegexp.Replace(charTags, "");
         }
         
         /// <summary>

@@ -280,7 +280,10 @@ namespace WebHelp
         /// <summary>
         /// Shortens the post and replaces newlines with spaces. Multiple newlines are squashed.
         /// </summary>
-        /// <returns>The shortened post. Returns post as-is if null or empty.</returns>
+        /// <returns>The shortened post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
+        /// 
         /// <param name="post">String content of a post.</param>
         /// <param name="maxLines">If more lines than maxLines, shorten to maxLines.
         /// Disable by passing &lt= 0.</param>
@@ -289,8 +292,8 @@ namespace WebHelp
         /// <param name="contSymbol">String to append to the returned string if it was shortened.</param>
         public static string ShortenPost(string post, int maxLines, int maxChar, string contSymbol)
         {
-            if (string.IsNullOrEmpty(post))
-                return post;
+            if (post == null)
+                throw new ArgumentNullException("post");
             
             bool shortenLines = maxLines > 0;
             bool shortenChars = maxChar > 0;
@@ -317,8 +320,8 @@ namespace WebHelp
         /// <summary>
         /// Removes spoiler tags.
         /// </summary>
-        /// <returns>String content of the post without spoiler tags.
-        /// Returns post as-is if null or empty.</returns>
+        /// <returns>String content of the post without spoiler tags.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
         /// <param name="post">String content of a post.</param>
         public static string RemoveSpoilerTags(string post)
         {
@@ -328,15 +331,17 @@ namespace WebHelp
         /// <summary>
         /// Replaces spoiler tags.
         /// </summary>
-        /// <returns>String content of the post with spoiler tags replaced.
-        /// Returns post as-is if null or empty.</returns>
+        /// <returns>String content of the post with spoiler tags replaced.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
+        /// 
         /// <param name="post">String content of a post.</param>
         /// <param name="beginReplacement">What to replace the opening spoiler tag with.</param>
         /// <param name="endReplacement">What to replace the closing spoiler tag with.</param>
         public static string ReplaceSpoilerTags(string post, string beginReplacement, string endReplacement)
         {
-            if (string.IsNullOrEmpty(post))
-                return post;
+            if (post == null)
+                throw new ArgumentNullException("post");
             
             return spoilerRegexp.Replace(post, string.Concat(beginReplacement, "$2", endReplacement));
         }
