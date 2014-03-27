@@ -162,7 +162,7 @@ public class TimeLeft : IMeidoHook
         {
             TimeLeftUnit[] sortedByTime;
             lock (_locker)
-                sortedByTime = SortByDate( storage.GetAll() );
+                sortedByTime = SortByDate( storage.Search(name) );
 
             foreach (var tlu in sortedByTime)
                 SendTime(channel, tlu.Name, tlu.Date);
