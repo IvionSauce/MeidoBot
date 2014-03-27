@@ -235,14 +235,14 @@ class ChannelThread
                 bool printedDetection = false;
                 foreach ( string url in ExtractUrls(item.Message) )
                 {
-                    ProcessUrl(item.Nick, url);
-                    
                     if (!printedDetection)
                     {
                         var message = string.Join(" ", item.Message);
                         Console.WriteLine("\nURL(s) detected - {0}/{1} {2}", Channel, item.Nick, message);
                         printedDetection = true;
                     }
+
+                    ProcessUrl(item.Nick, url);
                 }
             }
             // A queued null is the signal to stop, so return and stop consuming.

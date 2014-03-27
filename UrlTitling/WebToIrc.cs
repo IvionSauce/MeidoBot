@@ -115,9 +115,9 @@ namespace WebIrc
             }
 
             else if (webStr.Exception is UrlNotHtmlException)
-                Console.WriteLine("Non-(X)HTML: " + url);
+                Console.WriteLine("Not (X)HTML: " + url);
             else
-                Console.WriteLine("--- Error getting {0} ({1})", url, webStr.Exception.Message);
+                webStr.HandleError(url);
 
             return null;
         }
@@ -134,11 +134,26 @@ namespace WebIrc
     }
 
 
-    internal static class ExtensionMethods
+    static class ExtensionMethods
     {
-        internal static bool Contains(this string source, string value, StringComparison comp)
+        public static bool Contains(this string source, string value, StringComparison comp)
         {
             return source.IndexOf(value, comp) >= 0;
+        }
+
+
+        public static void HandleError(this WebResource resource, string url)
+        {
+            if (resource.Exception.Message == null)
+                Console.WriteLine("!!! Unknown error, contact software author.");
+            else
+            {
+                const string errorMsg = "--- Error getting {0} ({1})";
+                if (resource.Location == null)
+                    Console.WriteLine(errorMsg, url, resource.Exception.Message);
+                else
+                    Console.WriteLine(errorMsg, resource.Location, resource.Exception.Message);
+            }
         }
     }
 
@@ -173,11 +188,7 @@ namespace WebIrc
             }
             else
             {
-                string message = "Unknown error, contact software author.";
-                if (opPost.Exception != null)
-                    message = opPost.Exception.Message;
-                
-                Console.WriteLine("--- Error getting {0} ({1})", url, message);
+                opPost.HandleError(url);
                 return null;
             }
         }
@@ -254,11 +265,7 @@ namespace WebIrc
             }
             else
             {
-                string message = "Unknown error, contact software author.";
-                if (postInfo.Exception != null)
-                    message = postInfo.Exception.Message;
-                
-                Console.WriteLine("--- Error getting {0} ({1})", url, message);
+                postInfo.HandleError(url);
                 return null;
             }
         }
