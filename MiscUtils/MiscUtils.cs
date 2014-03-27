@@ -19,7 +19,7 @@ public class MiscUtils : IMeidoHook
     }
     public string Version
     {
-        get { return "0.36"; }
+        get { return "0.38"; }
     }
 
     public Dictionary<string,string> Help
@@ -76,13 +76,10 @@ public class MiscUtils : IMeidoHook
 
     public void HandlePM(IIrcMessage e)
     {
-        if (e.MessageArray[0] == "say")
+        if (e.MessageArray[0] == "say" && e.MessageArray.Length > 2)
         {
-            if (e.MessageArray.Length > 2)
-            {
-                string toChannel = Say(e.MessageArray, "");
-                Console.WriteLine("\n--- Say: PM/{1} -> {2}", e.Channel, e.Nick, toChannel);
-            }
+            string toChannel = Say(e.MessageArray, "");
+            Console.WriteLine("\n--- Say: PM/{0} -> {1}", e.Nick, toChannel);
         }
     }
 
@@ -122,7 +119,7 @@ public class MiscUtils : IMeidoHook
     {
         foreach (string joinedChannel in irc.GetChannels())
         {
-            if (channel.ToLower() == joinedChannel.ToLower())
+            if ( channel.Equals(joinedChannel, StringComparison.OrdinalIgnoreCase) )
                 return true;
         }
         return false;

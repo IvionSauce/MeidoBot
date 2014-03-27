@@ -212,7 +212,7 @@ public class NyaaSpam : IMeidoHook
     }
 
 
-    void Show(string channel, string nick, string numbersStr)
+    /* void Show(string channel, string nick, string numbersStr)
     {
         int[] numbers = GetNumbers(numbersStr);
         var patterns = new List<string>();
@@ -226,7 +226,7 @@ public class NyaaSpam : IMeidoHook
         }
 
         IrcShow(nick, patterns.ToArray());
-    }
+    } */
 
     void ShowAll(string channel, string nick, int? assocPat)
     {
