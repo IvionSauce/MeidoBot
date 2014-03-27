@@ -44,29 +44,29 @@ public class UrlTitler : IMeidoHook
     [ImportingConstructor]
     public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        irc = ircComm;
         var conf = new Config(meidoComm.ConfDir + "/UrlTitling.xml");
 
         WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);
         // Setup black- and whitelist.
         SetupBWLists(conf);
-        // Sharing stuff with the Channel Manager.
-        ChannelThreadManager.irc = ircComm;
-        ChannelThreadManager.Conf = conf;
+        // Sharing stuff with all the ChannelThreads.
+        ChannelThread.irc = ircComm;
+        ChannelThread.Conf = conf;
 
+        irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
     }
 
     void SetupBWLists(Config conf)
     {
-        ChannelThreadManager.Blacklist = new Blacklist();
-        ChannelThreadManager.Whitelist = new Whitelist();
+        ChannelThread.Blacklist = new Blacklist();
+        ChannelThread.Whitelist = new Whitelist();
         if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
         {
             try
             {
-                ChannelThreadManager.Blacklist.LoadFromFile(conf.BlacklistLocation);
+                ChannelThread.Blacklist.LoadFromFile(conf.BlacklistLocation);
                 Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
             }
             catch (FileNotFoundException)
@@ -78,7 +78,7 @@ public class UrlTitler : IMeidoHook
         {
             try
             {
-                ChannelThreadManager.Whitelist.LoadFromFile(conf.WhitelistLocation);
+                ChannelThread.Whitelist.LoadFromFile(conf.WhitelistLocation);
                 Console.WriteLine("-> Loaded whitelist from " + conf.WhitelistLocation);
             }
             catch (FileNotFoundException)
@@ -94,8 +94,8 @@ public class UrlTitler : IMeidoHook
         // ----- Trigger handling -----
         if (index0 == Prefix + "reload_bw")
         {
-            ChannelThreadManager.Blacklist.ReloadFile();
-            ChannelThreadManager.Whitelist.ReloadFile();
+            ChannelThread.Blacklist.ReloadFile();
+            ChannelThread.Whitelist.ReloadFile();
             irc.SendMessage(e.Channel, "Black- and whitelist have been reloaded.");
         }
         else if (index0 == Prefix + "disable")
@@ -113,43 +113,25 @@ public class UrlTitler : IMeidoHook
             return;
 
         // ----- Handling of URLs -----
-        bool printedDetection = false;
-        foreach (string s in e.MessageArray)
-        {
-            if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                ChannelThreadManager.EnqueueUrl(e.Channel, e.Nick, s);
-
-                if (!printedDetection)
-                {
-                    Console.WriteLine("\nURL(s) detected - {0}/{1} {2}", e.Channel, e.Nick, e.Message);
-                    printedDetection = true;
-                }
-            }
-        }
+        ChannelThreadManager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
     }
 }
 
 
 static class ChannelThreadManager
 {
-    static public IIrcComm irc { get; set; }
-    static public Blacklist Blacklist { get; set; }
-    static public Whitelist Whitelist { get; set; }
-    static public Config Conf { get; set; }
-
     static Dictionary<string, ChannelThread> channelThreads =
         new Dictionary<string, ChannelThread>(StringComparer.OrdinalIgnoreCase);
 
 
-    static public void EnqueueUrl(string channel, string nick, string url)
+    static public void EnqueueMessage(string channel, string nick, string[] message)
     {
+        var item = new MessageItem(nick, message);
         ChannelThread thread = GetThread(channel);
 
         lock (thread._channelLock)
         {
-            thread.UrlQueue.Enqueue( new string[] {nick, url} );
+            thread.MessageQueue.Enqueue(item);
             Monitor.Pulse(thread._channelLock);
         }
     }
@@ -161,7 +143,7 @@ static class ChannelThreadManager
         {
             lock (thread._channelLock)
             {
-                thread.UrlQueue.Enqueue(null);
+                thread.MessageQueue.Enqueue(null);
                 Monitor.Pulse(thread._channelLock);
             }
         }
@@ -200,85 +182,135 @@ static class ChannelThreadManager
             return channelThreads[channel];
         }
     }
+}
 
 
-    class ChannelThread
+class ChannelThread
+{
+    // Shared amongst all threads/channels.
+    // Are set from outside.
+    public static IIrcComm irc { get; set; }
+    public static Blacklist Blacklist { get; set; }
+    public static Whitelist Whitelist { get; set; }
+    public static Config Conf { get; set; }
+
+    // Unique to each thread, channel-specific properties.
+    public string Channel { get; private set; }
+    public Queue<MessageItem> MessageQueue { get; private set; }
+    public HashSet<string> DisabledNicks { get; private set; }
+    
+    public object _channelLock { get; private set; }
+    
+    WebToIrc webToIrc;
+    
+    
+    public ChannelThread(string channel)
     {
-        public string Channel { get; private set; }
-        public Queue<string[]> UrlQueue { get; private set; }
-        public HashSet<string> DisabledNicks { get; private set; }
+        Channel = channel;
+        MessageQueue = new Queue<MessageItem>();
+        DisabledNicks = new HashSet<string>();
+        _channelLock = new object();
+        
+        webToIrc = Conf.ConstructWebToIrc(channel);
+        
+        new Thread(Consume).Start();
+    }
 
-        public object _channelLock { get; private set; }
 
-        WebToIrc webToIrc;
-
-
-        public ChannelThread(string channel)
+    void Consume()
+    {
+        MessageItem item;
+        while (true)
         {
-            Channel = channel;
-            UrlQueue = new Queue<string[]>();
-            DisabledNicks = new HashSet<string>();
-            _channelLock = new object();
-
-            webToIrc = Conf.ConstructWebToIrc(channel);
-
-            new Thread(Consume).Start();
-        }
-
-        void Consumer(string[] item)
-        {
-            string nick = item[0];
-            string url = item[1];
-
-            if (!DisabledNicks.Contains(nick))
+            lock (_channelLock)
             {
-                bool? inWhite = Whitelist.IsInList(url, Channel, nick);
-                // If whitelist not applicable.
-                if (inWhite == null)
-                {
-                    if ( Blacklist.IsInList(url, Channel, nick) )
-                        Console.WriteLine("Blacklisted: " + url);
-                    else
-                        OutputUrl(url);
-                }
-                // If in whitelist, go directly to output and skip blacklist.
-                else if (inWhite == true)
-                    OutputUrl(url);
-                // If the whitelist was applicable, but the URL wasn't found in it.
-                else
-                    Console.WriteLine("Not whitelisted: " + url);
+                while (MessageQueue.Count == 0)
+                    Monitor.Wait(_channelLock);
+                
+                item = MessageQueue.Dequeue();
             }
+            
+            if (item != null)
+            {
+                bool printedDetection = false;
+                foreach ( string url in ExtractUrls(item.Message) )
+                {
+                    ProcessUrl(item.Nick, url);
+                    
+                    if (!printedDetection)
+                    {
+                        var message = string.Join(" ", item.Message);
+                        Console.WriteLine("\nURL(s) detected - {0}/{1} {2}", Channel, item.Nick, message);
+                        printedDetection = true;
+                    }
+                }
+            }
+            // A queued null is the signal to stop, so return and stop consuming.
             else
-                Console.WriteLine("Titling disabled for {0}.", nick);
+                return;
         }
+    }
 
-        void OutputUrl(string url)
+
+    IEnumerable<string> ExtractUrls(string[] message)
+    {
+        foreach (string s in message)
         {
-            string htmlInfo = webToIrc.GetWebInfo(url);
-            if (htmlInfo != null)
-            {
-                irc.SendMessage(Channel, htmlInfo);
-                Console.WriteLine(url + "  --  " + htmlInfo);
+            if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {                
+                yield return s;
             }
         }
+    }
 
-        void Consume()
+
+    void ProcessUrl(string nick, string url)
+    {        
+        if (!DisabledNicks.Contains(nick))
         {
-            while (true)
+            bool? inWhite = Whitelist.IsInList(url, Channel, nick);
+            // If whitelist not applicable.
+            if (inWhite == null)
             {
-                string[] item;
-                lock (_channelLock)
-                {
-                    while (UrlQueue.Count == 0)
-                        Monitor.Wait(_channelLock);
-
-                    item = UrlQueue.Dequeue();
-                }
-                if (item != null)
-                    Consumer(item);
+                if ( Blacklist.IsInList(url, Channel, nick) )
+                    Console.WriteLine("Blacklisted: " + url);
                 else
-                    return;
+                    OutputUrl(url);
             }
+            // If in whitelist, go directly to output and skip blacklist.
+            else if (inWhite == true)
+                OutputUrl(url);
+            // If the whitelist was applicable, but the URL wasn't found in it.
+            else
+                Console.WriteLine("Not whitelisted: " + url);
         }
+        else
+            Console.WriteLine("Titling disabled for {0}.", nick);
+    }
+
+
+    void OutputUrl(string url)
+    {
+        string htmlInfo = webToIrc.GetWebInfo(url);
+        if (htmlInfo != null)
+        {
+            irc.SendMessage(Channel, htmlInfo);
+            Console.WriteLine(url + "  --  " + htmlInfo);
+        }
+    }
+}
+
+
+class MessageItem
+{
+    public string Nick { get; private set; }
+    public string[] Message { get; private set; }
+
+
+    public MessageItem(string nick, string[] message)
+    {
+        Nick = nick;
+        Message = message;
     }
 }
