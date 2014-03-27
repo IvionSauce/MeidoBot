@@ -11,8 +11,6 @@ public class MiscUtils : IMeidoHook
 {
     IIrcComm irc;
 
-    List<Timer> timers = new List<Timer>();
-
     public string Prefix { get; set; }
 
     public string Name
@@ -39,10 +37,7 @@ public class MiscUtils : IMeidoHook
 
 
     public void Stop()
-    {
-        foreach (Timer tmr in timers)
-            tmr.Dispose();
-    }
+    {}
 
     [ImportingConstructor]
     public MiscUtils(IIrcComm ircComm)
@@ -71,11 +66,9 @@ public class MiscUtils : IMeidoHook
             {
                 if (minutes <= 0)
                     return;
-
-                string[] info = {e.Channel, e.Nick};
                 var time = TimeSpan.FromMinutes(minutes);
 
-                timers.Add( new Timer(IrcTimer, info, time, TimeSpan.Zero) );
+                ThreadPool.QueueUserWorkItem( (state) => IrcTimer(e.Channel, e.Nick, time) );
                 irc.SendMessage( e.Channel, string.Format("{0}: Your timer has started.", e.Nick) );
             }
         }
@@ -93,10 +86,10 @@ public class MiscUtils : IMeidoHook
         }
     }
 
-    void IrcTimer(object data)
+    void IrcTimer(string channel, string nick, TimeSpan duration)
     {
-        var info = (string[])data;
-        irc.SendMessage( info[0], string.Format("{0}: !RINGRING! Your timer has finished.", info[1]) );
+        Thread.Sleep(duration);
+        irc.SendMessage( channel, string.Format("{0}: !RINGRING! Your timer has finished.", nick) );
     }
 
     string Say(string[] command, string currentChannel)
