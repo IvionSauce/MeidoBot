@@ -47,6 +47,7 @@ public class NyaaSpam : IMeidoHook
     public void Stop()
     {
         feedReader.Stop();
+        nyaa.Dispose();
     }
 
     [ImportingConstructor]
@@ -74,63 +75,57 @@ public class NyaaSpam : IMeidoHook
         if (e.MessageArray[0] == Prefix + "nyaa")
         {
             if (e.MessageArray.Length == 1)
+            {
                 irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show>\" for help.", Prefix) );
-
-            else if (e.MessageArray[1] == "add" && e.MessageArray.Length > 2)
-            {
-                Add( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2),
-                    null);
+                return;
             }
 
-            else if (e.MessageArray[1] == "del" && e.MessageArray.Length > 2)
-            {
-                Del( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2),
-                    null);
-            }
-
-            else if (e.MessageArray[1] == "show")
-            {
-                if (e.MessageArray.Length > 2)
-                    Show( e.Channel, e.Nick, string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2) );
-                else
-                    ShowAll(e.Channel, e.Nick, null);
-            }
+            string command = e.MessageArray[1];
+            string input = "";
+            int? assocPat = null;
 
             // nyaa ex <add|del|show>
             // nyaa ex <assocPat> <add|del|show>
-            else if (e.MessageArray[1] == "ex" && e.MessageArray.Length > 2)
+            // Command will be reassigned.
+            if (command == "ex" && e.MessageArray.Length > 2)
             {
                 int assocPatInt;
-                string command;
-                string input = "";
                 // Exclude Patterns associated with a pattern.
                 if (int.TryParse(e.MessageArray[2], out assocPatInt) && e.MessageArray.Length > 3)
                 {
+                    assocPat = assocPatInt;
                     command = e.MessageArray[3];
+
                     if (e.MessageArray.Length > 4)
                         input = string.Join(" ", e.MessageArray, 4, e.MessageArray.Length - 4);
                 }
                 // Global Exclude Patterns.
                 else
                 {
-                    assocPatInt = -1;
+                    assocPat = -1;
                     command = e.MessageArray[2];
+
                     if (e.MessageArray.Length > 3)
                         input = string.Join(" ", e.MessageArray, 3, e.MessageArray.Length - 3);
                 }
+            }
+            // nyaa <add|del|show>
+            // Command already set above.
+            else if (e.MessageArray.Length > 2)
+                input = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
 
-                if (command == "add")
-                {
-                    Add(e.Channel, e.Nick, input, assocPatInt);
-                }
-                else if (command == "del")
-                {
-                    Del(e.Channel, e.Nick, input, assocPatInt);
-                }
-                else if (command == "show")
-                {
-                    ShowAll(e.Channel, e.Nick, assocPatInt);
-                }
+
+            if (command == "add")
+            {
+                Add(e.Channel, e.Nick, input, assocPat);
+            }
+            else if (command == "del")
+            {
+                Del(e.Channel, e.Nick, input, assocPat);
+            }
+            else if (command == "show")
+            {
+                ShowAll(e.Channel, e.Nick, assocPat);
             }
         }
     }

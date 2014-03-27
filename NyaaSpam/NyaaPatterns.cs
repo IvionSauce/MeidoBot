@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using IvionSoft;
 
 
-public class NyaaPatterns
+public class NyaaPatterns : IDisposable
 {
     public bool SerializeOnModification { get; set; }
     public TimeSpan BufferTime { get; set; }
-    volatile int ticker;
+    int ticker;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
     object _locker = new object();
@@ -387,26 +387,30 @@ public class NyaaPatterns
     }
 
 
+    // Write depends on the calling method to hold the lock.
     void Write()
     {
         if (path == null || !SerializeOnModification)
             return;
 
-        if (BufferTime == TimeSpan.Zero)
+        if (BufferTime <= TimeSpan.Zero)
             storage.Serialize(path);
         else
         {
             ticker++;
-            new Timer(BufferedWrite, null, BufferTime, TimeSpan.Zero);
+            ThreadPool.QueueUserWorkItem(BufferedWrite);
         }
     }
 
-    void BufferedWrite(object data)
+    // Since Write returns after spawning this thread we cannot be sure of the lock's state, reacquire.
+    void BufferedWrite(object stateInfo)
     {
-        ticker--;
-        if (ticker == 0 && path != null)
+        Thread.Sleep(BufferTime);
+
+        lock (_locker)
         {
-            lock (_locker)
+            ticker--;
+            if (ticker == 0 && path != null)
                 storage.Serialize(path);
         }
     }
@@ -433,6 +437,20 @@ public class NyaaPatterns
         {
             this.path = path;
             storage = Storage<ChannelPatterns>.Deserialize(path);
+        }
+    }
+
+
+    public void Dispose()
+    {
+        lock (_locker)
+        {
+            // If outstanding BufferedWrites, write storage to disk.
+            if (ticker > 0 && path != null)
+                storage.Serialize(path);
+            // Disable BufferedWrite.
+            ticker = -1;
+            BufferTime = TimeSpan.Zero;
         }
     }
 }
