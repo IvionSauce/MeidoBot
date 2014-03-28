@@ -9,7 +9,7 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class MiscUtils : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
     public string Prefix { get; set; }
 

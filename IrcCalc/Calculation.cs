@@ -137,7 +137,7 @@ namespace Calculation
             if (parenBalance > 0)
                 throw new MalformedExpressionException("Unclosed subexpression(s) detected, amount: " + parenBalance);
 
-            AddNumToExpr(tmpNum);
+            AddNumToExpr();
 
             // Final check. The expression should have ended in either a number or a right parenthesis. Both of these
             // set the allowedTokens to include TokenType.Operator, which would not be set by the others. So check for
@@ -147,6 +147,7 @@ namespace Calculation
             else
                 throw new MalformedExpressionException("Expression did not end with a number or closing parenthesis.");
         }
+
 
         void AddCharToNum(char c)
         {
@@ -166,16 +167,6 @@ namespace Calculation
             tmpNum.Add(c);
         }
 
-        void AddNumToExpr(List<char> token)
-        {
-            if (token.Count == 0)
-                return;
-
-            var numString = new string( token.ToArray() );
-
-            token.Clear();
-            exprList.Add(numString);
-        }
 
         void AddLParenToExpr(char token)
         {
@@ -184,6 +175,7 @@ namespace Calculation
             parenBalance++;
         }
 
+
         void AddRParenToExpr(char token)
         {
             // Abort on a subexpression being closed before it was opened / unexpected right parenthesis.
@@ -191,21 +183,33 @@ namespace Calculation
                 throw new MalformedExpressionException("Tried to close a subexpression before it was opened.");
 
             // Because a left parenthesis can follow a number, commit collected single digits as a number token.
-            AddNumToExpr(tmpNum);
-            decimalPoint = false;
+            AddNumToExpr();
 
             exprList.Add( token.ToString() );
             // Record the closing of a subexpression to the parentheses balance.
             parenBalance--;
         }
 
+
         void AddOperatorToExpr(char token)
         {
             // Because an operator can follow a number, commit collected single digits as a number token.
-            AddNumToExpr(tmpNum);
-            decimalPoint = false;
+            AddNumToExpr();
 
             exprList.Add( token.ToString() );
+        }
+
+
+        void AddNumToExpr()
+        {
+            if (tmpNum.Count == 0)
+                return;
+            
+            var numString = new string( tmpNum.ToArray() );
+            exprList.Add(numString);
+            
+            tmpNum.Clear();
+            decimalPoint = false;
         }
     }
 

@@ -8,7 +8,7 @@ using System.ComponentModel.Composition.Hosting;
 [Export(typeof(IMeidoHook))]
 public class Calc : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
     public string Prefix { get; set; }
 
@@ -18,7 +18,7 @@ public class Calc : IMeidoHook
     }
     public string Version
     {
-        get { return "1.0"; }
+        get { return "1.1"; }
     }
 
     public Dictionary<string,string> Help
@@ -59,12 +59,12 @@ public class Calc : IMeidoHook
             catch (MalformedExpressionException)
             {
                 irc.SendMessage(e.Channel, string.Format
-                                ("{0}: I am but a simple meido, please supply a correct expression.", e.Nick));
+                                ("{0}: I am but a simple meido, please ask me something I understand.", e.Nick));
                 return;
             }
 
             double result = ShuntingYard.Calculate(tokenizedExpr);
-            irc.SendMessage(e.Channel, string.Format("{0}: {1}", e.Nick, result));
+            irc.SendMessage( e.Channel, string.Format("{0}: {1}", e.Nick, result) );
         }
     }
 }
