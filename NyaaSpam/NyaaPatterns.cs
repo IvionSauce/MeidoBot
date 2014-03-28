@@ -11,7 +11,7 @@ public class NyaaPatterns : IDisposable
     public bool SerializeOnModification
     {
         get { return _serialize; }
-        set { _serialize = value }
+        set { _serialize = value; }
     }
 
     TimeSpan bufferTime;
