@@ -9,7 +9,7 @@ public class NyaaPatterns : IDisposable
 {
     public bool SerializeOnModification { get; set; }
     public TimeSpan BufferTime { get; set; }
-    int ticker;
+    Timer tmr;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
     object _locker = new object();
@@ -397,21 +397,23 @@ public class NyaaPatterns : IDisposable
             storage.Serialize(path);
         else
         {
-            ticker++;
-            ThreadPool.QueueUserWorkItem(BufferedWrite);
+            if (tmr != null)
+                tmr.Dispose();
+            tmr = new Timer(BufferedWrite, null, BufferTime, TimeSpan.Zero);
         }
     }
 
     // Since Write returns after spawning this thread we cannot be sure of the lock's state, reacquire.
     void BufferedWrite(object stateInfo)
     {
-        Thread.Sleep(BufferTime);
-
         lock (_locker)
         {
-            ticker--;
-            if (ticker == 0 && path != null)
+            if (path != null)
                 storage.Serialize(path);
+
+            // Clean up after ourselves.
+            tmr.Dispose();
+            tmr = null;
         }
     }
 
@@ -446,10 +448,12 @@ public class NyaaPatterns : IDisposable
         lock (_locker)
         {
             // If outstanding BufferedWrites, write storage to disk.
-            if (ticker > 0 && path != null)
+            if (tmr != null && path != null)
+            {
+                tmr.Dispose();
                 storage.Serialize(path);
+            }
             // Disable BufferedWrite.
-            ticker = -1;
             BufferTime = TimeSpan.Zero;
         }
     }
