@@ -58,8 +58,8 @@ public class Calc : IMeidoHook
             }
             catch (MalformedExpressionException)
             {
-                irc.SendMessage(e.Channel, string.Format
-                                ("{0}: I am but a simple meido, please ask me something I understand.", e.Nick));
+                irc.SendMessage( e.Channel, string.Format(
+                    "{0}: I am but a simple meido, please ask me something I can understand.", e.Nick) );
                 return;
             }
 
