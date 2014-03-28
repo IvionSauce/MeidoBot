@@ -270,7 +270,7 @@ public class NyaaPatterns : IDisposable
     }
 
 
-    bool TryGetExPatterns(ChannelPatterns chanPat, int assocPat, out List<string[]> exPatterns)
+    static bool TryGetExPatterns(ChannelPatterns chanPat, int assocPat, out List<string[]> exPatterns)
     {
         // Get all Exclude Patterns associated with a certain Include Pattern.
         if ( IndexExists(chanPat, assocPat) )
@@ -291,7 +291,7 @@ public class NyaaPatterns : IDisposable
         }
     }
 
-    bool IndexExists(ChannelPatterns chanPat, int index)
+    static bool IndexExists(ChannelPatterns chanPat, int index)
     {
         if (chanPat != null && index < chanPat.Patterns.Count && index >= 0)
             return true;
@@ -299,7 +299,7 @@ public class NyaaPatterns : IDisposable
             return false;
     }
 
-    bool GlobalRequest(ChannelPatterns chanPat, int index)
+    static bool GlobalRequest(ChannelPatterns chanPat, int index)
     {
         if (chanPat != null && index < 0)
             return true;
@@ -324,15 +324,13 @@ public class NyaaPatterns : IDisposable
                 // Iterate over the patterns associated with channel.
                 foreach (PatternEntry patEntry in chanPattern.Patterns)
                 {
-                    if ( IsMatch(patEntry.IncludePattern, title) )
+                    // If it matches the pattern and doesn't match any Exclude Patterns associated with the Include
+                    // Pattern, add it to the channels list.
+                    if (IsMatch(patEntry.IncludePattern, title) &&
+                        !ContainsExcludePattern(patEntry, title))
                     {
-                        // If it matches the pattern and doesn't match any Exclude Patterns associated with the Include
-                        // Pattern, add it to the channels list.
-                        if ( !ContainsExcludePattern(patEntry, title) )
-                        {
-                            channels.Add(chanPattern.Channel);
-                            break;
-                        }
+                        channels.Add(chanPattern.Channel);
+                        break;
                     }
                 }
             }
@@ -342,7 +340,7 @@ public class NyaaPatterns : IDisposable
     }
 
 
-    bool ContainsGlobalExcludePattern(ChannelPatterns chanPat, string title)
+    static bool ContainsGlobalExcludePattern(ChannelPatterns chanPat, string title)
     {
         foreach (string[] pattern in chanPat.GlobalExcludePatterns)
             if ( IsMatch(pattern, title) )
@@ -350,7 +348,7 @@ public class NyaaPatterns : IDisposable
         return false;
     }
     
-    bool ContainsExcludePattern(PatternEntry entry, string title)
+    static bool ContainsExcludePattern(PatternEntry entry, string title)
     {
         foreach (string[] pattern in entry.ExcludePatterns)
             if ( IsMatch(pattern, title) )
@@ -358,7 +356,7 @@ public class NyaaPatterns : IDisposable
         return false;
     }
 
-    bool IsMatch(string[] pattern, string title)
+    static bool IsMatch(string[] pattern, string title)
     {
         // Each pattern is an array of constituents. If the title contains one subtract 1 from the
         // countdown. When the countdown reaches 0 it means all constituents were found in the title, so
