@@ -13,7 +13,7 @@ public class NyaaSpam : IMeidoHook
 {
     IIrcComm irc;
 
-    NyaaPatterns nyaa = new NyaaPatterns();
+    NyaaPatterns nyaa;
     NyaaFeedReader feedReader;
 
     public string Prefix { get; set; }
@@ -53,6 +53,7 @@ public class NyaaSpam : IMeidoHook
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
+        nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) );
         string nyaaFile = meidoComm.ConfDir + "/_nyaapatterns.xml";
         try
         {
@@ -60,7 +61,6 @@ public class NyaaSpam : IMeidoHook
         }
         catch (FileNotFoundException)
         {}
-        nyaa.BufferTime = TimeSpan.FromMinutes(1);
 
         var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
         feedReader = new NyaaFeedReader(ircComm, conf, nyaa);

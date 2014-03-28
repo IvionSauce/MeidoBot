@@ -7,8 +7,14 @@ using IvionSoft;
 
 public class NyaaPatterns : IDisposable
 {
-    public bool SerializeOnModification { get; set; }
-    public TimeSpan BufferTime { get; set; }
+    volatile bool _serialize = true;
+    public bool SerializeOnModification
+    {
+        get { return _serialize; }
+        set { _serialize = value }
+    }
+
+    TimeSpan bufferTime;
     Timer tmr;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
@@ -19,8 +25,12 @@ public class NyaaPatterns : IDisposable
 
     public NyaaPatterns()
     {
-        SerializeOnModification = true;
-        BufferTime = TimeSpan.Zero;
+        bufferTime = TimeSpan.Zero;
+    }
+
+    public NyaaPatterns(TimeSpan bufferTime)
+    {
+        this.bufferTime = bufferTime;
     }
 
 
@@ -391,13 +401,13 @@ public class NyaaPatterns : IDisposable
         if (path == null || !SerializeOnModification)
             return;
 
-        if (BufferTime <= TimeSpan.Zero)
+        if (bufferTime <= TimeSpan.Zero)
             storage.Serialize(path);
         else
         {
             if (tmr != null)
                 tmr.Dispose();
-            tmr = new Timer(BufferedWrite, null, BufferTime, TimeSpan.Zero);
+            tmr = new Timer(BufferedWrite, null, bufferTime, TimeSpan.Zero);
         }
     }
 
@@ -452,7 +462,7 @@ public class NyaaPatterns : IDisposable
                 storage.Serialize(path);
             }
             // Disable BufferedWrite.
-            BufferTime = TimeSpan.Zero;
+            bufferTime = TimeSpan.Zero;
         }
     }
 }
