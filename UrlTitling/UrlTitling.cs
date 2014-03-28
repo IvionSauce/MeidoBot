@@ -10,7 +10,7 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class UrlTitler : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
     public string Prefix { get; set; }
 
@@ -201,7 +201,7 @@ class ChannelThread
     
     public object _channelLock { get; private set; }
     
-    WebToIrc webToIrc;
+    readonly WebToIrc webToIrc;
     
     
     public ChannelThread(string channel)

@@ -11,10 +11,10 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class NyaaSpam : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
-    NyaaPatterns nyaa;
-    NyaaFeedReader feedReader;
+    readonly NyaaPatterns nyaa;
+    readonly NyaaFeedReader feedReader;
 
     public string Prefix { get; set; }
 

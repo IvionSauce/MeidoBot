@@ -14,7 +14,7 @@ class NyaaFeedReader
     
     Timer tmr;
     
-    IIrcComm irc;
+    readonly IIrcComm irc;
     
     DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
     DateTimeOffset latestPublish = DateTimeOffset.Now;

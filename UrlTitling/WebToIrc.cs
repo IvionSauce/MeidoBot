@@ -12,8 +12,8 @@ namespace WebIrc
 {
     public class WebToIrc
     {
-        HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
-        UrlTitleComparer urlTitleComp = new UrlTitleComparer();
+        readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
+        readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
 
         public static double Threshold { get; set; }
         public static CookieContainer Cookies { get; private set; }

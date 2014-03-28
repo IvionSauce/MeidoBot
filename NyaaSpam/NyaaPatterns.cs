@@ -18,7 +18,7 @@ public class NyaaPatterns : IDisposable
     Timer tmr;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
-    object _locker = new object();
+    readonly object _locker = new object();
 
     string path;
 

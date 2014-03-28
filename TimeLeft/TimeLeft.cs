@@ -13,11 +13,11 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class TimeLeft : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
-    Storage<TimeLeftUnit> storage;
-    Timer cleaner;
-    object _locker = new object();
+    readonly Storage<TimeLeftUnit> storage;
+    readonly Timer cleaner;
+    readonly object _locker = new object();
 
     const string loc = "conf/_timeleft.xml";
     
