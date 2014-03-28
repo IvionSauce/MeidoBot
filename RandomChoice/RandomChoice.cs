@@ -34,8 +34,8 @@ public class IrcRandom : IMeidoHook
                 {"c", "c <options> - Takes either a range of numbers (.c x-y) or a list of options seperated by" +
                      @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
 
-                {"cd", "cd - Want to simulwatch something? Countdown is the tool for you! Invoking .cd will provide " +
-                    "you with an automatic countdown, starting from 3 and ending in a spectacular launch!"},
+                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking .cd will" +
+                    "provide you with an automatic countdown (default: 3 seconds) and ending in a spectacular launch!"},
 
                 {"8ball", "8ball [question] - Ask the Magic 8-Ball any yes or no question."}
             };
