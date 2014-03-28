@@ -12,7 +12,7 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class IrcRandom : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
     public string Prefix { get; set; }
 
@@ -22,7 +22,7 @@ public class IrcRandom : IMeidoHook
     }
     public string Version
     {
-        get { return "1.0"; }
+        get { return "1.1"; }
     }
 
     public Dictionary<string,string> Help
@@ -67,24 +67,34 @@ public class IrcRandom : IMeidoHook
                 irc.SendMessage(e.Channel, e.Nick + ": " + choice);
         }
         else if (index0 == Prefix + "cd")
-            new Thread( () => Countdown(e.Channel) ).Start();
+        {
+            const int maxCountdownSec = 10;
+            const int stdCountdownSec = 3;
+            int tminus;
+            if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
+            {
+                if (tminus >= stdCountdownSec && tminus <= maxCountdownSec)
+                    new Thread( () => Countdown(e.Channel, tminus) ).Start();
+            }
+            else
+                new Thread( () => Countdown(e.Channel, stdCountdownSec) ).Start();
+        }
 
         else if (index0 == Prefix + "8ball")
             new Thread( () => EightBall(e.Channel) ).Start();
     }
 
-    void Countdown(string channel)
+    void Countdown(string channel, int seconds)
     {
         string launch = RandomChoice.ChooseRndLaunch();
 
         irc.SendMessage(channel, "Commencing Countdown");
         Thread.Sleep(500);
-        irc.SendMessage(channel, "3");
-        Thread.Sleep(1000);
-        irc.SendMessage(channel, "2");
-        Thread.Sleep(1000);
-        irc.SendMessage(channel, "1");
-        Thread.Sleep(1000);
+        for (int tminus = seconds; tminus > 0; tminus--)
+        {
+            irc.SendMessage(channel, tminus.ToString());
+            Thread.Sleep(1000);
+        }
         irc.SendMessage(channel, launch);
     }
 
@@ -102,7 +112,7 @@ public class IrcRandom : IMeidoHook
 
 static class RandomChoice
 {
-    static Random rnd = new Random();
+    static readonly Random rnd = new Random();
 
     static readonly string[] ballChoices = {"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely",
         "You may rely on it", "As I see it yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",
@@ -142,27 +152,25 @@ static class RandomChoice
         {
             word = message[i];
 
-            if (word.ToLower() == "or")
+            if ( word.Equals("or", StringComparison.OrdinalIgnoreCase) )
             {
                 if (tempOption.Count != 0)
                 {
-                    options.Add( string.Join(" ", tempOption.ToArray()) );
+                    options.Add( string.Join(" ", tempOption) );
                     tempOption.Clear();
                 }
             }
-            else if (word.EndsWith(","))
+            else if ( word.EndsWith(",") )
             {
                 string removedComma = word.Substring(0, word.Length - 1);
                 if (removedComma.Length != 0)
-                    tempOption.Add(removedComma);
-
-                if (tempOption.Count != 0)
                 {
-                    options.Add( string.Join(" ", tempOption.ToArray()) );
+                    tempOption.Add(removedComma);
+                    options.Add( string.Join(" ", tempOption) );
                     tempOption.Clear();
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(word))
+            else if ( !string.IsNullOrWhiteSpace(word) )
                 tempOption.Add(word);
         }
 
@@ -174,7 +182,7 @@ static class RandomChoice
 
         // Clean-up last option, if applicable.
         if (tempOption.Count != 0)
-            options.Add( string.Join(" ", tempOption.ToArray()) );
+            options.Add( string.Join(" ", tempOption) );
         return options.ToArray();
     }
 
