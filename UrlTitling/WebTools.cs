@@ -101,6 +101,10 @@ namespace WebHelp
             {
                 return new WebString(uri, ex);
             }
+            finally
+            {
+                wc.Dispose();
+            }
         }
     }
 
