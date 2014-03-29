@@ -10,6 +10,7 @@ class WebToIrcConfig
     public int? MaxTags { get; set; }
     public string DanboContSym { get; set; }
     public bool? Colourize { get; set; }
+    public HashSet<string> WarningTags { get; set; }
     
     public int? MaxLines { get; set; }
     public int? MaxCharacters { get; set; }
@@ -38,11 +39,7 @@ class Config : XmlConfig
         var webIrc = new WebToIrc();
         var global = GetChannelConfig("_all");
         var specific = GetChannelConfig(channel);
-        
-        // What follows are necesary if/else's for allowing a cascading config between global and channel specific
-        // settings, as well as falling back to each properties default values if neither the global or channel specific
-        // setting is set.
-        
+
         // --- Danbooru ---
         // ----------------
         
@@ -57,6 +54,10 @@ class Config : XmlConfig
         // Colourize.
         webIrc.Danbo.Colourize = 
             specific.Colourize ?? global.Colourize ?? false;
+
+        // Warning Tags (Print a warning if the General Tags contains 1 or more of these).
+        webIrc.Danbo.WarningTags = 
+            specific.WarningTags ?? global.WarningTags;
         
         // --- 4chan & Foolz ---
         // ---------------------
@@ -75,7 +76,8 @@ class Config : XmlConfig
         
         return webIrc;
     }
-    
+
+
     public override void LoadConfig()
     {
         Threshold = (double)Config.Element("threshold");
@@ -116,7 +118,7 @@ class Config : XmlConfig
         
         foreach (XElement danbo in Config.Elements("danbooru"))
         {
-            if (danbo.HasElements == false)
+            if (!danbo.HasElements)
                 continue;
             
             var settings = GetChannelConfig( GetChannelAttr(danbo) );
@@ -124,11 +126,20 @@ class Config : XmlConfig
             settings.MaxTags = (int?)danbo.Element("max-tags-displayed");
             settings.DanboContSym = (string)danbo.Element("continuation-symbol");
             settings.Colourize = (bool?)danbo.Element("colourize");
+
+            XElement warningTags = danbo.Element("warning-tags");
+            if (warningTags != null)
+            {
+                settings.WarningTags = new HashSet<string>();
+                foreach (XElement tag in warningTags.Elements())
+                    if (!string.IsNullOrEmpty(tag.Value))
+                        settings.WarningTags.Add(tag.Value);
+            }
         }
         
         foreach (XElement chan in Config.Elements("chan-foolz"))
         {
-            if (chan.HasElements == false)
+            if (!chan.HasElements)
                 continue;
             
             var settings = GetChannelConfig( GetChannelAttr(chan) );
@@ -138,7 +149,8 @@ class Config : XmlConfig
             settings.ChanContSym = (string)chan.Element("continuation-symbol");
         }
     }
-    
+
+
     string GetChannelAttr(XElement el)
     {
         var channel = (string)el.Attribute("channel");
@@ -147,7 +159,8 @@ class Config : XmlConfig
         else
             return channel;
     }
-    
+
+
     WebToIrcConfig GetChannelConfig(string channel)
     {
         string chanLow = channel.ToLower();
@@ -161,6 +174,7 @@ class Config : XmlConfig
             return WebIrcSettings[chanLow];
         }
     }
+
     
     public override XElement DefaultConfig ()
     {
@@ -178,11 +192,17 @@ class Config : XmlConfig
                                                                "(characters, copyrights and artists) to this number")),
                             new XElement("continuation-symbol", "[...]", new XComment("What to print to indicate " +
                                                                       "that there are more tags than displayed")),
-                            new XElement("colourize", true)
-                         /* new XElement("normal-code", "", new XComment("Default is no control-codes")),
-                            new XElement("characters-code", "\u000303"),
-                            new XElement("copyrights-code", "\u000306"),
-                            new XElement("artists-code", "\u000305") */
+                            new XElement("colourize", true),
+                            new XElement("warning-tags",
+                                new XElement("tag", "spoilers"),
+                                new XElement("tag", "guro"),
+                                new XElement("tag", "futanari"),
+                                new XElement("tag", "yaoi"),
+                                new XElement("tag", "bestiality"),
+                                new XElement("tag", "furry"),
+                                new XElement("tag", "loli"),
+                                new XElement("tag", "shota")
+                                )
                             ),
                          
                          new XElement("chan-foolz", new XAttribute("channel", "_all"),

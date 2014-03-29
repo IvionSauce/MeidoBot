@@ -92,39 +92,6 @@ namespace WebHelp
             return postInfo;
         }
 
-
-        /// <summary>
-        /// Converts an array of tags into a tag string.
-        /// </summary>
-        /// <returns>A string of tags.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
-        /// <param name="tags">An array of tags.</param>
-        /// <param name="maxTags">Don't make the returned string contain more tags than maxTags.
-        /// Disable by passing <= 0.</param>
-        public static string TagArrayToString(string[] tags, int maxTags)
-        {
-            return TagArrayToString(tags, maxTags, "");
-        }
-        
-        /// <summary>
-        /// Converts an array of tags into a tag string.
-        /// </summary>
-        /// <returns>A string of tags.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
-        /// <param name="tags">An array of tags.</param>
-        /// <param name="maxTags">Don't make the returned string contain more tags than maxTags.
-        /// Disable by passing <= 0.</param>
-        /// <param name="contSymbol">String to append to the returned string if it was shortened.</param>
-        public static string TagArrayToString(string[] tags, int maxTags, string contSymbol)
-        {
-            string[] shortened = ShortenTagArray(tags, maxTags);
-            var tagStr = string.Join(" ", shortened);
-            
-            if (shortened.Length != tags.Length)
-                return string.Concat(tagStr, contSymbol);
-            else
-                return tagStr;
-        }
         
         /// <summary>
         /// Shortens an array of tags.
