@@ -184,7 +184,7 @@ namespace WebHelp
                     foundWords++;
             }
 
-            // If the Total Words count /somehow/ ended up in the negative, return zero.
+            // If the Total Words count ended up in the negative, return zero.
             // Also safeguard against Divided-By-Zero or `Infinity` result.
             if (totalWords <= 0)
                 return 0d;

@@ -119,6 +119,7 @@ namespace WebHelp
         /// <summary>
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
         /// </summary>
+        /// <returns>An array of equal length (to charTags) with the sources removed from the character tags.</returns>
         /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
         /// <param name="charTags">A tag array of character tags.</param>
         public static string[] CleanupCharacterTags(string[] charTags, string[] sourceTags)
