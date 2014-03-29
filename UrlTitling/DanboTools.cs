@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using IvionSoft;
 // JSON.NET
@@ -13,11 +14,8 @@ namespace WebHelp
     public static class DanboTools
     {
         static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
-        
-        // Matches the "_(source)" part that is sometimes present with character tags.
-        static readonly Regex charSourceRegexp = new Regex(@"_\([^) ]+\)");
-        
-        
+
+
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
@@ -116,35 +114,41 @@ namespace WebHelp
             else
                 return tags;
         }
-        
+
         
         /// <summary>
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
         /// </summary>
-        /// <returns>Cleaned up character tags.</returns>
         /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
-        /// <param name="charTags">A tag string of character tags.</param>
-        public static string CleanupCharacterTags(string charTags)
+        /// <param name="charTags">A tag array of character tags.</param>
+        public static string[] CleanupCharacterTags(string[] charTags, string[] sourceTags)
         {
             if (charTags == null)
                 throw new ArgumentNullException("charTags");
 
-            return charSourceRegexp.Replace(charTags, "");
-        }
-        
-        /// <summary>
-        /// Cleans up the character tags. Removes the "_(source)" part of the tags.
-        /// Modifies charTags in-place.
-        /// </summary>
-        /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
-        /// <param name="charTags">A tag array of character tags.</param>
-        public static void CleanupCharacterTags(string[] charTags)
-        {
-            if (charTags == null)
-                throw new ArgumentNullException("charTags");
-            
-            for (int i = 0; i < charTags.Length; i++)
-                charTags[i] = charSourceRegexp.Replace(charTags[i], "");
+            // Return early if there's nothing to be done.
+            if (charTags.Length == 0 || sourceTags.Length == 0)
+                return charTags;
+
+            string checkAgainst, charTag;
+            int sourceStart;
+            var filtered = new string[charTags.Length];
+            foreach (string srcTag in sourceTags)
+            {
+                checkAgainst = string.Concat("_(", srcTag, ")");
+                for (int i = 0; i < charTags.Length; i++)
+                {
+                    charTag = charTags[i];
+
+                    sourceStart = charTag.IndexOf(checkAgainst);
+                    if (sourceStart > 0)
+                        filtered[i] = charTag.Substring(0, sourceStart);
+                    else
+                        filtered[i] = charTag;
+                }
+            }
+
+            return filtered;
         }
     }
 

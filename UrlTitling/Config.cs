@@ -200,6 +200,7 @@ class Config : XmlConfig
                                 new XElement("tag", "yaoi"),
                                 new XElement("tag", "bestiality"),
                                 new XElement("tag", "furry"),
+                                new XElement("tag", "rape"),
                                 new XElement("tag", "loli"),
                                 new XElement("tag", "shota")
                                 )
