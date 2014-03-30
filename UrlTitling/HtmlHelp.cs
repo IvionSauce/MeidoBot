@@ -83,7 +83,9 @@ namespace WebHelp
             // Hebrew
             {"iso-8859-8-i", "iso-8859-8"},
             // Western
-            {"latin", "iso-8859-1"}
+            {"latin", "iso-8859-1"},
+            // Unicode
+            {"utf8", "utf-8"}
         };
 
 

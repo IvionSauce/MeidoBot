@@ -122,6 +122,7 @@ namespace WebHelp
         /// <returns>An array of equal length (to charTags) with the sources removed from the character tags.</returns>
         /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
         /// <param name="charTags">A tag array of character tags.</param>
+        /// <param name="sourceTags">A tag array of copyright tags.</param>
         public static string[] CleanupCharacterTags(string[] charTags, string[] sourceTags)
         {
             if (charTags == null)
