@@ -52,10 +52,10 @@
     <Compile Include="Config.cs" />
     <Compile Include="WebResources.cs" />
     <Compile Include="ChanTools.cs" />
-    <Compile Include="DanboTools.cs" />
     <Compile Include="ControlList.cs" />
     <Compile Include="ChanHandler.cs" />
     <Compile Include="BooruHandler.cs" />
+    <Compile Include="BooruTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

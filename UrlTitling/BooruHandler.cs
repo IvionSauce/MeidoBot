@@ -4,7 +4,7 @@ using WebHelp;
 
 namespace WebIrc
 {
-    public class BooruHandler
+    abstract public class BooruHandler
     {
         public HashSet<string> WarningTags { get; set; }
 

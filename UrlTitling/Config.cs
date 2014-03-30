@@ -37,8 +37,10 @@ class Config : XmlConfig
     public WebToIrc ConstructWebToIrc(string channel)
     {
         var webIrc = new WebToIrc();
-        var global = GetChannelConfig("_all");
-        var specific = GetChannelConfig(channel);
+        var global = GetOrAddConfig("_all");
+        WebToIrcConfig specific;
+        if ( !WebIrcSettings.TryGetValue(channel, out specific) )
+            specific = new WebToIrcConfig();
 
         // --- Danbooru ---
         // ----------------
@@ -124,7 +126,7 @@ class Config : XmlConfig
             if (!danbo.HasElements)
                 continue;
             
-            var settings = GetChannelConfig( GetChannelAttr(danbo) );
+            var settings = GetOrAddConfig( GetChannelAttr(danbo) );
             
             settings.MaxTags = (int?)danbo.Element("max-tags-displayed");
             settings.DanboContSym = (string)danbo.Element("continuation-symbol");
@@ -145,7 +147,7 @@ class Config : XmlConfig
             if (!chan.HasElements)
                 continue;
             
-            var settings = GetChannelConfig( GetChannelAttr(chan) );
+            var settings = GetOrAddConfig( GetChannelAttr(chan) );
             
             settings.MaxLines = (int?)chan.Element("max-lines");
             settings.MaxCharacters = (int?)chan.Element("max-characters");
@@ -164,7 +166,7 @@ class Config : XmlConfig
     }
 
 
-    WebToIrcConfig GetChannelConfig(string channel)
+    WebToIrcConfig GetOrAddConfig(string channel)
     {
         string chanLow = channel.ToLower();
         
@@ -198,7 +200,16 @@ class Config : XmlConfig
                             new XElement("colourize", true),
                             new XElement("warning-tags",
                                 new XElement("tag", "spoilers"),
+
                                 new XElement("tag", "guro"),
+                                new XElement("tag", "death"),
+                                new XElement("tag", "poop"),
+                                new XElement("tag", "scat"),
+                                new XElement("tag", "vomit"),
+                                new XElement("tag", "vomiting"),
+                                new XElement("tag", "pee"),
+                                new XElement("tag", "peeing"),
+
                                 new XElement("tag", "futanari"),
                                 new XElement("tag", "yaoi"),
                                 new XElement("tag", "bestiality"),
