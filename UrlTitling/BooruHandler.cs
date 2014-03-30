@@ -9,11 +9,11 @@ namespace WebIrc
         public HashSet<string> WarningTags { get; set; }
 
 
-        protected static string ResolveRating(DanboPost.Rating rating)
+        protected static string ResolveRating(BooruPost.Rating rating)
         {
-            if (rating == DanboPost.Rating.Safe)
+            if (rating == BooruPost.Rating.Safe)
                 return "s";
-            else if (rating == DanboPost.Rating.Questionable)
+            else if (rating == BooruPost.Rating.Questionable)
                 return "q";
             else
                 return "e";
@@ -75,7 +75,7 @@ namespace WebIrc
         
         public string PostToIrc(string url)
         {
-            DanboPost postInfo = DanboTools.GetPostInfo(url);
+            BooruPost postInfo = DanboTools.GetPostInfo(url);
             
             if (postInfo.Success)
             {
@@ -163,6 +163,32 @@ namespace WebIrc
             }
             
             return danbo;
+        }
+    }
+
+
+    public class GelboHandler : BooruHandler
+    {
+        public string PostToIrc(string url)
+        {
+            BooruPost postInfo = GelboTools.GetPostInfo(url);
+
+            if (postInfo.Success)
+            {
+                string warning = ConstructWarning(postInfo.AllTags);
+                if (!string.IsNullOrEmpty(warning))
+                {
+                    string rating = ResolveRating(postInfo.Rated);
+                    return string.Format("[{0}] [ #{1} ] {2}", rating, postInfo.PostNo, warning);
+                }
+                else
+                    return null;
+            }
+            else
+            {
+                postInfo.ReportError(url);
+                return null;
+            }
         }
     }
 }

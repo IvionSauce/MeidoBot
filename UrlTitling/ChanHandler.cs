@@ -33,7 +33,7 @@ namespace WebIrc
             }
             else
             {
-                opPost.HandleError(url);
+                opPost.ReportError(url);
                 return null;
             }
         }

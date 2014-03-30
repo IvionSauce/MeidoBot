@@ -20,6 +20,7 @@ namespace WebIrc
 
         public ChanHandler Chan { get; private set; }
         public DanboHandler Danbo { get; private set; }
+        public GelboHandler Gelbo { get; private set; }
 
 
         static WebToIrc()
@@ -33,6 +34,7 @@ namespace WebIrc
         {
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
+            Gelbo = new GelboHandler();
         }
 
 
@@ -42,6 +44,11 @@ namespace WebIrc
             if (url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
             {
                 return Danbo.PostToIrc(url);
+            }
+            // Gelbooru handling.
+            else if (url.Contains("gelbooru.com/index.php?page=post&s=view&id=", StringComparison.OrdinalIgnoreCase))
+            {
+                return Gelbo.PostToIrc(url);
             }
             // Foolz and 4chan handling.
             else if (ChanTools.IsAddressSupported(url))
@@ -117,7 +124,7 @@ namespace WebIrc
             else if (webStr.Exception is UrlNotHtmlException)
                 Console.WriteLine("Not (X)HTML: " + url);
             else
-                webStr.HandleError(url);
+                webStr.ReportError(url);
 
             return null;
         }
@@ -144,7 +151,7 @@ namespace WebIrc
 
         public static void ReportError(this WebResource resource, string url)
         {
-            if (resource.Exception.Message == null)
+            if (resource.Exception == null || resource.Exception.Message == null)
                 Console.WriteLine("!!! Unknown error, contact software author.");
             else
             {

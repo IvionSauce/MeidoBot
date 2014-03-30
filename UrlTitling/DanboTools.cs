@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using IvionSoft;
 // JSON.NET
 using Newtonsoft.Json;
@@ -8,38 +9,11 @@ using Newtonsoft.Json;
 
 namespace WebHelp
 {
-    /// <summary>
-    /// Collection of tools dealing with Danbooru.
-    /// </summary>
-    public static class DanboTools
+    static class BooruTools
     {
-        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
-
-
-        /// <summary>
-        /// Get info of a Danbooru post.
-        /// </summary>
-        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
-        /// <param name="url">URL pointing to a post.</param>
-        public static DanboPost GetPostInfo(string url)
+        public static int ExtractPostNo(string url, Regex urlRegexp)
         {
-            url.ThrowIfNullOrWhiteSpace("url");
-
-            int postNo = ExtractPostNo(url);
-            if (postNo > 0)
-                return GetPostInfo(postNo);
-            else
-            {
-                var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
-                return new DanboPost(ex);
-            }
-        }
-
-        static int ExtractPostNo(string url)
-        {
-            GroupCollection groups = danboUrlRegexp.Match(url).Groups;
+            GroupCollection groups = urlRegexp.Match(url).Groups;
             
             if (groups[1].Success)
                 return int.Parse(groups[1].Value);
@@ -47,14 +21,56 @@ namespace WebHelp
                 return -1;
         }
 
+
+        public static BooruPost.Rating RatingStringToEnum(string rating)
+        {
+            if (rating == "s")
+                return BooruPost.Rating.Safe;
+            else if (rating == "q")
+                return BooruPost.Rating.Questionable;
+            else
+                return BooruPost.Rating.Explicit;
+        }
+    }
+
+
+    /// <summary>
+    /// Collection of tools dealing with Danbooru.
+    /// </summary>
+    public static class DanboTools
+    {
+        static readonly Regex urlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
+
+
+        /// <summary>
+        /// Get info of a Danbooru post.
+        /// </summary>
+        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// <param name="url">URL pointing to a post.</param>
+        public static BooruPost GetPostInfo(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+
+            int postNo = BooruTools.ExtractPostNo(url, urlRegexp);
+            if (postNo > 0)
+                return GetPostInfo(postNo);
+            else
+            {
+                var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
+                return new BooruPost(ex);
+            }
+        }
+
         
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
-        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
+        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
         /// <param name="postNo">Post number.</param>
-        public static DanboPost GetPostInfo(int postNo)
+        public static BooruPost GetPostInfo(int postNo)
         {
             if (postNo < 1)
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
@@ -62,7 +78,7 @@ namespace WebHelp
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
             WebString json = WebTools.SimpleGetString(jsonReq);
             if (!json.Success)
-                return new DanboPost(json);
+                return new BooruPost(json);
             
             dynamic postJson = JsonConvert.DeserializeObject(json.Document);
             string copyrights = postJson.tag_string_copyright;
@@ -70,16 +86,9 @@ namespace WebHelp
             string artists = postJson.tag_string_artist;
             string other = postJson.tag_string_general;
             string all = postJson.tag_string;
+            var rated = BooruTools.RatingStringToEnum(postJson.rating);
             
-            DanboPost.Rating rated;
-            if (postJson.rating == "s")
-                rated = DanboPost.Rating.Safe;
-            else if (postJson.rating == "q")
-                rated = DanboPost.Rating.Questionable;
-            else
-                rated = DanboPost.Rating.Explicit;
-            
-            var postInfo = new DanboPost(json, postNo,
+            var postInfo = new BooruPost(json, postNo,
                                          copyrights.Split(' '),
                                          characters.Split(' '),
                                          artists.Split(' '),
@@ -155,12 +164,55 @@ namespace WebHelp
     }
 
 
+    public static class GelboTools
+    {
+        static readonly Regex urlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
+
+
+        public static BooruPost GetPostInfo(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+            
+            int postNo = BooruTools.ExtractPostNo(url, urlRegexp);
+            if (postNo > 0)
+                return GetPostInfo(postNo);
+            else
+            {
+                var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
+                return new BooruPost(ex);
+            }
+        }
+
+
+        public static BooruPost GetPostInfo(int postNo)
+        {
+            if (postNo < 1)
+                throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
+
+            var xmlReq = string.Format("http://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
+            WebString xml = WebTools.SimpleGetString(xmlReq);
+            if (!xml.Success)
+                return new BooruPost(xml);
+
+            var postXml = XElement.Parse(xml.Document).Element("post");
+            string tags = postXml.Attribute("tags").Value;
+            var rated = BooruTools.RatingStringToEnum( postXml.Attribute("rating").Value );
+
+            var postInfo = new BooruPost(xml,
+                                         postNo,
+                                         tags.Split(' '),
+                                         rated);
+            return postInfo;
+        }
+    }
+
+
     /// <summary>
     /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
     /// check the Exception property. If Exception is null and Succes is false it means something went wrong extracting
     /// the post number from the URL.
     /// </summary>
-    public class DanboPost : WebResource
+    public class BooruPost : WebResource
     {
         [Flags]
         public enum Rating
@@ -179,11 +231,23 @@ namespace WebHelp
         public Rating Rated { get; private set; }
 
         
-        public DanboPost(WebResource resource) : base(resource) {}
+        public BooruPost(WebResource resource) : base(resource) {}
 
-        public DanboPost(Exception ex) : base(null, false, ex) {}
-        
-        public DanboPost(WebResource resource,
+        public BooruPost(Exception ex) : base(null, false, ex) {}
+
+        // Smaller subset for less feature-rich booru's (Gelbooru).
+        public BooruPost(WebResource resource,
+                         int postNo,
+                         string[] all,
+                         Rating rated) : base(resource)
+        {
+            PostNo = postNo;
+            AllTags = all;
+            Rated = rated;
+        }
+
+        // Full set for Danbooru.
+        public BooruPost(WebResource resource,
                          int postNo,
                          string[] copyrights,
                          string[] characters,

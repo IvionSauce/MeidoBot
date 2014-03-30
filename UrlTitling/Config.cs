@@ -58,6 +58,9 @@ class Config : XmlConfig
         // Warning Tags (Print a warning if the General Tags contains 1 or more of these).
         webIrc.Danbo.WarningTags = 
             specific.WarningTags ?? global.WarningTags;
+
+        // Gelbooru Warning Tabs (just point to Danbo's ones).
+        webIrc.Gelbo.WarningTags = webIrc.Danbo.WarningTags;
         
         // --- 4chan & Foolz ---
         // ---------------------
