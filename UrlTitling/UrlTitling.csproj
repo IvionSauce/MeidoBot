@@ -54,6 +54,8 @@
     <Compile Include="ChanTools.cs" />
     <Compile Include="DanboTools.cs" />
     <Compile Include="ControlList.cs" />
+    <Compile Include="ChanHandler.cs" />
+    <Compile Include="BooruHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
