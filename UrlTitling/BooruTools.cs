@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 
 namespace WebHelp
 {
+    /// <summary>
+    /// Generic tools for use with Booru's.
+    /// </summary>
     static class BooruTools
     {
         public enum Source
@@ -22,6 +25,16 @@ namespace WebHelp
         static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
 
 
+        /// <summary>
+        /// Extracts the post number from an URL.
+        /// </summary>
+        /// <returns>The post number. Returns -1 if number couldn't be found.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL</param>
+        /// <param name="source">Source</param>
         public static int ExtractPostNo(string url, Source source)
         {
             url.ThrowIfNullOrWhiteSpace("url");
@@ -46,6 +59,11 @@ namespace WebHelp
         }
 
 
+        /// <summary>
+        /// Converts rating string to equivalent <see cref="BooruPost.Rating">rating</see>.
+        /// </summary>
+        /// <returns>The appropriate enum. Returns Rating.Unknown if string can't be converted.</returns>
+        /// <param name="rating">Rating</param>
         public static BooruPost.Rating RatingStringToEnum(string rating)
         {
             switch(rating)
@@ -59,6 +77,31 @@ namespace WebHelp
             default:
                 return BooruPost.Rating.Unknown;
             }
+        }
+
+
+        /// <summary>
+        /// Shortens an array of tags.
+        /// </summary>
+        /// <returns>An array of strings equal or shorter than amount. Returns as-is if amount &lt= 0.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
+        /// <param name="tags">An array of tags.</param>
+        /// <param name="amount">Maximum amount of items the array should have. Disable by passing &lt= 0.</param>
+        public static string[] ShortenTagArray(string[] tags, int amount)
+        {
+            if (tags == null)
+                throw new ArgumentNullException("tags");
+            
+            if ( amount > 0 && tags.Length > amount )
+            {
+                var shortened = new string[amount];
+                for (int i = 0; i < amount; i++)
+                    shortened[i] = tags[i];
+                
+                return shortened;
+            }
+            else
+                return tags;
         }
     }
 
@@ -124,31 +167,6 @@ namespace WebHelp
                                          rated);
             
             return postInfo;
-        }
-
-        
-        /// <summary>
-        /// Shortens an array of tags.
-        /// </summary>
-        /// <returns>An array of strings equal or shorter than amount. Returns as-is if amount &lt= 0.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
-        /// <param name="tags">An array of tags.</param>
-        /// <param name="amount">Maximum amount of items the array should have. Disable by passing &lt= 0.</param>
-        public static string[] ShortenTagArray(string[] tags, int amount)
-        {
-            if (tags == null)
-                throw new ArgumentNullException("tags");
-            
-            if ( amount > 0 && tags.Length > amount )
-            {
-                var shortened = new string[amount];
-                for (int i = 0; i < amount; i++)
-                    shortened[i] = tags[i];
-                
-                return shortened;
-            }
-            else
-                return tags;
         }
 
         
