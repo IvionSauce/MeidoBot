@@ -11,12 +11,15 @@ namespace WebIrc
 
         protected static string ResolveRating(BooruPost.Rating rating)
         {
-            if (rating == BooruPost.Rating.Safe)
+            switch(rating)
+            {
+            case BooruPost.Rating.Safe:
                 return "s";
-            else if (rating == BooruPost.Rating.Questionable)
+            case BooruPost.Rating.Questionable:
                 return "q";
-            else
+            default:
                 return "e";
+            }
         }
 
 
@@ -119,7 +122,7 @@ namespace WebIrc
 
         string TagArrayToString(string[] tags)
         {
-            if (tags.Length > MaxTagCount)
+            if (MaxTagCount > 0 && tags.Length > MaxTagCount)
                 return string.Concat( string.Join(" ", tags, 0, MaxTagCount), ContinuationSymbol );
             else
                 return string.Join(" ", tags);

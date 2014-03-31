@@ -43,8 +43,8 @@ public class Blacklist : ControlList
 // Also wrap access to DomainLists to provide a workable (not exploding) interface even if there's nothing loaded.
 public class ControlList
 {
-    DomainLists domLists;
-    string path;
+    volatile DomainLists domLists;
+    volatile string path;
     
     
     public bool IsInGlobalList(string url)
@@ -65,8 +65,7 @@ public class ControlList
 
     public void LoadFromFile(string path)
     {
-        if (this.path != null)
-            this.path = null;
+        path.ThrowIfNullOrWhiteSpace("path");
 
         var tmpDomLists = new DomainLists(path);
         domLists = tmpDomLists;
@@ -75,6 +74,8 @@ public class ControlList
 
     public void ReloadFile()
     {
+        // While `path` /could/ change after this check, it will never become null again.
+        /// And because `path` is only changed after a successful load, it will be a proper path.
         if (path != null)
         {
             var tmpDomLists = new DomainLists(path);

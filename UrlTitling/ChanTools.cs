@@ -17,7 +17,6 @@ namespace WebHelp
     /// </summary>
     public static class ChanTools
     {
-        [Flags]
         public enum Source
         {
             Fourchan,
@@ -134,7 +133,7 @@ namespace WebHelp
             var boardAndThread = ExtractBoardAndThreadNo(url, src.Value);
             
             if (boardAndThread.Item2 > 0)
-                return GetThreadOP(boardAndThread.Item1, boardAndThread.Item2, src.Value);
+                return GetThreadOP(src.Value, boardAndThread.Item1, boardAndThread.Item2);
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
@@ -154,13 +153,22 @@ namespace WebHelp
         }
 
 
-        static Tuple<string, int> ExtractBoardAndThreadNo(string url, Source source)
+        public static Tuple<string, int> ExtractBoardAndThreadNo(string url, Source source)
         {
+            url.ThrowIfNullOrWhiteSpace("url");
+
             GroupCollection groups;
-            if (source == Source.Fourchan)
+            switch(source)
+            {
+            case Source.Fourchan:
                 groups = chanUrlRegexp.Match(url).Groups;
-            else
+                break;
+            case Source.Foolz:
                 groups = foolzUrlRegexp.Match(url).Groups;
+                break;
+            default:
+                throw new InvalidEnumArgumentException();
+            }
 
             if (groups[1].Success && groups[2].Success)
             {
@@ -204,14 +212,14 @@ namespace WebHelp
         /// <param name="board">Board where thread is located.</param>
         /// <param name="thread">Thread number.</param>
         /// <param name="source">Whether it's a 4chan or foolz.us post.</param>
-        public static ChanPost GetThreadOP(string board, int thread, Source source)
+        public static ChanPost GetThreadOP(Source source, string board, int thread)
         {
             board.ThrowIfNullOrWhiteSpace("board");
             if (thread < 1)
                 throw new ArgumentOutOfRangeException("thread", "Can't be 0 or negative.");
             
             // GetJsonString checks whether we got passed a valid Source value.
-            WebString json = GetJsonString(board, thread, source);
+            WebString json = GetJsonString(source, board, thread);
             if (!json.Success)
                 return new ChanPost(json);
             
@@ -243,16 +251,21 @@ namespace WebHelp
             return opPost;
         }
         
-        static WebString GetJsonString(string board, int thread, Source source)
+        static WebString GetJsonString(Source source, string board, int thread)
         {
             // Construct query.
             string jsonReq;
-            if (source == Source.Fourchan)
+            switch(source)
+            {
+            case Source.Fourchan:
                 jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, thread);
-            else if (source == Source.Foolz)
+                break;
+            case Source.Foolz:
                 jsonReq = string.Format("http://archive.foolz.us/_/api/chan/post/?board={0}&num={1}", board, thread);
-            else
+                break;
+            default:
                 throw new InvalidEnumArgumentException();
+            }
             
             return WebTools.SimpleGetString(jsonReq);
         }

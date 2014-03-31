@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using System.ComponentModel;
 using IvionSoft;
 // JSON.NET
 using Newtonsoft.Json;
@@ -11,9 +12,32 @@ namespace WebHelp
 {
     static class BooruTools
     {
-        public static int ExtractPostNo(string url, Regex urlRegexp)
+        public enum Source
         {
-            GroupCollection groups = urlRegexp.Match(url).Groups;
+            Danbooru,
+            Gelbooru
+        }
+
+        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
+        static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
+
+
+        public static int ExtractPostNo(string url, Source source)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+
+            GroupCollection groups;
+            switch(source)
+            {
+            case Source.Danbooru:
+                groups = danboUrlRegexp.Match(url).Groups;
+                break;
+            case Source.Gelbooru:
+                groups = gelboUrlRegexp.Match(url).Groups;
+                break;
+            default:
+                throw new InvalidEnumArgumentException();
+            }
             
             if (groups[1].Success)
                 return int.Parse(groups[1].Value);
@@ -24,12 +48,17 @@ namespace WebHelp
 
         public static BooruPost.Rating RatingStringToEnum(string rating)
         {
-            if (rating == "s")
+            switch(rating)
+            {
+            case "s":
                 return BooruPost.Rating.Safe;
-            else if (rating == "q")
+            case "q":
                 return BooruPost.Rating.Questionable;
-            else
+            case "e":
                 return BooruPost.Rating.Explicit;
+            default:
+                return BooruPost.Rating.Unknown;
+            }
         }
     }
 
@@ -39,9 +68,6 @@ namespace WebHelp
     /// </summary>
     public static class DanboTools
     {
-        static readonly Regex urlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
-
-
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
@@ -53,7 +79,7 @@ namespace WebHelp
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
-            int postNo = BooruTools.ExtractPostNo(url, urlRegexp);
+            int postNo = BooruTools.ExtractPostNo(url, BooruTools.Source.Danbooru);
             if (postNo > 0)
                 return GetPostInfo(postNo);
             else
@@ -86,7 +112,8 @@ namespace WebHelp
             string artists = postJson.tag_string_artist;
             string other = postJson.tag_string_general;
             string all = postJson.tag_string;
-            var rated = BooruTools.RatingStringToEnum(postJson.rating);
+            string rating = postJson.rating;
+            var rated = BooruTools.RatingStringToEnum(rating);
             
             var postInfo = new BooruPost(json, postNo,
                                          copyrights.Split(' '),
@@ -141,21 +168,25 @@ namespace WebHelp
             if (charTags.Length == 0 || sourceTags.Length == 0)
                 return charTags;
 
+            // Create a shallow copy of charTags.
+            var filtered = new string[charTags.Length];
+            charTags.CopyTo(filtered, 0);
+
             string checkAgainst, charTag;
             int sourceStart;
-            var filtered = new string[charTags.Length];
             foreach (string srcTag in sourceTags)
             {
                 checkAgainst = string.Concat("_(", srcTag, ")");
+
                 for (int i = 0; i < charTags.Length; i++)
                 {
                     charTag = charTags[i];
 
                     sourceStart = charTag.IndexOf(checkAgainst);
+                    // Only replace a tag if we removed the source part. Else we could overwrite a previously filtered
+                    // charTag, that was fixed in a previous loop with another srcTag.
                     if (sourceStart > 0)
                         filtered[i] = charTag.Substring(0, sourceStart);
-                    else
-                        filtered[i] = charTag;
                 }
             }
 
@@ -166,14 +197,11 @@ namespace WebHelp
 
     public static class GelboTools
     {
-        static readonly Regex urlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
-
-
         public static BooruPost GetPostInfo(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
             
-            int postNo = BooruTools.ExtractPostNo(url, urlRegexp);
+            int postNo = BooruTools.ExtractPostNo(url, BooruTools.Source.Gelbooru);
             if (postNo > 0)
                 return GetPostInfo(postNo);
             else
@@ -209,14 +237,13 @@ namespace WebHelp
 
     /// <summary>
     /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
-    /// check the Exception property. If Exception is null and Succes is false it means something went wrong extracting
-    /// the post number from the URL.
+    /// check the Exception property.
     /// </summary>
     public class BooruPost : WebResource
     {
-        [Flags]
         public enum Rating
         {
+            Unknown,
             Safe,
             Questionable,
             Explicit
