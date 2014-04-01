@@ -229,19 +229,17 @@ namespace WebHelp
             {
                 opSubject = threadJson.posts[0].sub;
                 opComment = threadJson.posts[0].com;
-                if (opComment != null)
+                if (!string.IsNullOrEmpty(opComment))
                     opComment = Fix4chanPost(opComment);
             }
             else
             {
                 opSubject = threadJson.title;
                 opComment = threadJson.comment_sanitized;
-                
-                if (opSubject == "")
-                    opSubject = null;
-                if (opComment == "")
-                    opComment = null;
             }
+            // Make sure subject and comment are not null.
+            opSubject = opSubject ?? string.Empty;
+            opComment = opComment ?? string.Empty;
             
             var opPost = new ChanPost(json,
                                       board, GetBoardName(board),
@@ -287,7 +285,7 @@ namespace WebHelp
             if (boardMapping.TryGetValue(board, out name))
                 return name;
             else
-                return "Unknown";
+                return string.Empty;
         }
         
         /// <summary>
@@ -384,11 +382,11 @@ namespace WebHelp
         /// </summary>
         public int PostNo { get; private set; }
         /// <summary>
-        /// Subject of the post. Will be null if no subject.
+        /// Subject of the post. Will be empty if no subject.
         /// </summary>
         public string Subject { get; private set; }
         /// <summary>
-        /// Comment/message of the post. Will be null if no comment.
+        /// Comment/message of the post. Will be empty if no comment.
         /// </summary>
         public string Comment { get; private set; }
 

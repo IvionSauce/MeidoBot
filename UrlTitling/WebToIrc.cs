@@ -13,7 +13,7 @@ namespace WebIrc
     public class WebToIrc
     {
         readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
-        readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
+        static readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
 
         public static double Threshold { get; set; }
         public static CookieContainer Cookies { get; private set; }

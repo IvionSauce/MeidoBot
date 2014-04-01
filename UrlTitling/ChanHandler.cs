@@ -18,9 +18,9 @@ namespace WebIrc
                 string topic = null;
                 // Prefer subject as topic, if the post has one. Else reform the message into a topic.
                 // If a post has neither subject or comment/message, return null.
-                if (opPost.Subject != null)
+                if (!string.IsNullOrEmpty(opPost.Subject))
                     topic = opPost.Subject;
-                else if (opPost.Comment != null)
+                else if (!string.IsNullOrEmpty(opPost.Comment))
                 {
                     topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
                     topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
