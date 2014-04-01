@@ -13,6 +13,8 @@ using System.ComponentModel.Composition;
 public class IrcRandom : IMeidoHook
 {
     readonly IIrcComm irc;
+    readonly Config conf;
+
 
     public string Prefix { get; set; }
 
@@ -34,8 +36,9 @@ public class IrcRandom : IMeidoHook
                 {"c", "c <options> - Takes either a range of numbers (.c x-y) or a list of options seperated by" +
                      @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
 
-                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking .cd will " +
-                    "provide you with an automatic countdown (default: 3 seconds) and end in a spectacular launch!"},
+                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking .cd " +
+                    "will provide you with an automatic countdown (default/min: 3s, max: 10s) " +
+                    "and end in a spectacular launch!"},
 
                 {"8ball", "8ball [question] - Ask the Magic 8-Ball any yes or no question."}
             };
@@ -49,8 +52,7 @@ public class IrcRandom : IMeidoHook
     [ImportingConstructor]
     public IrcRandom(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        var conf = new Config(meidoComm.ConfDir + "/RandomChoice.xml");
-        RandomChoice.LaunchChoices = conf.LaunchChoices.ToArray();
+        conf = new Config(meidoComm.ConfDir + "/RandomChoice.xml");
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
@@ -64,29 +66,34 @@ public class IrcRandom : IMeidoHook
         {
             string choice = RandomChoice.RndChoice(e.MessageArray);
             if (choice != null)
-                irc.SendMessage(e.Channel, e.Nick + ": " + choice);
+                irc.SendMessage(e.Channel, "{0}: {1}", e.Nick, choice);
         }
         else if (index0 == Prefix + "cd")
-        {
-            const int maxCountdownSec = 10;
-            const int stdCountdownSec = 3;
-            int tminus;
-            if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
-            {
-                if (tminus >= stdCountdownSec && tminus <= maxCountdownSec)
-                    new Thread( () => Countdown(e.Channel, tminus) ).Start();
-            }
-            else
-                new Thread( () => Countdown(e.Channel, stdCountdownSec) ).Start();
-        }
+            Countdown(e);
 
         else if (index0 == Prefix + "8ball")
             new Thread( () => EightBall(e.Channel) ).Start();
     }
 
-    void Countdown(string channel, int seconds)
+
+    void Countdown(IIrcMessage e)
     {
-        string launch = RandomChoice.ChooseRndLaunch();
+        const int maxCountdownSec = 10;
+        const int stdCountdownSec = 3;
+        int tminus;
+        if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
+        {
+            if (tminus >= stdCountdownSec && tminus <= maxCountdownSec)
+                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.Channel, tminus) );
+        }
+        else
+            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.Channel, stdCountdownSec) );
+    }
+
+
+    void IrcCountdown(string channel, int seconds)
+    {
+        string launch = RandomChoice.ChooseRndItem(conf.LaunchChoices);
 
         irc.SendMessage(channel, "Commencing Countdown");
         Thread.Sleep(500);
@@ -97,6 +104,7 @@ public class IrcRandom : IMeidoHook
         }
         irc.SendMessage(channel, launch);
     }
+
 
     void EightBall(string channel)
     {
@@ -120,15 +128,13 @@ static class RandomChoice
         "Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good",
         "Very doubtful"};
 
-    public static string[] LaunchChoices { get; set; }
 
-
-    public static string ChooseRndLaunch()
+    public static T ChooseRndItem<T>(List<T> items)
     {
         lock (rnd)
         {
-            int rndIndex = rnd.Next(LaunchChoices.Length);
-            return LaunchChoices[rndIndex];
+            int rndIndex = rnd.Next(items.Count);
+            return items[rndIndex];
         }
     }
 
@@ -141,7 +147,7 @@ static class RandomChoice
         }
     }
 
-    static string[] ConstructOptions(string[] message)
+    static List<string> ConstructOptions(string[] message)
     {
         var options = new List<string>();
         var tempOption = new List<string>();
@@ -178,13 +184,14 @@ static class RandomChoice
         // are delimited by spaces. Return options as array.
         // Otherwise return collected options as an array.
         if (options.Count == 0)
-            return tempOption.ToArray();
+            return tempOption;
 
         // Clean-up last option, if applicable.
         if (tempOption.Count != 0)
             options.Add( string.Join(" ", tempOption) );
-        return options.ToArray();
+        return options;
     }
+
 
     public static string RndChoice(string[] message)
     {
@@ -211,19 +218,18 @@ static class RandomChoice
             else
             {
                 lock (rnd)
-                    return Convert.ToString( rnd.Next(begin, (end + 1)) );
+                {
+                    int rndInt = rnd.Next( begin, (end + 1) );
+                    return rndInt.ToString();
+                }
             }
         }
         // Else assume that it's a collection of options, so extract those options into an array and choose
         // a random member.
         else
         {
-            string[] options = ConstructOptions(message);
-            lock (rnd)
-            {
-                int rndIndex = rnd.Next(options.Length);
-                return options[rndIndex];
-            }
+            List<string> options = ConstructOptions(message);
+            return ChooseRndItem(options);
         }
     }
 }

@@ -59,12 +59,12 @@ namespace WebIrc
 
             // ----- Above: Don't Need HTML and/or Title -----
             // -----------------------------------------------
-            string htmlString = GetHtmlContent(url);
-            if (htmlString == null)
+            string htmlContent = GetHtmlContent(url);
+            if (htmlContent == null)
                 // Something went wrong in GetHtmlString, which should've already printed the error.
                 return null;
 
-            string htmlTitle = WebTools.GetTitle(htmlString);
+            string htmlTitle = WebTools.GetTitle(htmlContent);
             if (htmlTitle == null)
             {
                 Console.WriteLine(url + " -- No <title> found");
@@ -79,7 +79,7 @@ namespace WebIrc
                 url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
             {
                 // If duration can be found, change the html info to include that. Else return normal info.
-                int ytTime = WebTools.GetYoutubeTime(htmlString);
+                int ytTime = WebTools.GetYoutubeTime(htmlContent);
                 if (ytTime > 0)
                 {
                     int ytMinutes = ytTime / 60;
@@ -91,17 +91,31 @@ namespace WebIrc
             }
             // Other URLs.
             else
-            {                
-                double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(url, htmlTitle);
-                Console.WriteLine("URL-Title Similarity: " + urlTitleSimilarity);
-
-                // If the URL and Title are too similar, don't return HTML info for printing to IRC.
-                if (urlTitleSimilarity < Threshold)
-                    return string.Format("[ {0} ]", htmlTitle);
-                else
-                    return null;
-            }
+                return GenericHandler(url, htmlTitle);
         }
+
+
+        string GenericHandler(string url, string htmlTitle)
+        {
+            var formatted = string.Format("[ {0} ]", htmlTitle);
+            // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
+            // higher. The similarity would always be equal to or less than 1.
+            if (Threshold >= 1)
+                return formatted;
+            // If Threshold is set to 0 that would still mean that titles that had 0 similarity with their URLs would
+            // get printed. Set to a negative value to never print any title.
+            else if (Threshold < 0)
+                return null;
+
+            double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(url, htmlTitle);
+            Console.WriteLine("URL-Title Similarity: " + urlTitleSimilarity);
+
+            if (urlTitleSimilarity <= Threshold)
+                return formatted;
+            else
+                return null;
+        }
+
 
         string GetHtmlContent(string url)
         {
