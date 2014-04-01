@@ -60,27 +60,6 @@ namespace WebHelp
 
 
         /// <summary>
-        /// Converts rating string to equivalent <see cref="BooruPost.Rating">rating</see>.
-        /// </summary>
-        /// <returns>The appropriate enum. Returns Rating.Unknown if string can't be converted.</returns>
-        /// <param name="rating">Rating</param>
-        public static BooruPost.Rating RatingStringToEnum(string rating)
-        {
-            switch(rating)
-            {
-            case "s":
-                return BooruPost.Rating.Safe;
-            case "q":
-                return BooruPost.Rating.Questionable;
-            case "e":
-                return BooruPost.Rating.Explicit;
-            default:
-                return BooruPost.Rating.Unknown;
-            }
-        }
-
-
-        /// <summary>
         /// Shortens an array of tags.
         /// </summary>
         /// <returns>An array of strings equal or shorter than amount. Returns as-is if amount &lt= 0.</returns>
@@ -156,7 +135,6 @@ namespace WebHelp
             string other = postJson.tag_string_general;
             string all = postJson.tag_string;
             string rating = postJson.rating;
-            var rated = BooruTools.RatingStringToEnum(rating);
             
             var postInfo = new BooruPost(json, postNo,
                                          copyrights.Split(' '),
@@ -164,7 +142,7 @@ namespace WebHelp
                                          artists.Split(' '),
                                          other.Split(' '),
                                          all.Split(' '),
-                                         rated);
+                                         rating);
             
             return postInfo;
         }
@@ -242,7 +220,7 @@ namespace WebHelp
 
             var postXml = XElement.Parse(xml.Document).Element("post");
             string tags = postXml.Attribute("tags").Value;
-            var rated = BooruTools.RatingStringToEnum( postXml.Attribute("rating").Value );
+            string rated = postXml.Attribute("rating").Value;
 
             var postInfo = new BooruPost(xml,
                                          postNo,
@@ -284,11 +262,11 @@ namespace WebHelp
         public BooruPost(WebResource resource,
                          int postNo,
                          string[] all,
-                         Rating rated) : base(resource)
+                         string rated) : base(resource)
         {
             PostNo = postNo;
             AllTags = all;
-            Rated = rated;
+            Rated = RatingStringToEnum(rated);
         }
 
         // Full set for Danbooru.
@@ -299,7 +277,7 @@ namespace WebHelp
                          string[] artists,
                          string[] others,
                          string[] all,
-                         Rating rated) : base(resource)
+                         string rated) : base(resource)
         {
             PostNo = postNo;
             CopyrightTags = copyrights;
@@ -307,7 +285,23 @@ namespace WebHelp
             ArtistTags = artists;
             GeneralTags = others;
             AllTags = all;
-            Rated = rated;
+            Rated = RatingStringToEnum(rated);
+        }
+
+
+        static Rating RatingStringToEnum(string rating)
+        {
+            switch(rating)
+            {
+            case "s":
+                return Rating.Safe;
+            case "q":
+                return Rating.Questionable;
+            case "e":
+                return Rating.Explicit;
+            default:
+                return Rating.Unknown;
+            }
         }
     }
 }

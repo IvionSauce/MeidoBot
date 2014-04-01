@@ -11,6 +11,7 @@ using System.ComponentModel.Composition;
 public class UrlTitler : IMeidoHook
 {
     readonly IIrcComm irc;
+    readonly ChannelThreadManager manager;
 
     public string Prefix { get; set; }
 
@@ -38,7 +39,7 @@ public class UrlTitler : IMeidoHook
 
     public void Stop()
     {
-        ChannelThreadManager.StopAll();
+        manager.StopAll();
     }
 
     [ImportingConstructor]
@@ -48,11 +49,12 @@ public class UrlTitler : IMeidoHook
 
         WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);
+
+        // Sharing stuff with all the ChannelThreads.
+        manager = new ChannelThreadManager(ircComm, conf);
+
         // Setup black- and whitelist.
         SetupBWLists(conf);
-        // Sharing stuff with all the ChannelThreads.
-        ChannelThread.irc = ircComm;
-        ChannelThread.Conf = conf;
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
@@ -60,13 +62,11 @@ public class UrlTitler : IMeidoHook
 
     void SetupBWLists(Config conf)
     {
-        ChannelThread.Blacklist = new Blacklist();
-        ChannelThread.Whitelist = new Whitelist();
         if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
         {
             try
             {
-                ChannelThread.Blacklist.LoadFromFile(conf.BlacklistLocation);
+                manager.Blacklist.LoadFromFile(conf.BlacklistLocation);
                 Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
             }
             catch (FileNotFoundException)
@@ -78,7 +78,7 @@ public class UrlTitler : IMeidoHook
         {
             try
             {
-                ChannelThread.Whitelist.LoadFromFile(conf.WhitelistLocation);
+                manager.Whitelist.LoadFromFile(conf.WhitelistLocation);
                 Console.WriteLine("-> Loaded whitelist from " + conf.WhitelistLocation);
             }
             catch (FileNotFoundException)
@@ -94,18 +94,18 @@ public class UrlTitler : IMeidoHook
         // ----- Trigger handling -----
         if (index0 == Prefix + "reload_bw")
         {
-            ChannelThread.Blacklist.ReloadFile();
-            ChannelThread.Whitelist.ReloadFile();
+            manager.Blacklist.ReloadFile();
+            manager.Whitelist.ReloadFile();
             irc.SendMessage(e.Channel, "Black- and whitelist have been reloaded.");
         }
         else if (index0 == Prefix + "disable")
         {
-            ChannelThreadManager.DisableNick(e.Channel, e.Nick);
+            manager.DisableNick(e.Channel, e.Nick);
             irc.SendNotice(e.Nick, string.Format("Disabling URL-Titling for you. (In {0})", e.Channel));
         }
         else if (index0 == Prefix + "enable")
         {
-            if ( ChannelThreadManager.EnableNick(e.Channel, e.Nick ) )
+            if ( manager.EnableNick(e.Channel, e.Nick ) )
                 irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
         }
         // Do nothing if it might be a trigger we're not associated with.
@@ -113,18 +113,33 @@ public class UrlTitler : IMeidoHook
             return;
 
         // ----- Handling of URLs -----
-        ChannelThreadManager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
+        manager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
     }
 }
 
 
-static class ChannelThreadManager
+class ChannelThreadManager
 {
-    static Dictionary<string, ChannelThread> channelThreads =
+    public Blacklist Blacklist { get; private set; }
+    public Whitelist Whitelist { get; private set; }
+
+    readonly IIrcComm irc;
+    readonly Config conf;
+    readonly Dictionary<string, ChannelThread> channelThreads =
         new Dictionary<string, ChannelThread>(StringComparer.OrdinalIgnoreCase);
 
 
-    static public void EnqueueMessage(string channel, string nick, string[] message)
+    public ChannelThreadManager(IIrcComm irc, Config conf)
+    {
+        this.irc = irc;
+        this.conf = conf;
+
+        Blacklist = new Blacklist();
+        Whitelist = new Whitelist();
+    }
+
+
+    public void EnqueueMessage(string channel, string nick, string[] message)
     {
         var item = new MessageItem(nick, message);
         ChannelThread thread = GetThread(channel);
@@ -137,7 +152,7 @@ static class ChannelThreadManager
     }
 
 
-    static public void StopAll()
+    public void StopAll()
     {
         foreach (ChannelThread thread in channelThreads.Values)
         {
@@ -150,7 +165,7 @@ static class ChannelThreadManager
     }
 
 
-    static public bool DisableNick(string channel, string nick)
+    public bool DisableNick(string channel, string nick)
     {
         ChannelThread thread = GetThread(channel);
 
@@ -160,7 +175,7 @@ static class ChannelThreadManager
         }
     }
 
-    static public bool EnableNick(string channel, string nick)
+    public bool EnableNick(string channel, string nick)
     {
         ChannelThread thread = GetThread(channel);
 
@@ -171,15 +186,18 @@ static class ChannelThreadManager
     }
 
 
-    static ChannelThread GetThread(string channel)
+    ChannelThread GetThread(string channel)
     {
         ChannelThread thread;
         if (channelThreads.TryGetValue(channel, out thread))
             return thread;
         else
         {
-            channelThreads.Add(channel, new ChannelThread(channel));
-            return channelThreads[channel];
+            var wIrc = conf.ConstructWebToIrc(channel);
+            thread = new ChannelThread(irc, Blacklist, Whitelist, wIrc, channel);
+
+            channelThreads.Add(channel, thread);
+            return thread;
         }
     }
 }
@@ -187,31 +205,32 @@ static class ChannelThreadManager
 
 class ChannelThread
 {
-    // Shared amongst all threads/channels.
-    // Are set from outside.
-    public static IIrcComm irc { get; set; }
-    public static Blacklist Blacklist { get; set; }
-    public static Whitelist Whitelist { get; set; }
-    public static Config Conf { get; set; }
-
     // Unique to each thread, channel-specific properties.
     public string Channel { get; private set; }
     public Queue<MessageItem> MessageQueue { get; private set; }
     public HashSet<string> DisabledNicks { get; private set; }
     
     public object _channelLock { get; private set; }
+
+    readonly IIrcComm irc;
+    readonly Blacklist blacklist;
+    readonly Whitelist whitelist;
     
     readonly WebToIrc webToIrc;
     
     
-    public ChannelThread(string channel)
+    public ChannelThread(IIrcComm irc, Blacklist black, Whitelist white, WebToIrc wIrc, string channel)
     {
+        this.irc = irc;
+        blacklist = black;
+        whitelist = white;
+
+        webToIrc = wIrc;
+
         Channel = channel;
         MessageQueue = new Queue<MessageItem>();
         DisabledNicks = new HashSet<string>();
         _channelLock = new object();
-        
-        webToIrc = Conf.ConstructWebToIrc(channel);
         
         new Thread(Consume).Start();
     }
@@ -269,11 +288,11 @@ class ChannelThread
     {        
         if (!DisabledNicks.Contains(nick))
         {
-            bool? inWhite = Whitelist.IsInList(url, Channel, nick);
+            bool? inWhite = whitelist.IsInList(url, Channel, nick);
             // If whitelist not applicable.
             if (inWhite == null)
             {
-                if ( Blacklist.IsInList(url, Channel, nick) )
+                if ( blacklist.IsInList(url, Channel, nick) )
                     Console.WriteLine("Blacklisted: " + url);
                 else
                     OutputUrl(url);
