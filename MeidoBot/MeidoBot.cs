@@ -44,18 +44,39 @@ namespace MeidoBot
             QueryMessageHandlers += handler;
         }
 
+
+        public void SendMessage(string target, string message, params object[] args)
+        {
+            SendMessage( target, string.Format(message, args) );
+        }
+
         public void SendMessage(string target, string message)
         {
             irc.SendMessage(SendType.Message, target, message);
         }
+
+
+        public void DoAction(string target, string action, params object[] args)
+        {
+            DoAction( target, string.Format(action, args) );
+        }
+
         public void DoAction(string target, string action)
         {
             irc.SendMessage(SendType.Action, target, action);
         }
+
+
+        public void SendNotice(string target, string message, params object[] args)
+        {
+            SendNotice( target, string.Format(message, args) );
+        }
+
         public void SendNotice(string target, string message)
         {
             irc.SendMessage(SendType.Notice, target, message);
         }
+
 
         public string[] GetChannels()
         {
@@ -80,7 +101,6 @@ namespace MeidoBot
         public string Host { get; private set; }
 
 
-        // Constructor
         public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData)
         {
             Message = messageData.Message;

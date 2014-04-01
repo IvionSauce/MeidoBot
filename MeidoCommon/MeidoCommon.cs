@@ -39,8 +39,13 @@ namespace MeidoCommon
         void AddQueryMessageHandler(Action<IIrcMessage> handler);
 
         void SendMessage(string target, string message);
+        void SendMessage(string target, string message, params object[] args);
+
         void DoAction(string target, string action);
+        void DoAction(string target, string action, params object[] args);
+
         void SendNotice(string target, string message);
+        void SendNotice(string target, string message, params object[] args);
 
         string[] GetChannels();
         bool IsMe(string nick);

@@ -8,18 +8,21 @@ namespace IvionSoft
 {
     public class DomainLists
     {
-        List<string> globalList = new List<string>();
-        Dictionary< string, List<string> > domainSpecific =
-            new Dictionary< string, List<string> >(StringComparer.OrdinalIgnoreCase);
+        readonly string[] global;
+        readonly Dictionary< string, string[] > domainSpecific =
+            new Dictionary< string, string[] >(StringComparer.OrdinalIgnoreCase);
 
 
         public DomainLists(string file)
         {
+            var tmpGlobal = new List<string>();
+            var tmpDomains = new Dictionary< string, List<string> >(StringComparer.OrdinalIgnoreCase);
+
             using (var fileStream = new StreamReader(file))
             {
                 // Applicable domain of the lines yet to read, start of in 'global' mode - meaning that read
                 // lines are applicable to all domains. Gets changed whenever instructed to by ":".
-                string[] domain = {"_all"};
+                string[] domains = {"_all"};
                 
                 while (fileStream.Peek() >= 0)
                 {
@@ -30,28 +33,32 @@ namespace IvionSoft
                         continue;
                     else if (line[0] == ':')
                         // Remove leading ":" before splitting.
-                        domain = line.Substring(1).Split(',');
+                        domains = line.Substring(1).Split(',');
                     // The rest will be treated as relevant and added to the list.
+                    else if (domains.Contains("_all"))
+                        tmpGlobal.Add(line);
                     else
                     {
-                        if (domain.Contains("_all"))
-                            Add(line);
-                        else if (domain.Length == 1)
-                            Add(domain[0], line);
-                        else
-                            Add(domain, line);
+                        foreach(string dom in domains)
+                        {
+                            var domList = tmpDomains.GetOrAdd(dom);
+                            domList.Add(line);
+                        }
                     }
                 }
             }
+            global = tmpGlobal.ToArray();
+            foreach (var pair in tmpDomains)
+                domainSpecific.Add( pair.Key, pair.Value.ToArray() );
         }
 
 
         public bool? IsInDomainList(string domain, string line)
         {
-            List<string> domainList;
-            if (domainSpecific.TryGetValue(domain, out domainList))
+            string[] domArr;
+            if (domainSpecific.TryGetValue(domain, out domArr))
             {
-                foreach (string s in domainList)
+                foreach (string s in domArr)
                     if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
                         return true;
 
@@ -65,39 +72,11 @@ namespace IvionSoft
         
         public bool IsInGlobalList(string line)
         {
-            foreach (string s in globalList)
+            foreach (string s in global)
                 if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
                     return true;
             
             return false;
-        }
-
-
-        void Add(string line)
-        {
-            globalList.Add(line);
-        }
-
-        void Add(string domain, string line)
-        {
-            List<string> domainList;
-
-            if (domainSpecific.TryGetValue(domain, out domainList))
-                domainList.Add(line);
-            else
-            {
-                domainSpecific.Add(domain, new List<string>());
-                domainList = domainSpecific[domain];
-                domainList.Add(line);
-            }
-        }
-
-        void Add(string[] domains, string line)
-        {
-            foreach (string domain in domains)
-            {
-                Add(domain, line);
-            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace IvionSoft
 {
@@ -44,10 +45,15 @@ namespace IvionSoft
 
         public static void ThrowIfNullOrEmpty(this string source, string argName)
         {
-            if (source == null)
+            switch (source)
+            {
+            case null:
                 throw new ArgumentNullException(argName);
-            else if (source == string.Empty)
+            case "":
                 throw new ArgumentException("Can't be empty.", argName);
+            default:
+                return;
+            }                
         }
 
         public static void ThrowIfNullOrWhiteSpace(this string source, string argName)
@@ -64,6 +70,19 @@ namespace IvionSoft
                 return true;
             else
                 return false;
+        }
+
+
+        public static V GetOrAdd<K,V>(this Dictionary<K,V> source, K key) where V: class, new()
+        {
+            V item;
+            if (source.TryGetValue(key, out item))
+                return item;
+            else
+            {
+                source.Add(key, new V());
+                return source[key];
+            }
         }
     }
 }

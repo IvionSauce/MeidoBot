@@ -101,7 +101,7 @@ public class UrlTitler : IMeidoHook
         else if (index0 == Prefix + "disable")
         {
             manager.DisableNick(e.Channel, e.Nick);
-            irc.SendNotice(e.Nick, string.Format("Disabling URL-Titling for you. (In {0})", e.Channel));
+            irc.SendNotice(e.Nick, "Disabling URL-Titling for you. (In {0})", e.Channel);
         }
         else if (index0 == Prefix + "enable")
         {
