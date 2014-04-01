@@ -24,7 +24,7 @@ public class IrcRandom : IMeidoHook
     }
     public string Version
     {
-        get { return "1.1"; }
+        get { return "1.2"; }
     }
 
     public Dictionary<string,string> Help

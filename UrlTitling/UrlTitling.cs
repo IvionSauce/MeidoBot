@@ -21,7 +21,7 @@ public class UrlTitler : IMeidoHook
     }
     public string Version
     {
-        get { return "1.0 RC4"; }
+        get { return "1.0 RC5"; }
     }
 
     public Dictionary<string,string> Help
