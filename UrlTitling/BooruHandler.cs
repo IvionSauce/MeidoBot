@@ -93,11 +93,10 @@ namespace WebIrc
                     return string.Format("{0}[{1}] [ #{2} ] {3}", NormalCode, rating, postInfo.PostNo, warning);
                 }
                 
-                string[] cleanedCharacters =
-                    DanboTools.CleanupCharacterTags(postInfo.CharacterTags, postInfo.CopyrightTags);
+                DanboTools.CleanupCharacterTags(postInfo.CharacterTags, postInfo.CopyrightTags);
                 
                 // Convert to string and limit the number of tags as specified in `MaxTagCount`.
-                var characters = TagArrayToString(cleanedCharacters);
+                var characters = TagArrayToString(postInfo.CharacterTags);
                 var copyrights = TagArrayToString(postInfo.CopyrightTags);
                 var artists = TagArrayToString(postInfo.ArtistTags);
                 // Colourize the tags.

@@ -150,23 +150,19 @@ namespace WebHelp
         
         /// <summary>
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
+        /// Modifies charTags in place.
         /// </summary>
-        /// <returns>An array of equal length (to charTags) with the sources removed from the character tags.</returns>
         /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
         /// <param name="charTags">A tag array of character tags.</param>
         /// <param name="sourceTags">A tag array of copyright tags.</param>
-        public static string[] CleanupCharacterTags(string[] charTags, string[] sourceTags)
+        public static void CleanupCharacterTags(string[] charTags, string[] sourceTags)
         {
             if (charTags == null)
                 throw new ArgumentNullException("charTags");
 
             // Return early if there's nothing to be done.
             if (charTags.Length == 0 || sourceTags.Length == 0)
-                return charTags;
-
-            // Create a shallow copy of charTags.
-            var filtered = new string[charTags.Length];
-            charTags.CopyTo(filtered, 0);
+                return;
 
             string checkAgainst, charTag;
             int sourceStart;
@@ -182,11 +178,9 @@ namespace WebHelp
                     // Only replace a tag if we removed the source part. Else we could overwrite a previously filtered
                     // charTag, that was fixed in a previous loop with another srcTag.
                     if (sourceStart > 0)
-                        filtered[i] = charTag.Substring(0, sourceStart);
+                        charTags[i] = charTag.Substring(0, sourceStart);
                 }
             }
-
-            return filtered;
         }
     }
 

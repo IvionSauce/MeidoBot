@@ -108,7 +108,7 @@ class Config : XmlConfig
             return;
         foreach (XElement cookie in cookies.Elements())
         {
-            if (cookie == null)
+            if (!cookie.HasElements)
                 continue;
             
             var name = (string)cookie.Element("name");
