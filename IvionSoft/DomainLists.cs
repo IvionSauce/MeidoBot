@@ -9,8 +9,8 @@ namespace IvionSoft
     public class DomainLists
     {
         readonly string[] global;
-        readonly Dictionary< string, string[] > domainSpecific =
-            new Dictionary< string, string[] >(StringComparer.OrdinalIgnoreCase);
+        readonly Dictionary<string, string[]> domainSpecific =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
 
         public DomainLists(string file)
@@ -23,10 +23,12 @@ namespace IvionSoft
                 // Applicable domain of the lines yet to read, start of in 'global' mode - meaning that read
                 // lines are applicable to all domains. Gets changed whenever instructed to by ":".
                 string[] domains = {"_all"};
-                
+
+                string line;
+                List<string> domList;
                 while (fileStream.Peek() >= 0)
                 {
-                    string line = fileStream.ReadLine();
+                    line = fileStream.ReadLine();
                     
                     // Ignore empty lines or comments.
                     if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
@@ -41,7 +43,7 @@ namespace IvionSoft
                     {
                         foreach(string dom in domains)
                         {
-                            var domList = tmpDomains.GetOrAdd(dom);
+                            domList = tmpDomains.GetOrAdd(dom);
                             domList.Add(line);
                         }
                     }
