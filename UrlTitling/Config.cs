@@ -8,7 +8,7 @@ using WebIrc;
 // Container for storing the various settings.
 class WebToIrcConfig
 {
-    public int? Threshold { get; set; }
+    public double? Threshold { get; set; }
 
     public int? MaxTags { get; set; }
     public string DanboContSym { get; set; }
@@ -131,7 +131,7 @@ class Config : XmlConfig
         foreach(XElement thresh in Config.Elements("threshold"))
         {
             var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(thresh) );
-            settings.Threshold = (int?)thresh;
+            settings.Threshold = (double?)thresh;
         }
 
         foreach (XElement danbo in Config.Elements("danbooru"))
