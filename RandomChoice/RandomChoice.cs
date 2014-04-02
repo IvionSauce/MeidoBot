@@ -69,25 +69,25 @@ public class IrcRandom : IMeidoHook
                 irc.SendMessage(e.Channel, "{0}: {1}", e.Nick, choice);
         }
         else if (index0 == Prefix + "cd")
-            Countdown(e);
+            Countdown(e.Channel, e.MessageArray);
 
         else if (index0 == Prefix + "8ball")
-            new Thread( () => EightBall(e.Channel) ).Start();
+            ThreadPool.QueueUserWorkItem( (data) => EightBall(e.Channel) );
     }
 
 
-    void Countdown(IIrcMessage e)
+    void Countdown(string channel, string[] message)
     {
         const int maxCountdownSec = 10;
         const int stdCountdownSec = 3;
         int tminus;
-        if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
+        if ( message.Length == 2 && int.TryParse(message[1], out tminus) )
         {
             if (tminus >= stdCountdownSec && tminus <= maxCountdownSec)
-                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.Channel, tminus) );
+                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(channel, tminus) );
         }
         else
-            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.Channel, stdCountdownSec) );
+            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(channel, stdCountdownSec) );
     }
 
 
@@ -224,8 +224,7 @@ static class RandomChoice
                 }
             }
         }
-        // Else assume that it's a collection of options, so extract those options into an array and choose
-        // a random member.
+        // Else assume that it's a collection of options, so extract those options and choose a random member.
         else
         {
             List<string> options = ConstructOptions(message);
@@ -246,10 +245,14 @@ class Config : XmlConfig
     public override void LoadConfig()
     {
         XElement countdownOptions = Config.Element("countdown");
-
         LaunchChoices = new List<string>();
-        foreach (XElement option in countdownOptions.Elements())
-            LaunchChoices.Add(option.Value);
+
+        if (countdownOptions != null)
+        {
+            foreach (XElement option in countdownOptions.Elements())
+                if (!string.IsNullOrEmpty(option.Value))
+                    LaunchChoices.Add(option.Value);
+        }
     }
 
     public override XElement DefaultConfig()
