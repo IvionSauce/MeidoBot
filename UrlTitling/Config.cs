@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Xml.Linq;
@@ -7,6 +8,8 @@ using WebIrc;
 // Container for storing the various settings.
 class WebToIrcConfig
 {
+    public int? Threshold { get; set; }
+
     public int? MaxTags { get; set; }
     public string DanboContSym { get; set; }
     public bool? Colourize { get; set; }
@@ -21,7 +24,6 @@ class WebToIrcConfig
 class Config : XmlConfig
 {
     // Global and/or static settings.
-    public double Threshold { get; set; }
     public string BlacklistLocation { get; set; }
     public string WhitelistLocation { get; set; }
     public CookieCollection CookieColl { get; set; }
@@ -37,10 +39,15 @@ class Config : XmlConfig
     public WebToIrc ConstructWebToIrc(string channel)
     {
         var webIrc = new WebToIrc();
-        var global = GetOrAddConfig("_all");
+
+        var global = WebIrcSettings.GetOrAdd("_all");
         WebToIrcConfig specific;
         if ( !WebIrcSettings.TryGetValue(channel, out specific) )
             specific = new WebToIrcConfig();
+
+        // Threshold
+        webIrc.Threshold =
+            specific.Threshold ?? global.Threshold ?? 1.0d;
 
         // --- Danbooru ---
         // ----------------
@@ -58,10 +65,11 @@ class Config : XmlConfig
             specific.Colourize ?? global.Colourize ?? false;
 
         // Warning Tags (Print a warning if the General Tags contains 1 or more of these).
+        // It being null is okay.
         webIrc.Danbo.WarningTags = 
             specific.WarningTags ?? global.WarningTags;
 
-        // Gelbooru Warning Tabs (just point to Danbo's ones).
+        // Gelbooru Warning Tags (just point to Danbo's ones).
         webIrc.Gelbo.WarningTags = webIrc.Danbo.WarningTags;
         
         // --- 4chan & Foolz ---
@@ -85,7 +93,6 @@ class Config : XmlConfig
 
     public override void LoadConfig()
     {
-        Threshold = (double)Config.Element("threshold");
         BlacklistLocation = (string)Config.Element("blacklist-location");
         WhitelistLocation = (string)Config.Element("whitelist-location");
         
@@ -119,40 +126,52 @@ class Config : XmlConfig
     
     void LoadIntoWebIrcSettings()
     {
-        WebIrcSettings = new Dictionary<string, WebToIrcConfig>();
-        
-        foreach (XElement danbo in Config.Elements("danbooru"))
-        {
-            if (!danbo.HasElements)
-                continue;
-            
-            var settings = GetOrAddConfig( GetChannelAttr(danbo) );
-            
-            settings.MaxTags = (int?)danbo.Element("max-tags-displayed");
-            settings.DanboContSym = (string)danbo.Element("continuation-symbol");
-            settings.Colourize = (bool?)danbo.Element("colourize");
+        WebIrcSettings = new Dictionary<string, WebToIrcConfig>(StringComparer.OrdinalIgnoreCase);
 
-            XElement warningTags = danbo.Element("warning-tags");
-            if (warningTags != null)
-            {
-                settings.WarningTags = new HashSet<string>();
-                foreach (XElement tag in warningTags.Elements())
-                    if (!string.IsNullOrEmpty(tag.Value))
-                        settings.WarningTags.Add(tag.Value);
-            }
+        foreach(XElement thresh in Config.Elements("threshold"))
+        {
+            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(thresh) );
+            settings.Threshold = (int?)thresh;
         }
+
+        foreach (XElement danbo in Config.Elements("danbooru"))
+            LoadDanbo(danbo);
         
         foreach (XElement chan in Config.Elements("chan-foolz"))
+            LoadChan(chan);
+    }
+
+    void LoadDanbo(XElement danbo)
+    {
+        if (!danbo.HasElements)
+            return;
+        
+        var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(danbo) );
+        
+        settings.MaxTags = (int?)danbo.Element("max-tags-displayed");
+        settings.DanboContSym = (string)danbo.Element("continuation-symbol");
+        settings.Colourize = (bool?)danbo.Element("colourize");
+        
+        XElement warningTags = danbo.Element("warning-tags");
+        if (warningTags != null)
         {
-            if (!chan.HasElements)
-                continue;
-            
-            var settings = GetOrAddConfig( GetChannelAttr(chan) );
-            
-            settings.MaxLines = (int?)chan.Element("max-lines");
-            settings.MaxCharacters = (int?)chan.Element("max-characters");
-            settings.ChanContSym = (string)chan.Element("continuation-symbol");
+            settings.WarningTags = new HashSet<string>();
+            foreach (XElement tag in warningTags.Elements())
+                if (!string.IsNullOrEmpty(tag.Value))
+                    settings.WarningTags.Add(tag.Value);
         }
+    }
+
+    void LoadChan(XElement chan)
+    {
+        if (!chan.HasElements)
+            return;
+        
+        var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(chan) );
+        
+        settings.MaxLines = (int?)chan.Element("max-lines");
+        settings.MaxCharacters = (int?)chan.Element("max-characters");
+        settings.ChanContSym = (string)chan.Element("continuation-symbol");
     }
 
 
@@ -165,27 +184,12 @@ class Config : XmlConfig
             return channel;
     }
 
-
-    WebToIrcConfig GetOrAddConfig(string channel)
-    {
-        string chanLow = channel.ToLower();
-        
-        WebToIrcConfig config;
-        if (WebIrcSettings.TryGetValue(chanLow, out config))
-            return config;
-        else
-        {
-            WebIrcSettings.Add(chanLow, new WebToIrcConfig());
-            return WebIrcSettings[chanLow];
-        }
-    }
-
     
     public override XElement DefaultConfig ()
     {
         var config = 
             new XElement("config",
-                         new XElement("threshold", 1.0d, new XComment("Number between 0 and 1")),
+                         new XElement("threshold", 1.0d, new XAttribute("channel", "_all")),
                          new XElement("blacklist-location", "conf/blacklist"),
                          new XElement("whitelist-location", "conf/whitelist"),
                          

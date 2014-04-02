@@ -47,12 +47,10 @@ public class UrlTitler : IMeidoHook
     {
         var conf = new Config(meidoComm.ConfDir + "/UrlTitling.xml");
 
-        WebToIrc.Threshold = conf.Threshold;
         WebToIrc.Cookies.Add(conf.CookieColl);
 
         // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(ircComm, conf);
-
         // Setup black- and whitelist.
         SetupBWLists(conf);
 

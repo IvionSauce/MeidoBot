@@ -12,15 +12,16 @@ namespace WebIrc
 {
     public class WebToIrc
     {
-        readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
-        static readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
-
-        public static double Threshold { get; set; }
-        public static CookieContainer Cookies { get; private set; }
+        public double Threshold { get; set; }
 
         public ChanHandler Chan { get; private set; }
         public DanboHandler Danbo { get; private set; }
         public GelboHandler Gelbo { get; private set; }
+
+        public static CookieContainer Cookies { get; private set; }
+
+        readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
+        static readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
 
 
         static WebToIrc()
