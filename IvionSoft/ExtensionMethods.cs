@@ -76,13 +76,12 @@ namespace IvionSoft
         public static V GetOrAdd<K,V>(this Dictionary<K,V> source, K key) where V: class, new()
         {
             V item;
-            if (source.TryGetValue(key, out item))
-                return item;
-            else
+            if (!source.TryGetValue(key, out item))
             {
-                source.Add(key, new V());
-                return source[key];
+                item = new V();
+                source.Add(key, item);
             }
+            return item;
         }
     }
 }

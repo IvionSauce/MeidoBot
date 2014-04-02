@@ -38,13 +38,13 @@ namespace IvionSoft
                         domains = line.Substring(1).Split(',');
                     // The rest will be treated as relevant and added to the list.
                     else if (domains.Contains("_all"))
-                        tmpGlobal.Add(line);
+                        tmpGlobal.Add( line.Trim() );
                     else
                     {
                         foreach(string dom in domains)
                         {
                             domList = tmpDomains.GetOrAdd(dom);
-                            domList.Add(line);
+                            domList.Add( line.Trim() );
                         }
                     }
                 }
