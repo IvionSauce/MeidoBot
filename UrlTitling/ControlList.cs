@@ -63,8 +63,6 @@ public class ControlList
 
     public void LoadFromFile(string path)
     {
-        path.ThrowIfNullOrWhiteSpace("path");
-
         var tmpDomLists = new DomainLists(path);
         domLists = tmpDomLists;
         this.path = path;
@@ -73,7 +71,7 @@ public class ControlList
     public void ReloadFile()
     {
         // While `path` /could/ change after this check, it will never become null again.
-        /// And because `path` is only changed after a successful load, it will be a proper path.
+        // And because `path` is only changed after a successful load, it will be a proper path.
         if (path != null)
         {
             var tmpDomLists = new DomainLists(path);

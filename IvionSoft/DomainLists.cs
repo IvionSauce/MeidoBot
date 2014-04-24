@@ -59,8 +59,10 @@ namespace IvionSoft
 
         public bool? IsInDomainList(string domain, string line)
         {
-            domain.ThrowIfNullOrEmpty("domain");
-            line.ThrowIfNullOrEmpty("line");
+            if (domain == null)
+                throw new ArgumentNullException("domain");
+            else if (line == null)
+                throw new ArgumentNullException("line");
 
             string[] domArr;
             if (domainSpecific.TryGetValue(domain, out domArr))
@@ -79,7 +81,8 @@ namespace IvionSoft
         
         public bool IsInGlobalList(string line)
         {
-            line.ThrowIfNullOrEmpty("line");
+            if (line == null)
+                throw new ArgumentNullException("line");
 
             foreach (string s in global)
                 if (line.Contains(s, StringComparison.OrdinalIgnoreCase))

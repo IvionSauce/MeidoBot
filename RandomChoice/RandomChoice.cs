@@ -207,6 +207,7 @@ static class RandomChoice
             {
                 begin = int.Parse(numberSeq.Groups[1].Value);
                 end = int.Parse(numberSeq.Groups[2].Value);
+                end++;
             }
             catch (OverflowException)
             {
@@ -219,7 +220,7 @@ static class RandomChoice
             {
                 lock (rnd)
                 {
-                    int rndInt = rnd.Next( begin, (end + 1) );
+                    int rndInt = rnd.Next(begin, end);
                     return rndInt.ToString();
                 }
             }
