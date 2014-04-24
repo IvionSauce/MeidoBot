@@ -108,6 +108,9 @@ namespace WebHelp
             {"soc", "Cams & Meetups"},
             {"s4s", "Shit 4chan Says"}
         };
+
+        static FormatException formatEx =
+            new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
         
         
         /// <summary>
@@ -117,7 +120,6 @@ namespace WebHelp
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
-        /// <exception cref="NotSupportedException">Thrown if url does not point to 4chan or foolz.us.</exception>
         /// 
         /// <param name="url">URL pointing to thread.</param>
         public static ChanPost GetThreadOP(string url)
@@ -126,19 +128,15 @@ namespace WebHelp
             
             Source? src = GetSource(url);
             if (src == null)
-                throw new NotSupportedException("Address is not supported.");
+                return new ChanPost(formatEx);
             
             var boardAndThread = ExtractBoardAndThreadNo(url, src.Value);
             
             if (boardAndThread.Item2 > 0)
                 return GetThreadOP(src.Value, boardAndThread.Item1, boardAndThread.Item2);
             else
-            {
-                var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
-                return new ChanPost(ex);
-            }
+                return new ChanPost(formatEx);
         }
-        
         
         static Source? GetSource(string url)
         {
@@ -285,46 +283,7 @@ namespace WebHelp
             else
                 return string.Empty;
         }
-        
-        /// <summary>
-        /// Shortens the post and replaces newlines with spaces. Multiple newlines are squashed.
-        /// </summary>
-        /// <returns>The shortened post.</returns>
-        /// 
-        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
-        /// 
-        /// <param name="post">String content of a post.</param>
-        /// <param name="maxLines">If more lines than maxLines, shorten to maxLines.
-        /// Disable by passing &lt= 0.</param>
-        /// <param name="maxChar">If more characters than maxChar, shorten to maxChar.
-        /// Disable by passing &lt= 0.</param>
-        /// <param name="contSymbol">String to append to the returned string if it was shortened.</param>
-        public static string ShortenPost(string post, int maxLines, int maxChar, string contSymbol)
-        {
-            if (post == null)
-                throw new ArgumentNullException("post");
-            
-            bool shortenLines = maxLines > 0;
-            bool shortenChars = maxChar > 0;
-            
-            string[] postLines = post.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
-            
-            string shortPost;
-            if (shortenLines && postLines.Length > maxLines)
-                shortPost = string.Join(" ", postLines, 0, maxLines);
-            else
-                shortPost = string.Join(" ", postLines);
-            
-            if (shortenChars && shortPost.Length > maxChar)
-            {
-                shortPost = shortPost.Substring(0, maxChar);
-                return string.Concat(shortPost, contSymbol);
-            }
-            else if (shortenLines && postLines.Length > maxLines)
-                return string.Concat(shortPost, " ", contSymbol);
-            else
-                return shortPost;
-        }
+
         
         /// <summary>
         /// Removes spoiler tags.

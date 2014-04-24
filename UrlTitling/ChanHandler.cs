@@ -1,3 +1,4 @@
+using System;
 using WebHelp;
 
 
@@ -23,7 +24,7 @@ namespace WebIrc
                 else if (!string.IsNullOrEmpty(opPost.Comment))
                 {
                     topic = ChanTools.RemoveSpoilerTags(opPost.Comment);
-                    topic = ChanTools.ShortenPost(topic, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
+                    topic = ShortenPost(topic);
                 }
                 
                 if (string.IsNullOrWhiteSpace(topic))
@@ -36,6 +37,31 @@ namespace WebIrc
                 opPost.ReportError(url);
                 return null;
             }
+        }
+
+
+        string ShortenPost(string post)
+        {            
+            bool shortenLines = TopicMaxLines > 0;
+            bool shortenChars = TopicMaxChars > 0;
+            
+            string[] postLines = post.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
+            
+            string shortPost;
+            if (shortenLines && postLines.Length > TopicMaxLines)
+                shortPost = string.Join(" ", postLines, 0, TopicMaxLines);
+            else
+                shortPost = string.Join(" ", postLines);
+            
+            if (shortenChars && shortPost.Length > TopicMaxChars)
+            {
+                shortPost = shortPost.Substring(0, TopicMaxChars);
+                return string.Concat(shortPost, ContinuationSymbol);
+            }
+            else if (shortenLines && postLines.Length > TopicMaxLines)
+                return string.Concat(shortPost, " ", ContinuationSymbol);
+            else
+                return shortPost;
         }
     }
 }
