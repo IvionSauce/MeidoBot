@@ -57,31 +57,6 @@ namespace WebHelp
             else
                 return -1;
         }
-
-
-        /// <summary>
-        /// Shortens an array of tags.
-        /// </summary>
-        /// <returns>An array of strings equal or shorter than amount. Returns as-is if amount &lt= 0.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if tags is null.</exception>
-        /// <param name="tags">An array of tags.</param>
-        /// <param name="amount">Maximum amount of items the array should have. Disable by passing &lt= 0.</param>
-        public static string[] ShortenTagArray(string[] tags, int amount)
-        {
-            if (tags == null)
-                throw new ArgumentNullException("tags");
-            
-            if ( amount > 0 && tags.Length > amount )
-            {
-                var shortened = new string[amount];
-                for (int i = 0; i < amount; i++)
-                    shortened[i] = tags[i];
-                
-                return shortened;
-            }
-            else
-                return tags;
-        }
     }
 
 
@@ -137,11 +112,11 @@ namespace WebHelp
             string rating = postJson.rating;
             
             var postInfo = new BooruPost(json, postNo,
-                                         copyrights.Split(' '),
-                                         characters.Split(' '),
-                                         artists.Split(' '),
-                                         other.Split(' '),
-                                         all.Split(' '),
+                                         copyrights,
+                                         characters,
+                                         artists,
+                                         other,
+                                         all,
                                          rating);
             
             return postInfo;
@@ -152,36 +127,53 @@ namespace WebHelp
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
         /// Modifies charTags in place.
         /// </summary>
-        /// <exception cref="ArgumentNullException">Thrown if charTags is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if charTags or copyrightTags is null.</exception>
         /// <param name="charTags">A tag array of character tags.</param>
-        /// <param name="sourceTags">A tag array of copyright tags.</param>
-        public static void CleanupCharacterTags(string[] charTags, string[] sourceTags)
+        /// <param name="copyrightTags">A tag array of copyright tags.</param>
+        public static void CleanupCharacterTags(string[] charTags, string[] copyrightTags)
         {
             if (charTags == null)
                 throw new ArgumentNullException("charTags");
+            else if (copyrightTags == null)
+                throw new ArgumentNullException("copyrightTags");
 
             // Return early if there's nothing to be done.
-            if (charTags.Length == 0 || sourceTags.Length == 0)
+            if (charTags.Length == 0 || copyrightTags.Length == 0)
                 return;
 
-            string checkAgainst, charTag;
-            int sourceStart;
-            foreach (string srcTag in sourceTags)
+            string charTag, source;
+            const string sourceStart = "_(";
+            int sourceIndex, start, len;
+            for (int i = 0; i < charTags.Length; i++)
             {
-                checkAgainst = string.Concat("_(", srcTag, ")");
+                charTag = charTags[i];
+                sourceIndex = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
 
-                for (int i = 0; i < charTags.Length; i++)
+                if (sourceIndex > 0)
                 {
-                    charTag = charTags[i];
+                    // Plus 2 to skip past the "_(" part of the source.
+                    start = sourceIndex + 2;
+                    // Plus 3 for the previously skipped "_(" and to slice off the ")" at the end.
+                    len = charTag.Length - (sourceIndex + 3);
+                    source = charTag.Substring(start, len);
 
-                    sourceStart = charTag.IndexOf(checkAgainst);
-                    // Only replace a tag if we removed the source part. Else we could overwrite a previously filtered
-                    // charTag, that was fixed in a previous loop with another srcTag.
-                    if (sourceStart > 0)
-                        charTags[i] = charTag.Substring(0, sourceStart);
-                }
-            }
+                    foreach (string srcTag in copyrightTags)
+                    {
+                        // Slice off the source if a copyright tag contains it. Examples:
+                        // _(kantai_collection) is in kantai_collection
+                        // _(jojo) is in jojo_no_kimyou_na_bouken
+                        // But also check if the source starts with a copyright tag, this is less common. Examples:
+                        // _(gundam_bf) starts with gundam
+                        if (srcTag.Contains(source, StringComparison.Ordinal) ||
+                            source.StartsWith(srcTag, StringComparison.Ordinal))
+                        {
+                            charTags[i] = charTag.Substring(0, sourceIndex);
+                        }
+                    } // foreach
+                } // if
+            } // for
         }
+
     }
 
 
@@ -218,7 +210,7 @@ namespace WebHelp
 
             var postInfo = new BooruPost(xml,
                                          postNo,
-                                         tags.Split(' '),
+                                         tags,
                                          rated);
             return postInfo;
         }
@@ -255,31 +247,34 @@ namespace WebHelp
         // Smaller subset for less feature-rich booru's (Gelbooru).
         public BooruPost(WebResource resource,
                          int postNo,
-                         string[] all,
+                         string all,
                          string rated) : base(resource)
         {
             PostNo = postNo;
-            AllTags = all;
+            AllTags = Split(all);
             Rated = RatingStringToEnum(rated);
         }
 
         // Full set for Danbooru.
         public BooruPost(WebResource resource,
                          int postNo,
-                         string[] copyrights,
-                         string[] characters,
-                         string[] artists,
-                         string[] others,
-                         string[] all,
-                         string rated) : base(resource)
+                         string copyrights,
+                         string characters,
+                         string artists,
+                         string others,
+                         string all,
+                         string rated) : this(resource, postNo, all, rated)
         {
-            PostNo = postNo;
-            CopyrightTags = copyrights;
-            CharacterTags = characters;
-            ArtistTags = artists;
-            GeneralTags = others;
-            AllTags = all;
-            Rated = RatingStringToEnum(rated);
+            CopyrightTags = Split(copyrights);
+            CharacterTags = Split(characters);
+            ArtistTags = Split(artists);
+            GeneralTags = Split(others);
+        }
+
+
+        static string[] Split(string tags)
+        {
+            return tags.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
         }
 
 

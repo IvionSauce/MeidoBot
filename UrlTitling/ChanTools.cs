@@ -90,8 +90,6 @@ namespace WebHelp
             {"d", "Hentai/Alternative"},
             {"y", "Yaoi"},
             {"t", "Torrents"},
-            // Rapidshares doesn't follow the 4chan.org/[board] standard.
-            // rs.4chan.org
             {"hr", "High Resolution"},
             {"gif", "Adult GIF"},
             // Other
@@ -176,7 +174,7 @@ namespace WebHelp
                 return new Tuple<string, int>(groups[1].Value, threadNo);
             }
             else
-                return new Tuple<string, int>("", -1);
+                return new Tuple<string, int>(string.Empty, -1);
         }
         
         

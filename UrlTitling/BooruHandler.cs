@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using WebHelp;
+using System;
 
 
 namespace WebIrc
@@ -8,8 +9,27 @@ namespace WebIrc
     {
         public HashSet<string> WarningTags { get; set; }
 
+        public string NormalCode { get; set; }
 
-        protected static string ResolveRating(BooruPost.Rating rating)
+
+        // NormalCode, Rating, Warning and PostInfo/PostNo.
+        const string msgFormat = "{0}[{1}]{2} [ {3} ]";
+
+
+        protected string FormatMessage(BooruPost.Rating rated, string warning, int postNo)
+        {
+            string postId = string.Concat("#", postNo);
+            return FormatMessage(rated, warning, postId);
+        }
+
+        protected string FormatMessage(BooruPost.Rating rated, string warning, string info)
+        {
+            string rating = ResolveRating(rated);
+            return string.Format(msgFormat, NormalCode, rating, warning, info);
+        }
+
+
+        static string ResolveRating(BooruPost.Rating rating)
         {
             switch(rating)
             {
@@ -35,7 +55,7 @@ namespace WebIrc
                     warnings.Add(tag);
             
             if (warnings.Count > 0)
-                return string.Format( "[Warning: {0}]", string.Join(", ", warnings) );
+                return string.Concat( " [", string.Join(", ", warnings), "]" );
             else
                 return string.Empty;
         }
@@ -65,14 +85,7 @@ namespace WebIrc
             get { return codes[2]; }
             set { codes[2] = value; }
         }
-        
-        string _normalCode = "";
-        public string NormalCode
-        {
-            get { return _normalCode; }
-            set { _normalCode = value; }
-        }
-        
+
         const string resetCode = "\u000F";
         
         
@@ -82,34 +95,27 @@ namespace WebIrc
             
             if (postInfo.Success)
             {
-                string rating = ResolveRating(postInfo.Rated);
                 string warning = ConstructWarning(postInfo.GeneralTags);
                 
-                // If image has no character, copyright or artist tags, return just the post ID and rating.
+                // If image has no character, copyright or artist tags, return just the post ID, rating and
+                // possible warning.
                 if (postInfo.CopyrightTags.Length == 0 &&
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    return string.Format("{0}[{1}] [ #{2} ] {3}", NormalCode, rating, postInfo.PostNo, warning);
+                    return FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
                 }
                 
                 DanboTools.CleanupCharacterTags(postInfo.CharacterTags, postInfo.CopyrightTags);
                 
                 // Convert to string and limit the number of tags as specified in `MaxTagCount`.
-                var characters = TagArrayToString(postInfo.CharacterTags);
-                var copyrights = TagArrayToString(postInfo.CopyrightTags);
-                var artists = TagArrayToString(postInfo.ArtistTags);
-                // Colourize the tags.
-                if (Colourize)
-                {
-                    characters = ColourizeTags(characters, CharacterCode);
-                    copyrights = ColourizeTags(copyrights, CopyrightCode);
-                    artists = ColourizeTags(artists, ArtistCode);
-                }
+                // Also colourize the tags if set to true.
+                var characters = TagArrayToString(postInfo.CharacterTags, CharacterCode);
+                var copyrights = TagArrayToString(postInfo.CopyrightTags, CopyrightCode);
+                var artists = TagArrayToString(postInfo.ArtistTags, ArtistCode);
                 
                 string danbo = FormatDanboInfo(characters, copyrights, artists);
-                
-                return string.Format("{0}[{1}] [ {2} ] {3}", NormalCode, rating, danbo, warning);
+                return FormatMessage(postInfo.Rated, warning, danbo);
             }
             else
             {
@@ -119,21 +125,27 @@ namespace WebIrc
         }
 
 
-        string TagArrayToString(string[] tags)
+        string TagArrayToString(string[] tags, string colour)
         {
+            if (tags.Length == 0)
+                return string.Empty;
+
+            string joiner;
+            if (Colourize)
+                joiner = string.Concat(resetCode, NormalCode, ", ", colour);
+            else
+                joiner = ", ";
+
+            string tagStr;
             if (MaxTagCount > 0 && tags.Length > MaxTagCount)
-                return string.Concat( string.Join(" ", tags, 0, MaxTagCount), ContinuationSymbol );
+                tagStr = string.Join(joiner, tags, 0, MaxTagCount);
             else
-                return string.Join(" ", tags);
-        }
-        
-        
-        string ColourizeTags(string tags, string colour)
-        {
-            if (string.IsNullOrEmpty(tags))
-                return tags;
+                tagStr = string.Join(joiner, tags);
+
+            if (Colourize)
+                return string.Concat(colour, tagStr, resetCode, NormalCode);
             else
-                return string.Concat(colour, tags, resetCode, NormalCode);
+                return tagStr;
         }
         
         
@@ -179,10 +191,7 @@ namespace WebIrc
             {
                 string warning = ConstructWarning(postInfo.AllTags);
                 if (!string.IsNullOrEmpty(warning))
-                {
-                    string rating = ResolveRating(postInfo.Rated);
-                    return string.Format("[{0}] [ #{1} ] {2}", rating, postInfo.PostNo, warning);
-                }
+                    return FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
                 else
                     return null;
             }

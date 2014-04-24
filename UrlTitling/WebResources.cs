@@ -21,17 +21,12 @@ namespace WebHelp
     }
 
 
-    public class WebResource
+    public abstract class WebResource
     {
         public Uri Location { get; private set; }
         public bool Success { get; private set; }
         public Exception Exception { get; private set; }
-        
 
-        public WebResource()
-        {
-            Success = false;
-        }
 
         public WebResource(Uri uri, bool success, Exception ex)
         {
