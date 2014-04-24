@@ -40,6 +40,10 @@ namespace WebIrc
         }
 
 
+        // Shorten post by limiting the amount of lines/sentences. Also check if post is below max amount of characters,
+        // even when it has had its lines reduced. The continuation symbol is appended if the post was shortened. Either
+        // of the limits (lines and chars) can be disabled by having them be <= 0.
+        // Newlines are replaced with spaces and multiple, consecutive newlines are squashed.
         string ShortenPost(string post)
         {            
             bool shortenLines = TopicMaxLines > 0;
