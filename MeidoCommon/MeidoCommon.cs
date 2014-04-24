@@ -26,6 +26,9 @@ namespace MeidoCommon
         string Nick { get; }
         string Ident { get; }
         string Host { get; }
+
+        void Reply(string message);
+        void Reply(string message, params object[] args);
     }
 
     public interface IMeidoComm

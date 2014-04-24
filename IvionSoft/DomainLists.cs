@@ -13,12 +13,14 @@ namespace IvionSoft
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
 
-        public DomainLists(string file)
+        public DomainLists(string path)
         {
+            path.ThrowIfNullOrWhiteSpace("path");
+
             var tmpGlobal = new List<string>();
             var tmpDomains = new Dictionary< string, List<string> >(StringComparer.OrdinalIgnoreCase);
 
-            using (var fileStream = new StreamReader(file))
+            using (var fileStream = new StreamReader(path))
             {
                 // Applicable domain of the lines yet to read, start of in 'global' mode - meaning that read
                 // lines are applicable to all domains. Gets changed whenever instructed to by ":".
@@ -57,6 +59,9 @@ namespace IvionSoft
 
         public bool? IsInDomainList(string domain, string line)
         {
+            domain.ThrowIfNullOrEmpty("domain");
+            line.ThrowIfNullOrEmpty("line");
+
             string[] domArr;
             if (domainSpecific.TryGetValue(domain, out domArr))
             {
@@ -74,6 +79,8 @@ namespace IvionSoft
         
         public bool IsInGlobalList(string line)
         {
+            line.ThrowIfNullOrEmpty("line");
+
             foreach (string s in global)
                 if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
                     return true;

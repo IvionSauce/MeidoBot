@@ -100,9 +100,15 @@ namespace MeidoBot
         public string Ident { get; private set; }
         public string Host { get; private set; }
 
+        readonly IrcClient irc;
+        readonly ReceiveType type;
+
 
         public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData)
         {
+            irc = messageData.Irc;
+            type = messageData.Type;
+
             Message = messageData.Message;
             MessageArray = messageData.MessageArray;
             Channel = messageData.Channel;
@@ -110,10 +116,33 @@ namespace MeidoBot
             Ident = messageData.Ident;
             Host = messageData.Host;
         }
+
+
+        public void Reply(string message, params object[] args)
+        {
+            Reply( string.Format(message, args) );
+        }
+
+        public void Reply(string message)
+        {
+            switch(type)
+            {
+            case ReceiveType.ChannelMessage:
+            case ReceiveType.ChannelAction:
+                irc.SendMessage(SendType.Message, Channel, string.Concat(Nick, ": ", message));
+                return;
+            case ReceiveType.QueryMessage:
+            case ReceiveType.QueryAction:
+                irc.SendMessage(SendType.Message, Nick, message);
+                return;
+            default:
+                throw new InvalidOperationException("Unexpected ReceiveType.");
+            }
+        }
     }
 
 
-    class Meido
+    class Meido : IDisposable
     {
         IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
         PluginManager plugins = new PluginManager();
@@ -153,7 +182,7 @@ namespace MeidoBot
         }
 
         // Pass on the message and associated info to the plugins.
-        void OnChannelMessage(object sender, Meebey.SmartIrc4net.IrcEventArgs e)
+        void OnChannelMessage(object sender, IrcEventArgs e)
         {
             if (e.Data.MessageArray[0] == plugins.Prefix + "h" ||
                 e.Data.MessageArray[0] == plugins.Prefix + "help")
@@ -166,7 +195,7 @@ namespace MeidoBot
 
         }
 
-        void OnQueryMessage(object sender, Meebey.SmartIrc4net.IrcEventArgs e)
+        void OnQueryMessage(object sender, IrcEventArgs e)
         {
             // Some makeshift stuff, will need to code an authentication system.
             if (e.Data.MessageArray[0] == "disconnect" &&
@@ -245,6 +274,13 @@ namespace MeidoBot
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);
+        }
+
+
+        public void Dispose()
+        {
+            irc.Disconnect();
+            plugins.StopPlugins();
         }
     }
 
