@@ -80,7 +80,7 @@ namespace MeidoBot
         {
             string helpSubject;
             if (subject.StartsWith(Prefix))
-                helpSubject = subject.Substring(1);
+                helpSubject = subject.Substring(Prefix.Length);
             else
                 helpSubject = subject;
 

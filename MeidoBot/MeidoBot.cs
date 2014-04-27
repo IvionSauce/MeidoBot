@@ -21,155 +21,6 @@ namespace MeidoBot
     }
 
 
-    // Implement IIrcComm by using a IrcClient as backend, allowing a limited subset of its methods to be used by
-    // the plugins.
-    class IrcComm : IIrcComm
-    {
-        IrcClient irc;
-        public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
-        public Action<IIrcMessage> QueryMessageHandlers { get; private set; }
-        public Action<IIrcMessage> TriggerHandlers { get; private set; }
-
-
-        public IrcComm(IrcClient ircClient)
-        {
-            irc = ircClient;
-        }
-
-        public void AddChannelMessageHandler(Action<IIrcMessage> handler)
-        {
-            ChannelMessageHandlers += handler;
-        }
-        public void AddQueryMessageHandler(Action<IIrcMessage> handler)
-        {
-            QueryMessageHandlers += handler;
-        }
-        public void AddTriggerHandler(Action<IIrcMessage> handler)
-        {
-            TriggerHandlers += handler;
-        }
-
-
-        public void SendMessage(string target, string message, params object[] args)
-        {
-            SendMessage( target, string.Format(message, args) );
-        }
-
-        public void SendMessage(string target, string message)
-        {
-            irc.SendMessage(SendType.Message, target, message);
-        }
-
-
-        public void DoAction(string target, string action, params object[] args)
-        {
-            DoAction( target, string.Format(action, args) );
-        }
-
-        public void DoAction(string target, string action)
-        {
-            irc.SendMessage(SendType.Action, target, action);
-        }
-
-
-        public void SendNotice(string target, string message, params object[] args)
-        {
-            SendNotice( target, string.Format(message, args) );
-        }
-
-        public void SendNotice(string target, string message)
-        {
-            irc.SendMessage(SendType.Notice, target, message);
-        }
-
-
-        public string[] GetChannels()
-        {
-            return irc.GetChannels();
-        }
-        public bool IsMe(string nick)
-        {
-            return irc.IsMe(nick);
-        }
-    }
-
-
-    // Implement IIrcMessage and supply a constructor that fills in the fields, once again allowing the subset of
-    // a SmartIrc4Net class to trickle down to the plugins.
-    class IrcMessage : IIrcMessage
-    {
-        public string Message { get; private set; }
-        public string[] MessageArray { get; private set; }
-        public string Channel { get; private set; }
-        public string Nick { get; private set; }
-        public string Ident { get; private set; }
-        public string Host { get; private set; }
-
-        public string Trigger { get; private set; }
-
-        readonly IrcClient irc;
-        readonly ReceiveType type;
-
-
-        public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData, string prefix)
-        {
-            irc = messageData.Irc;
-            type = messageData.Type;
-
-            Message = messageData.Message;
-            MessageArray = messageData.MessageArray;
-            Channel = messageData.Channel;
-            Nick = messageData.Nick;
-            Ident = messageData.Ident;
-            Host = messageData.Host;
-
-            Trigger = ParseTrigger(prefix);
-        }
-
-
-        // Returns trigger without the prefix. Will be null if message didn't start with a prefix.
-        // Will be empty if the prefix was called without a subsequent trigger.
-        // In case of a query message it will contain the first word, even if it didn't start with the prefix.
-        string ParseTrigger(string prefix)
-        {
-            if (Message.StartsWith(prefix, StringComparison.Ordinal))
-            {
-                if (MessageArray[0].Length == prefix.Length)
-                    return string.Empty;
-                else
-                    return MessageArray[0].Substring(prefix.Length);
-            }
-            else if (type == ReceiveType.QueryMessage)
-                return MessageArray[0];
-            else
-                return null;
-        }
-
-
-        public void Reply(string message, params object[] args)
-        {
-            Reply( string.Format(message, args) );
-        }
-
-        public void Reply(string message)
-        {
-            switch(type)
-            {
-            case ReceiveType.ChannelMessage:
-            case ReceiveType.ChannelAction:
-                irc.SendMessage(SendType.Message, Channel, string.Concat(Nick, ": ", message));
-                return;
-            case ReceiveType.QueryMessage:
-            case ReceiveType.QueryAction:
-                irc.SendMessage(SendType.Message, Nick, message);
-                return;
-            default:
-                throw new InvalidOperationException("Unexpected ReceiveType.");
-            }
-        }
-    }
-
-
     class Meido : IDisposable
     {
         IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
@@ -184,6 +35,46 @@ namespace MeidoBot
 
         // public MeidoComm MeidoComm { get; private set; }
 
+
+        public Meido(string nick, string prefix)
+        {
+            this.nick = nick;
+            
+            // Setting some SmartIrc4Net options.
+            irc.CtcpVersion = "MeidoBot v0.88.0";
+            irc.AutoJoinOnInvite = true;
+            irc.Encoding = Encoding.UTF8;
+            irc.ActiveChannelSyncing = true;
+            irc.AutoReconnect = true;
+            irc.AutoRejoin = true;
+            
+            // Make sure they know my greatness.
+            Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
+            
+            plugins.Prefix = prefix;
+            LoadPlugins();
+            
+            // Add our methods (defined above) to handle IRC events.
+            irc.OnConnected += new EventHandler(OnConnected);
+            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
+            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
+        }
+
+
+        void LoadPlugins()
+        {
+            // Initialize the IrcComm with our IrcClient instance.
+            ircComm = new IrcComm(irc);
+
+            // Load plugins and announce we're doing so.
+            Console.WriteLine("Loading plugins...");
+            plugins.LoadPlugins( ircComm, new MeidoComm() );
+            // Print number and descriptions of loaded plugins.
+            Console.WriteLine("Done! Loaded {0} plugin(s):", plugins.Count);
+            foreach (string s in plugins.GetDescriptions())
+                Console.WriteLine("- " + s);
+        }
+        
 
         public void Connect(string server, int port, string[] channels)
         {
@@ -210,6 +101,19 @@ namespace MeidoBot
         }
 
 
+        void OnMessage(object sender, IrcEventArgs e)
+        {
+            var msg = new IrcMessage(e.Data, plugins.Prefix);
+            
+            if (msg.Trigger != null && ircComm.TriggerHandlers != null)
+                ircComm.TriggerHandlers(msg);
+            else if (string.IsNullOrEmpty(msg.Channel))
+                QueryMessage(msg);
+            else
+                ChannelMessage(msg);
+        }
+
+
         // Pass on the message and associated info to the plugins.
         void ChannelMessage(IrcMessage msg)
         {
@@ -228,9 +132,9 @@ namespace MeidoBot
             // Some makeshift stuff, will need to code an authentication system.
             if (msg.Trigger == "disconnect" && msg.Nick == "Ivion")
             {
-                // This somehow doesn't end the main thread. Just another episode in "shit I don't get".
+                // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
+                // been given no new messages will arrive.
                 irc.Disconnect();
-                // Maybe this will make the main thread exit...
                 plugins.StopPlugins();
             }
 
@@ -243,19 +147,6 @@ namespace MeidoBot
 
             else if (ircComm.QueryMessageHandlers != null)
                 ircComm.QueryMessageHandlers(msg);
-        }
-
-
-        void OnMessage(object sender, IrcEventArgs e)
-        {
-            var msg = new IrcMessage(e.Data, plugins.Prefix);
-
-            if (msg.Trigger != null && ircComm.TriggerHandlers != null)
-                ircComm.TriggerHandlers(msg);
-            else if (string.IsNullOrEmpty(msg.Channel))
-                QueryMessage(msg);
-            else
-                ChannelMessage(msg);
         }
 
 
@@ -280,43 +171,6 @@ namespace MeidoBot
             }
         }
 
-        void LoadPlugins()
-        {
-            // Load plugins and announce we're doing so.
-            Console.WriteLine("Loading plugins...");
-            plugins.LoadPlugins( ircComm, new MeidoComm() );
-            // Print number and descriptions of loaded plugins.
-            Console.WriteLine("Done! Loaded {0} plugin(s):", plugins.Count);
-            foreach (string s in plugins.GetDescriptions())
-                Console.WriteLine("- " + s);
-        }
-
-        public Meido(string nick, string prefix)
-        {
-            this.nick = nick;
-
-            // Setting some SmartIrc4Net options.
-            irc.CtcpVersion = "MeidoBot v0.88.0";
-            irc.AutoJoinOnInvite = true;
-            irc.Encoding = Encoding.UTF8;
-            irc.ActiveChannelSyncing = true;
-            irc.AutoReconnect = true;
-            irc.AutoRejoin = true;
-
-            // Make sure they know my greatness.
-            Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
-
-            plugins.Prefix = prefix;
-            // Initialize the IrcComm with our IrcClient instance.
-            ircComm = new IrcComm(irc);
-            LoadPlugins();
-
-            // Add our methods (defined above) to handle IRC events.
-            irc.OnConnected += new EventHandler(OnConnected);
-            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
-            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
-        }
-
 
         public void Dispose()
         {
@@ -326,6 +180,8 @@ namespace MeidoBot
     }
 
 
+    // Entry point, also parses the XML config.
+    // Ugly shit, will need to be refactored... someday.
     static class Program
     {
         static void Main(string[] args)
