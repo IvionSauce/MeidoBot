@@ -18,7 +18,7 @@ namespace WebIrc
 
         protected string FormatMessage(BooruPost.Rating rated, string warning, int postNo)
         {
-            string postId = string.Concat("#", postNo);
+            var postId = string.Concat( "#", postNo.ToString() );
             return FormatMessage(rated, warning, postId);
         }
 
@@ -138,7 +138,7 @@ namespace WebIrc
 
             string tagStr;
             if (MaxTagCount > 0 && tags.Length > MaxTagCount)
-                tagStr = string.Join(joiner, tags, 0, MaxTagCount);
+                tagStr = string.Concat( string.Join(joiner, tags, 0, MaxTagCount), ContinuationSymbol );
             else
                 tagStr = string.Join(joiner, tags);
 
