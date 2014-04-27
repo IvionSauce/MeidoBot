@@ -18,6 +18,7 @@ namespace MeidoCommon
         void Stop();
     }
 
+
     public interface IIrcMessage
     {
         string Message { get; }
@@ -27,19 +28,24 @@ namespace MeidoCommon
         string Ident { get; }
         string Host { get; }
 
+        string Trigger { get; }
+
         void Reply(string message);
         void Reply(string message, params object[] args);
     }
+
 
     public interface IMeidoComm
     {
         string ConfDir { get; }
     }
 
+
     public interface IIrcComm
     {
         void AddChannelMessageHandler(Action<IIrcMessage> handler);
         void AddQueryMessageHandler(Action<IIrcMessage> handler);
+        void AddTriggerHandler(Action<IIrcMessage> handler);
 
         void SendMessage(string target, string message);
         void SendMessage(string target, string message, params object[] args);
