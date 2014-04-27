@@ -67,21 +67,21 @@ public class NyaaSpam : IMeidoHook
         feedReader.Start();
 
         irc = ircComm;
-        irc.AddChannelMessageHandler(HandleMessage);
+        irc.AddTriggerHandler(HandleTrigger);
     }
 
-    public void HandleMessage(IIrcMessage e)
+    public void HandleTrigger(IIrcMessage e)
     {
-        if (e.MessageArray[0] == Prefix + "nyaa")
+        if (e.Trigger == "nyaa")
         {
             if (e.MessageArray.Length == 1)
             {
-                irc.SendMessage( e.Channel, string.Format("See \"{0}h nyaa <add|del|show>\" for help.", Prefix) );
+                e.Reply("See \"{0}h nyaa <add|del|show>\" for help.", Prefix);
                 return;
             }
 
             string command = e.MessageArray[1];
-            string input = "";
+            string input = string.Empty;
             int? assocPat = null;
 
             // nyaa ex <add|del|show>
@@ -115,26 +115,28 @@ public class NyaaSpam : IMeidoHook
                 input = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
 
 
-            if (command == "add")
+            switch (command)
             {
+            case "add":
                 Add(e.Channel, e.Nick, input, assocPat);
-            }
-            else if (command == "del")
-            {
+                return;
+            case "del":
                 Del(e.Channel, e.Nick, input, assocPat);
-            }
-            else if (command == "show")
-            {
+                return;
+            case "show":
                 ShowAll(e.Channel, e.Nick, assocPat);
+                return;
             }
         }
     }
 
     void Add(string channel, string nick, string patternsStr, int? assocPat)
     {
+        const string quot = "\"";
+
         var patterns = new List<string>();
         // If enclosed in quotation marks, add string within the marks verbatim.
-        if ( patternsStr.StartsWith("\"") && patternsStr.EndsWith("\"") )
+        if ( patternsStr.StartsWith(quot) && patternsStr.EndsWith(quot) )
         {
             // Slice off the quotation marks.
             string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
@@ -269,9 +271,9 @@ public class NyaaSpam : IMeidoHook
             {
                 j = i + half;
                 if (j < patterns.Length)
-                    irc.SendNotice( nick, string.Format("[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j]) );
+                    irc.SendNotice( nick, "[{0}] {1,-30} [{2}] {3}", i, patterns[i], j, patterns[j] );
                 else
-                    irc.SendNotice( nick, string.Format("[{0}] {1}", i, patterns[i]) );
+                    irc.SendNotice( nick, "[{0}] {1}", i, patterns[i] );
             }
         }
         
