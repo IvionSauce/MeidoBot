@@ -19,7 +19,7 @@ public class MiscUtils : IMeidoHook
     }
     public string Version
     {
-        get { return "0.38"; }
+        get { return "0.40"; }
     }
 
     public Dictionary<string,string> Help
@@ -43,65 +43,67 @@ public class MiscUtils : IMeidoHook
     public MiscUtils(IIrcComm ircComm)
     {
         irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
-        irc.AddQueryMessageHandler(HandlePM);
+        irc.AddTriggerHandler(HandleTrigger);
     }
 
-    public void HandleChannelMessage(IIrcMessage e)
+    public void HandleTrigger(IIrcMessage e)
     {
-        // Say trigger.
-        if (e.MessageArray[0] == Prefix + "say" &&
-            e.MessageArray.Length > 1)
+        switch(e.Trigger)
         {
+        case "say":
+            string fromChannel = e.Channel ?? "PM";
             string toChannel = Say(e.MessageArray, e.Channel);
-            Console.WriteLine("\n--- Say: {0}/{1} -> {2}", e.Channel, e.Nick, toChannel);
-        }
+            if (toChannel != null)
+                Console.WriteLine("\n--- Say: {0}/{1} -> {2}", fromChannel, e.Nick, toChannel);
 
-        // Timer trigger.
-        else if (e.MessageArray[0] == Prefix + "timer" &&
-                 e.MessageArray.Length > 1)
-        {
-            double minutes;
-            if (double.TryParse(e.MessageArray[1], out minutes))
-            {
-                if (minutes <= 0)
-                    return;
-                var time = TimeSpan.FromMinutes(minutes);
-
-                ThreadPool.QueueUserWorkItem( (state) => IrcTimer(e.Channel, e.Nick, time) );
-                irc.SendMessage( e.Channel, string.Format("{0}: Your timer has started.", e.Nick) );
-            }
+            return;
+        case "timer":
+            Timer(e);
+            return;
         }
     }
 
-    public void HandlePM(IIrcMessage e)
+
+    void Timer(IIrcMessage e)
     {
-        if (e.MessageArray[0] == "say" && e.MessageArray.Length > 2)
+        double minutes;
+        if ( e.MessageArray.Length == 2 && double.TryParse(e.MessageArray[1], out minutes) )
         {
-            string toChannel = Say(e.MessageArray, "");
-            Console.WriteLine("\n--- Say: PM/{0} -> {1}", e.Nick, toChannel);
+            if (minutes <= 0)
+                return;
+            var time = TimeSpan.FromMinutes(minutes);
+            
+            ThreadPool.QueueUserWorkItem( (state) => IrcTimer(e, time) );
+            e.Reply("Your timer has started.");
         }
     }
 
-    void IrcTimer(string channel, string nick, TimeSpan duration)
+    void IrcTimer(IIrcMessage e, TimeSpan duration)
     {
         Thread.Sleep(duration);
-        irc.SendMessage( channel, string.Format("{0}: !RINGRING! Your timer has finished.", nick) );
+        e.Reply("!RINGRING! Your timer has finished.");
     }
+
 
     string Say(string[] command, string currentChannel)
     {
-        string channel, message;
-        if (command[1].StartsWith("#"))
+        string channel = null;
+        string message = null;
+        // say #channel message
+        // Send message to specified channel.
+        if ( command.Length > 2 && command[1].StartsWith("#") )
         {
             channel = command[1];
             message = string.Join(" ", command, 2, command.Length - 2);
         }
-        else
+        // say message
+        // Send message to current channel.
+        else if (command.Length > 1)
         {
             channel = currentChannel;
             message = string.Join(" ", command, 1, command.Length - 1);
         }
+
         return Say(channel, message);
     }
 
@@ -112,8 +114,10 @@ public class MiscUtils : IMeidoHook
             irc.SendMessage(channel, message);
             return channel;
         }
-        return null;
+        else
+            return null;
     }
+
 
     bool InChannel(string channel)
     {

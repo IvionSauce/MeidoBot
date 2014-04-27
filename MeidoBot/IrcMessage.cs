@@ -10,14 +10,17 @@ namespace MeidoBot
     // a SmartIrc4Net class to trickle down to the plugins.
     class IrcMessage : IIrcMessage
     {
+        // Identical to the IrcMessageData properties.
         public string Message { get; private set; }
         public string[] MessageArray { get; private set; }
         public string Channel { get; private set; }
         public string Nick { get; private set; }
         public string Ident { get; private set; }
         public string Host { get; private set; }
-        
+
+        // My own additions.
         public string Trigger { get; private set; }
+        public string ReturnTo { get; private set; }
         
         readonly IrcClient irc;
         readonly ReceiveType type;
@@ -36,6 +39,7 @@ namespace MeidoBot
             Host = messageData.Host;
             
             Trigger = ParseTrigger(prefix);
+            ReturnTo = Channel ?? Nick;
         }
         
         

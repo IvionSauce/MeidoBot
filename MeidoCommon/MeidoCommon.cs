@@ -29,6 +29,7 @@ namespace MeidoCommon
         string Host { get; }
 
         string Trigger { get; }
+        string ReturnTo { get; }
 
         void Reply(string message);
         void Reply(string message, params object[] args);

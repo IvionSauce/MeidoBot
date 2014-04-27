@@ -8,8 +8,6 @@ using System.ComponentModel.Composition.Hosting;
 [Export(typeof(IMeidoHook))]
 public class Calc : IMeidoHook
 {
-    readonly IIrcComm irc;
-
     public string Prefix { get; set; }
 
     public string Name
@@ -18,7 +16,7 @@ public class Calc : IMeidoHook
     }
     public string Version
     {
-        get { return "1.1"; }
+        get { return "1.12"; }
     }
 
     public Dictionary<string,string> Help
@@ -40,13 +38,12 @@ public class Calc : IMeidoHook
     [ImportingConstructor]
     public Calc(IIrcComm ircComm)
     {
-        irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
+        ircComm.AddTriggerHandler(HandleTrigger);
     }
 
-    public void HandleChannelMessage(IIrcMessage e)
+    public void HandleTrigger(IIrcMessage e)
     {
-        if (e.MessageArray[0] == Prefix + "calc" && e.MessageArray.Length > 1)
+        if (e.Trigger == "calc" && e.MessageArray.Length > 1)
         {
             var expr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             string [] tokenizedExpr;
@@ -58,13 +55,12 @@ public class Calc : IMeidoHook
             }
             catch (MalformedExpressionException)
             {
-                irc.SendMessage( e.Channel, string.Format(
-                    "{0}: I am but a simple meido, please ask me something I can understand.", e.Nick) );
+                e.Reply("I am but a simple meido, please ask me something I can understand.");
                 return;
             }
 
             double result = ShuntingYard.Calculate(tokenizedExpr);
-            irc.SendMessage( e.Channel, string.Format("{0}: {1}", e.Nick, result) );
+            e.Reply( result.ToString() );
         }
     }
 }
