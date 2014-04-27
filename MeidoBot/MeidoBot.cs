@@ -267,7 +267,7 @@ namespace MeidoBot
                 string[] keys = plugins.GetHelpSubjects();
                 var subjects = string.Join(", ", keys);
 
-                return "Help is available on the following subjects: " + subjects;
+                return "Help is available on - " + subjects;
             }
             else
             {

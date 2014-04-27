@@ -34,6 +34,8 @@
   <ItemGroup>
     <Compile Include="MeidoBot.cs" />
     <Compile Include="MeidoPlugins.cs" />
+    <Compile Include="IrcComm.cs" />
+    <Compile Include="IrcMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
