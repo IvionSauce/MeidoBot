@@ -28,6 +28,7 @@ namespace MeidoBot
         IrcClient irc;
         public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
         public Action<IIrcMessage> QueryMessageHandlers { get; private set; }
+        public Action<IIrcMessage> TriggerHandlers { get; private set; }
 
 
         public IrcComm(IrcClient ircClient)
@@ -42,6 +43,10 @@ namespace MeidoBot
         public void AddQueryMessageHandler(Action<IIrcMessage> handler)
         {
             QueryMessageHandlers += handler;
+        }
+        public void AddTriggerHandler(Action<IIrcMessage> handler)
+        {
+            TriggerHandlers += handler;
         }
 
 
@@ -100,11 +105,13 @@ namespace MeidoBot
         public string Ident { get; private set; }
         public string Host { get; private set; }
 
+        public string Trigger { get; private set; }
+
         readonly IrcClient irc;
         readonly ReceiveType type;
 
 
-        public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData)
+        public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData, string prefix)
         {
             irc = messageData.Irc;
             type = messageData.Type;
@@ -115,6 +122,27 @@ namespace MeidoBot
             Nick = messageData.Nick;
             Ident = messageData.Ident;
             Host = messageData.Host;
+
+            Trigger = ParseTrigger(prefix);
+        }
+
+
+        // Returns trigger without the prefix. Will be null if message didn't start with a prefix.
+        // Will be empty if the prefix was called without a subsequent trigger.
+        // In case of a query message it will contain the first word, even if it didn't start with the prefix.
+        string ParseTrigger(string prefix)
+        {
+            if (Message.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                if (MessageArray[0].Length == prefix.Length)
+                    return string.Empty;
+                else
+                    return MessageArray[0].Substring(prefix.Length);
+            }
+            else if (type == ReceiveType.QueryMessage)
+                return MessageArray[0];
+            else
+                return null;
         }
 
 
@@ -181,25 +209,24 @@ namespace MeidoBot
             irc.Listen();
         }
 
-        // Pass on the message and associated info to the plugins.
-        void OnChannelMessage(object sender, IrcEventArgs e)
-        {
-            if (e.Data.MessageArray[0] == plugins.Prefix + "h" ||
-                e.Data.MessageArray[0] == plugins.Prefix + "help")
-            {
-                string helpMessage = Help(e.Data.MessageArray);
-                irc.SendMessage(SendType.Message, e.Data.Channel, helpMessage);
-            }
-            else
-                ircComm.ChannelMessageHandlers(new IrcMessage(e.Data));
 
+        // Pass on the message and associated info to the plugins.
+        void ChannelMessage(IrcMessage msg)
+        {
+            if (msg.Trigger == "h" || msg.Trigger == "help")
+            {
+                string helpMessage = Help(msg.MessageArray);
+                msg.Reply(helpMessage);
+            }
+            else if (ircComm.ChannelMessageHandlers != null)
+                ircComm.ChannelMessageHandlers(msg);
         }
 
-        void OnQueryMessage(object sender, IrcEventArgs e)
+
+        void QueryMessage(IrcMessage msg)
         {
             // Some makeshift stuff, will need to code an authentication system.
-            if (e.Data.MessageArray[0] == "disconnect" &&
-                e.Data.Nick == "Ivion")
+            if (msg.Trigger == "disconnect" && msg.Nick == "Ivion")
             {
                 // This somehow doesn't end the main thread. Just another episode in "shit I don't get".
                 irc.Disconnect();
@@ -207,16 +234,30 @@ namespace MeidoBot
                 plugins.StopPlugins();
             }
 
-            else if (e.Data.MessageArray[0] == "part" &&
-                     e.Data.MessageArray.Length == 2 &&
-                     e.Data.Nick == "Ivion")
+            else if (msg.Trigger == "part" &&
+                     msg.MessageArray.Length == 2 &&
+                     msg.Nick == "Ivion")
             {
-                irc.RfcPart(e.Data.MessageArray[1]);
+                irc.RfcPart(msg.MessageArray[1]);
             }
 
-            else
-                ircComm.QueryMessageHandlers(new IrcMessage(e.Data));
+            else if (ircComm.QueryMessageHandlers != null)
+                ircComm.QueryMessageHandlers(msg);
         }
+
+
+        void OnMessage(object sender, IrcEventArgs e)
+        {
+            var msg = new IrcMessage(e.Data, plugins.Prefix);
+
+            if (msg.Trigger != null && ircComm.TriggerHandlers != null)
+                ircComm.TriggerHandlers(msg);
+            else if (string.IsNullOrEmpty(msg.Channel))
+                QueryMessage(msg);
+            else
+                ChannelMessage(msg);
+        }
+
 
         // Help trigger
         string Help(string[] message)
@@ -272,8 +313,8 @@ namespace MeidoBot
 
             // Add our methods (defined above) to handle IRC events.
             irc.OnConnected += new EventHandler(OnConnected);
-            irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
-            irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);
+            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
+            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
         }
 
 
@@ -312,21 +353,44 @@ namespace MeidoBot
                 Console.WriteLine("!! Aborting.");
                 return;
             }
+            var prefix = ParsePrefix(config);
+            if (prefix == null)
+            {
+                Console.WriteLine("!! Trigger prefix can't contain whitespace.");
+                Console.WriteLine("!! Aborting.");
+                return;
+            }
+
             // Allow port to have the default of 6667.
             int port = (int?)config.Element("port") ?? 6667;
 
             string[] channels = ParseChannels(config);
 
-            // Default prefix for triggers is "."
-            var triggerPrefix = (string)config.Element("trigger-prefix") ?? ".";
             // Default configuration directory is the base directory of the application, since we know for sure that
             // that directory exists.
             // var confDir = (string)config.Element("conf-directory") ?? AppDomain.CurrentDomain.BaseDirectory;
 
             // Finally active the Meido.
-            var meido = new Meido(nick, triggerPrefix);
+            var meido = new Meido(nick, prefix);
             meido.Connect(server, port, channels);
         }
+
+
+        static string ParsePrefix(XElement config)
+        {
+            var triggerPrefix = (string)config.Element("trigger-prefix");
+            // Default prefix for triggers is "."
+            if (string.IsNullOrEmpty(triggerPrefix))
+                return ".";
+
+            // Reject a prefix when it contains whitespace.
+            foreach (char c in triggerPrefix)
+                if (char.IsWhiteSpace(c))
+                    return null;
+
+            return triggerPrefix;
+        }
+
 
         static string[] ParseChannels(XElement config)
         {
@@ -347,6 +411,7 @@ namespace MeidoBot
 
             return chanList.ToArray();
         }
+
 
         static XElement GetXmlConfig(string file)
         {
