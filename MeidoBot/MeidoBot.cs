@@ -33,7 +33,7 @@ namespace MeidoBot
         string nick;
         string[] channels;
 
-        // public MeidoComm MeidoComm { get; private set; }
+        MeidoComm meidoComm;
 
 
         public Meido(string nick, string prefix)
@@ -65,10 +65,11 @@ namespace MeidoBot
         {
             // Initialize the IrcComm with our IrcClient instance.
             ircComm = new IrcComm(irc);
+            meidoComm = new MeidoComm();
 
             // Load plugins and announce we're doing so.
             Console.WriteLine("Loading plugins...");
-            plugins.LoadPlugins( ircComm, new MeidoComm() );
+            plugins.LoadPlugins(ircComm, meidoComm);
             // Print number and descriptions of loaded plugins.
             Console.WriteLine("Done! Loaded {0} plugin(s):", plugins.Count);
             foreach (string s in plugins.GetDescriptions())
@@ -91,6 +92,7 @@ namespace MeidoBot
             }
         }
 
+
         // Tell the server who we are and join channel(s).
         void OnConnected(object sender, EventArgs e)
         {
@@ -107,7 +109,8 @@ namespace MeidoBot
             
             if (msg.Trigger != null && ircComm.TriggerHandlers != null)
                 ircComm.TriggerHandlers(msg);
-            else if (string.IsNullOrEmpty(msg.Channel))
+
+            if (string.IsNullOrEmpty(msg.Channel))
                 QueryMessage(msg);
             else
                 ChannelMessage(msg);
