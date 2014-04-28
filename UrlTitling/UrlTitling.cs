@@ -89,6 +89,10 @@ public class UrlTitler : IMeidoHook
     {
         switch (e.Trigger)
         {
+            // ----- Handling of URLs -----
+        case null:
+            manager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
+            return;
         // ----- Trigger handling -----
         case "reload_bw":
             manager.Blacklist.ReloadFile();
@@ -102,10 +106,6 @@ public class UrlTitler : IMeidoHook
         case "enable":
             if ( manager.EnableNick(e.Channel, e.Nick ) )
                 irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
-            return;
-        // ----- Handling of URLs -----
-        case null:
-            manager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
             return;
         }
     }
