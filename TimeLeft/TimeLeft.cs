@@ -29,7 +29,7 @@ public class TimeLeft : IMeidoHook
     }
     public string Version
     {
-        get { return "0.26"; }
+        get { return "0.30"; }
     }
     
     public Dictionary<string,string> Help
@@ -56,49 +56,54 @@ public class TimeLeft : IMeidoHook
     [ImportingConstructor]
     public TimeLeft(IIrcComm ircComm)
     {
-        storage = new Storage<TimeLeftUnit>();
-
         try
         {
             storage = Storage<TimeLeftUnit>.Deserialize(loc);
         }
         catch (FileNotFoundException)
-        {}
-        catch (XmlException)
-        {}
+        {
+            storage = new Storage<TimeLeftUnit>();
+        }
 
         cleaner = new Timer(Cleaner, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
 
         irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
+        irc.AddTriggerHandler(HandleTrigger);
     }
     
-    public void HandleChannelMessage(IIrcMessage e)
+    public void HandleTrigger(IIrcMessage e)
     {
-        if (e.MessageArray[0] == Prefix + "timeleft")
+        if (e.Trigger == "timeleft")
         {
-            if ( e.MessageArray.Length >= 4 && (e.MessageArray[1] == "add" || e.MessageArray[1] == "set") )
+            // timeleft
+            if (e.MessageArray.Length == 1)
+            {
+                ShowAll(e.ReturnTo);
+                return;
+            }
+
+            string command = e.MessageArray[1];
+
+            // timeleft set Title 2104-01-01
+            if ( (command == "set" || command == "add") && e.MessageArray.Length >= 4 )
             {
                 Set(e.Nick, e.MessageArray);
             }
 
-            else if (e.MessageArray.Length >= 3 && e.MessageArray[1] == "del")
+            // timeleft del Title
+            else if (command == "del" && e.MessageArray.Length >= 3)
             {
                 Del(e.Nick, e.MessageArray);
             }
 
-            else if (e.MessageArray.Length > 1)
-            {
-                var name = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-                Show(e.Channel, name);
-            }
-
+            // timeleft Title
             else
             {
-                ShowAll(e.Channel);
+                Show(e.ReturnTo, e.MessageArray);
             }
         }
     }
+
 
     void Set(string nick, string[] message)
     {
@@ -129,9 +134,10 @@ public class TimeLeft : IMeidoHook
                 storage.Set(name, unit);
                 storage.Serialize(loc);
             }
-            irc.SendNotice( nick, string.Format("Set \"{0}\" :: {1}", name, date.ToString("MMMM dd, yyyy")) );
+            irc.SendNotice( nick, "Set \"{0}\" :: {1}", name, date.ToString("MMMM dd, yyyy") );
         }
     }
+
 
     void Del(string nick, string[] message)
     {
@@ -146,16 +152,19 @@ public class TimeLeft : IMeidoHook
         }
 
         if (removed)
-            irc.SendNotice( nick, string.Format("Deleted: {0}", name) );
+            irc.SendNotice(nick, "Deleted: {0}", name);
     }
 
-    void Show(string channel, string name)
+
+    void Show(string target, string[] message)
     {
+        var name = string.Join(" ", message, 1, message.Length - 1);
+
         TimeLeftUnit unit;
         lock (_locker)
             unit = storage.Get(name);
         if (unit != null)
-            SendTime(channel, unit.Name, unit.Date);
+            SendTime(target, unit.Name, unit.Date);
 
         // If no exact match, try to search for it.
         else
@@ -165,18 +174,19 @@ public class TimeLeft : IMeidoHook
                 sortedByTime = SortByDate( storage.Search(name) );
 
             foreach (var tlu in sortedByTime)
-                SendTime(channel, tlu.Name, tlu.Date);
+                SendTime(target, tlu.Name, tlu.Date);
         }
     }
 
-    void ShowAll(string channel)
+
+    void ShowAll(string target)
     {
         TimeLeftUnit[] sortedByTime;
         lock (_locker)
             sortedByTime = SortByDate( storage.GetAll() );
 
         foreach (var unit in sortedByTime)
-            SendTime(channel, unit.Name, unit.Date);
+            SendTime(target, unit.Name, unit.Date);
     }
 
     TimeLeftUnit[] SortByDate(IEnumerable<TimeLeftUnit> tlunits)
@@ -188,7 +198,8 @@ public class TimeLeft : IMeidoHook
         return sorted.ToArray();
     }
 
-    void SendTime(string channel, string name, DateTime date)
+
+    void SendTime(string target, string name, DateTime date)
     {
         TimeSpan timeLeft = date - DateTime.UtcNow;
         string message;
@@ -203,8 +214,9 @@ public class TimeLeft : IMeidoHook
                                     timeLeft.TotalHours, name, date.ToString("MMMM dd, yyyy"));
         }
         
-        irc.SendMessage(channel, message);
+        irc.SendMessage(target, message);
     }
+
 
     void Cleaner(object data)
     {
@@ -228,6 +240,7 @@ public class TimeLeft : IMeidoHook
                 storage.Serialize(loc);
         }
     }
+
 }
 
 [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
