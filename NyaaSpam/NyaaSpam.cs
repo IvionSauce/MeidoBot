@@ -24,7 +24,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.60"; }
+        get { return "0.62"; }
     }
 
     public Dictionary<string,string> Help
@@ -67,10 +67,12 @@ public class NyaaSpam : IMeidoHook
         feedReader.Start();
 
         irc = ircComm;
-        irc.AddTriggerHandler(HandleTrigger);
+        // The methods depend on having a meaningful channel parameter, so only accept the trigger when it's typed in a
+        // channel.
+        irc.AddChannelMessageHandler(Handler);
     }
 
-    public void HandleTrigger(IIrcMessage e)
+    public void Handler(IIrcMessage e)
     {
         if (e.Trigger == "nyaa")
         {
@@ -84,12 +86,11 @@ public class NyaaSpam : IMeidoHook
             string input = string.Empty;
             int? assocPat = null;
 
-            // nyaa ex <add|del|show>
-            // nyaa ex <assocPat> <add|del|show>
             // Command will be reassigned.
             if (command == "ex" && e.MessageArray.Length > 2)
             {
                 int assocPatInt;
+                // nyaa ex <assocPat> <add|del|show>
                 // Exclude Patterns associated with a pattern.
                 if (int.TryParse(e.MessageArray[2], out assocPatInt) && e.MessageArray.Length > 3)
                 {
@@ -99,6 +100,7 @@ public class NyaaSpam : IMeidoHook
                     if (e.MessageArray.Length > 4)
                         input = string.Join(" ", e.MessageArray, 4, e.MessageArray.Length - 4);
                 }
+                // nyaa ex <add|del|show>
                 // Global Exclude Patterns.
                 else
                 {
@@ -156,7 +158,7 @@ public class NyaaSpam : IMeidoHook
                 if (nyaa.Add(channel, pattern) != -1)
                     amount++;
 
-            irc.SendNotice( nick, string.Format("Added {0} pattern(s)", amount) );
+            irc.SendNotice(nick, "Added {0} pattern(s)", amount);
         }
         else if (assocPat >= 0)
         {
@@ -164,7 +166,7 @@ public class NyaaSpam : IMeidoHook
                 if (nyaa.AddExclude(channel, assocPat.Value, pattern) != -1)
                     amount++;
 
-            irc.SendNotice( nick, string.Format("Added {0} exclude pattern(s)", amount) );
+            irc.SendNotice(nick, "Added {0} exclude pattern(s)", amount);
         }
         else
         {
@@ -172,7 +174,7 @@ public class NyaaSpam : IMeidoHook
                 if (nyaa.AddGlobalExclude(channel, pattern) != -1)
                     amount++;
 
-            irc.SendNotice( nick, string.Format("Added {0} global exclude pattern(s)", amount) );
+            irc.SendNotice(nick, "Added {0} global exclude pattern(s)", amount);
         } 
     }
 
@@ -189,7 +191,7 @@ public class NyaaSpam : IMeidoHook
             {
                 removedPattern = nyaa.Remove(channel, n);
                 if (removedPattern != null)
-                    irc.SendNotice( nick, string.Format("Deleted pattern: {0}", removedPattern) );
+                    irc.SendNotice(nick, "Deleted pattern: {0}", removedPattern);
             }
         }
         else if (assocPat >= 0)
@@ -198,7 +200,7 @@ public class NyaaSpam : IMeidoHook
             {
                 removedPattern = nyaa.RemoveExclude(channel, assocPat.Value, n);
                 if (removedPattern != null)
-                    irc.SendNotice( nick, string.Format("Removed exclude pattern: {0}", removedPattern) );
+                    irc.SendNotice(nick, "Removed exclude pattern: {0}", removedPattern);
             }
         }
         else
@@ -207,7 +209,7 @@ public class NyaaSpam : IMeidoHook
             {
                 removedPattern = nyaa.RemoveGlobalExclude(channel, n);
                 if (removedPattern != null)
-                    irc.SendNotice( nick, string.Format("Removed global exclude pattern: {0}", removedPattern) );
+                    irc.SendNotice(nick, "Removed global exclude pattern: {0}", removedPattern);
             }
         }
         irc.SendNotice(nick, " -----");
@@ -235,7 +237,7 @@ public class NyaaSpam : IMeidoHook
         string[] patterns;
         if (assocPat == null)
         {
-            irc.SendNotice( nick, string.Format("Patterns for {0}:", channel) );
+            irc.SendNotice(nick, "Patterns for {0}:", channel);
             
             patterns = nyaa.GetPatterns(channel);
             IrcShow(nick, patterns);
@@ -245,7 +247,7 @@ public class NyaaSpam : IMeidoHook
             string pattern = nyaa.Get(channel, assocPat.Value);
             if (pattern != null)
             {
-                irc.SendNotice( nick, string.Format("Exclude patterns associated with \"{0}\":", pattern) );
+                irc.SendNotice(nick, "Exclude patterns associated with \"{0}\":", pattern);
 
                 patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
                 IrcShow(nick, patterns);
@@ -253,7 +255,7 @@ public class NyaaSpam : IMeidoHook
         }
         else
         {
-            irc.SendNotice( nick, string.Format("Global exclude patterns for {0}:", channel) );
+            irc.SendNotice(nick, "Global exclude patterns for {0}:", channel);
 
             patterns = nyaa.GetGlobalExcludePatterns(channel);
             IrcShow(nick, patterns);
