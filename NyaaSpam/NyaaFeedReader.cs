@@ -17,7 +17,6 @@ class NyaaFeedReader
     readonly IIrcComm irc;
     
     DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
-    DateTimeOffset latestPublish = DateTimeOffset.Now;
     
     
     public NyaaFeedReader(IIrcComm irc, Config conf, NyaaPatterns patterns)
@@ -49,11 +48,14 @@ class NyaaFeedReader
         }
         catch (System.Net.WebException ex)
         {
-            Console.WriteLine("WebException in ReadFeed: " + ex.Message);
+            Console.WriteLine("--- WebException in ReadFeed: " + ex.Message);
             return;
         }
         
         bool latestItem = true;
+        // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. But it _does_ get
+        // assigned, in the first loop (but I can see why the compiler doesn't see this).
+        DateTimeOffset latestPublish = DateTimeOffset.MinValue;
         foreach (SyndicationItem item in feed.Items)
         {
             // Since feed.Items is only IEnumerable, we can't just access the first member by index, so we have to

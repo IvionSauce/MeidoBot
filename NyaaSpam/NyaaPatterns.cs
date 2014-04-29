@@ -92,7 +92,7 @@ public class NyaaPatterns : IDisposable
 
     public string GetExclude(string channel, int assocPat, int iExclude)
     {
-        return GetOrRemoveExclude(false, channel, assocPat, iExclude);
+        return GetOrRemove(false, channel, assocPat, iExclude);
     }
 
     public string Remove(string channel, int index)
@@ -102,7 +102,7 @@ public class NyaaPatterns : IDisposable
 
     public string RemoveExclude(string channel, int assocPat, int iExclude)
     {
-        return GetOrRemoveExclude(true, channel, assocPat, iExclude);
+        return GetOrRemove(true, channel, assocPat, iExclude);
     }
 
 
@@ -128,8 +128,11 @@ public class NyaaPatterns : IDisposable
             return string.Join(" ", pattern);
     }
 
-    string GetOrRemoveExclude(bool remove, string channel, int assocPat, int iExclude)
+    string GetOrRemove(bool remove, string channel, int assocPat, int iExclude)
     {
+        if (iExclude < 0)
+            return null;
+
         string[] exPattern = null;
         lock (_locker)
         {
