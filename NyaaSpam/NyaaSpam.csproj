@@ -42,6 +42,7 @@
     <Compile Include="NyaaSpam.cs" />
     <Compile Include="NyaaPatterns.cs" />
     <Compile Include="NyaaFeedReader.cs" />
+    <Compile Include="Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
