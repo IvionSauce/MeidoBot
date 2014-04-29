@@ -55,6 +55,7 @@ public class UrlTitler : IMeidoHook
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
+        irc.AddTriggerHandler(HandleTrigger);
     }
 
     void SetupBWLists(Config conf)
@@ -85,15 +86,16 @@ public class UrlTitler : IMeidoHook
         }
     }
 
+
     public void HandleChannelMessage(IIrcMessage e)
     {
         switch (e.Trigger)
         {
-        // ----- Handling of URLs -----
+        // Handling of URLs.
         case null:
             manager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
             return;
-        // ----- Trigger handling -----
+        // Trigger handling.
         case "disable":
             manager.DisableNick(e.Channel, e.Nick);
             irc.SendNotice(e.Nick, "Disabling URL-Titling for you. (In {0})", e.Channel);
@@ -102,11 +104,17 @@ public class UrlTitler : IMeidoHook
             if ( manager.EnableNick(e.Channel, e.Nick ) )
                 irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
             return;
-        case "reload_bw":
+        }
+    }
+
+
+    public void HandleTrigger(IIrcMessage e)
+    {
+        if (e.Trigger == "reload_bw")
+        {
             manager.Blacklist.ReloadFile();
             manager.Whitelist.ReloadFile();
             e.Reply("Black- and whitelist have been reloaded.");
-            return;
         }
     }
 }

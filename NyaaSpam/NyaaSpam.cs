@@ -238,9 +238,7 @@ public class NyaaSpam : IMeidoHook
         if (assocPat == null)
         {
             irc.SendNotice(nick, "Patterns for {0}:", channel);
-            
             patterns = nyaa.GetPatterns(channel);
-            IrcShow(nick, patterns);
         }
         else if (assocPat >= 0)
         {
@@ -248,18 +246,16 @@ public class NyaaSpam : IMeidoHook
             if (pattern != null)
             {
                 irc.SendNotice(nick, "Exclude patterns associated with \"{0}\":", pattern);
-
                 patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
-                IrcShow(nick, patterns);
             }
         }
         else
         {
             irc.SendNotice(nick, "Global exclude patterns for {0}:", channel);
-
             patterns = nyaa.GetGlobalExcludePatterns(channel);
-            IrcShow(nick, patterns);
         }
+
+        IrcShow(nick, patterns);
     }
 
     void IrcShow(string nick, string[] patterns)
