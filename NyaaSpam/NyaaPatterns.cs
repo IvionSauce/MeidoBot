@@ -87,38 +87,26 @@ public class NyaaPatterns : IDisposable
 
     public string Get(string channel, int index)
     {
-        string[] pattern = null;
-        lock (_locker)
-        {
-            ChannelPatterns chanPat = storage.Get(channel);
-            if ( IndexExists(chanPat, index) )
-                pattern = chanPat.Patterns[index].IncludePattern;
-        }
-        if (pattern == null)
-            return null;
-        else
-            return string.Join(" ", pattern);
+        return GetOrRemove(false, channel, index);
     }
 
     public string GetExclude(string channel, int assocPat, int iExclude)
     {
-        string[] exPattern = null;
-        lock (_locker)
-        {
-            ChannelPatterns chanPat = storage.Get(channel);
+        return GetOrRemoveExclude(false, channel, assocPat, iExclude);
+    }
 
-            List<string[]> exPatterns;
-            if (TryGetExPatterns(chanPat, assocPat, out exPatterns) && iExclude < exPatterns.Count)
-                exPattern = exPatterns[iExclude];
-        }
-        if (exPattern == null)
-            return null;
-        else
-            return string.Join(" ", exPattern);
+    public string Remove(string channel, int index)
+    {
+        return GetOrRemove(true, channel, index);
+    }
+
+    public string RemoveExclude(string channel, int assocPat, int iExclude)
+    {
+        return GetOrRemoveExclude(true, channel, assocPat, iExclude);
     }
 
 
-    public string Remove(string channel, int index)
+    string GetOrRemove(bool remove, string channel, int index)
     {
         string[] pattern = null;
         lock (_locker)
@@ -127,8 +115,11 @@ public class NyaaPatterns : IDisposable
             if ( IndexExists(chanPat, index) )
             {
                 pattern = chanPat.Patterns[index].IncludePattern;
-                chanPat.Patterns.RemoveAt(index);
-                Write();
+                if (remove)
+                {
+                    chanPat.Patterns.RemoveAt(index);
+                    Write();
+                }
             }
         }
         if (pattern == null)
@@ -137,19 +128,22 @@ public class NyaaPatterns : IDisposable
             return string.Join(" ", pattern);
     }
 
-    public string RemoveExclude(string channel, int assocPat, int iExclude)
+    string GetOrRemoveExclude(bool remove, string channel, int assocPat, int iExclude)
     {
         string[] exPattern = null;
         lock (_locker)
         {
             ChannelPatterns chanPat = storage.Get(channel);
-
+            
             List<string[]> exPatterns;
             if (TryGetExPatterns(chanPat, assocPat, out exPatterns) && iExclude < exPatterns.Count)
             {
                 exPattern = exPatterns[iExclude];
-                exPatterns.RemoveAt(iExclude);
-                Write();
+                if (remove)
+                {
+                    exPatterns.RemoveAt(iExclude);
+                    Write();
+                }
             }
         }
         if (exPattern == null)
@@ -343,8 +337,8 @@ public class NyaaPatterns : IDisposable
                         break;
                     }
                 }
-            }
-        }
+            } // foreach
+        } // lock
 
         return channels.ToArray();
     }

@@ -132,24 +132,10 @@ public class NyaaSpam : IMeidoHook
         }
     }
 
+
     void Add(string channel, string nick, string patternsStr, int? assocPat)
     {
-        const string quot = "\"";
-
-        var patterns = new List<string>();
-        // If enclosed in quotation marks, add string within the marks verbatim.
-        if ( patternsStr.StartsWith(quot) && patternsStr.EndsWith(quot) )
-        {
-            // Slice off the quotation marks.
-            string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
-            patterns.Add(pattern);
-        }
-        // Else interpret comma's as seperators between different titles.
-        else
-        {
-            foreach ( string pattern in patternsStr.Split(',') )
-                patterns.Add( pattern.Trim() );
-        }
+        var patterns = GetPatterns(patternsStr);
 
         int amount = 0;
         if (assocPat == null)
@@ -232,6 +218,7 @@ public class NyaaSpam : IMeidoHook
         IrcShow(nick, patterns.ToArray());
     } */
 
+
     void ShowAll(string channel, string nick, int? assocPat)
     {
         string[] patterns;
@@ -244,10 +231,9 @@ public class NyaaSpam : IMeidoHook
         {
             string pattern = nyaa.Get(channel, assocPat.Value);
             if (pattern != null)
-            {
                 irc.SendNotice(nick, "Exclude patterns associated with \"{0}\":", pattern);
-                patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
-            }
+
+            patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
         }
         else
         {
@@ -279,7 +265,30 @@ public class NyaaSpam : IMeidoHook
     }
 
 
-    int[] GetNumbers(string numbersStr)
+    static List<string> GetPatterns(string patternsStr)
+    {
+        const string quot = "\"";
+        
+        var patterns = new List<string>();
+        // If enclosed in quotation marks, add string within the marks verbatim.
+        if ( patternsStr.StartsWith(quot) && patternsStr.EndsWith(quot) )
+        {
+            // Slice off the quotation marks.
+            string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
+            patterns.Add(pattern);
+        }
+        // Else interpret comma's as seperators between different titles.
+        else
+        {
+            foreach ( string pattern in patternsStr.Split(',') )
+                patterns.Add( pattern.Trim() );
+        }
+        
+        return patterns;
+    }
+
+
+    static int[] GetNumbers(string numbersStr)
     {
         if (string.IsNullOrWhiteSpace(numbersStr))
             return new int[0];
@@ -300,7 +309,7 @@ public class NyaaSpam : IMeidoHook
     }
 
     // Return list of ints for a range given as "x-y".
-    List<int> GetRange(string rangeStr)
+    static List<int> GetRange(string rangeStr)
     {
         var numbers = new List<int>();
 
