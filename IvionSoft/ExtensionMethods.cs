@@ -25,21 +25,22 @@ namespace IvionSoft
         }
 
         // http://www.dotnetperls.com/array-slice
+        // Modification: allow `end` to be 0, this will mean it will slice from `start` to whatever length the array is.
+        // This will allow you to have an inclusive end; -1 slices off the last item and 0 would cause an error
+        // (without this modification).
         public static T[] Slice<T>(this T[] source, int start, int end)
         {
             // Handles negative ends.
-            if (end < 0)
-            {
+            if (end <= 0)
                 end = source.Length + end;
-            }
+
             int len = end - start;
             
             // Return new array.
             T[] res = new T[len];
             for (int i = 0; i < len; i++)
-            {
                 res[i] = source[i + start];
-            }
+
             return res;
         }
 
