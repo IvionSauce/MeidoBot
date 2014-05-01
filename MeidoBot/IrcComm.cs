@@ -10,6 +10,12 @@ namespace MeidoBot
     // the plugins.
     class IrcComm : IIrcComm
     {
+        public string Nickname
+        {
+            get { return irc.Nickname; }
+        }
+
+
         IrcClient irc;
         public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
         public Action<IIrcMessage> QueryMessageHandlers { get; private set; }

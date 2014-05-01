@@ -44,6 +44,8 @@ namespace MeidoCommon
 
     public interface IIrcComm
     {
+        string Nickname { get; }
+
         void AddChannelMessageHandler(Action<IIrcMessage> handler);
         void AddQueryMessageHandler(Action<IIrcMessage> handler);
         void AddTriggerHandler(Action<IIrcMessage> handler);

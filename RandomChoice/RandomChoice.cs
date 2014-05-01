@@ -167,7 +167,7 @@ static class RandomChoice
                     tempOption.Clear();
                 }
             }
-            else if ( word.EndsWith(",") )
+            else if ( word.EndsWith(",", StringComparison.OrdinalIgnoreCase) )
             {
                 string removedComma = word.Substring(0, word.Length - 1);
                 if (removedComma.Length != 0)
