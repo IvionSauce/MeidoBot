@@ -6,15 +6,34 @@ namespace Chainey
 {
     public class SqliteBack
     {
-        readonly string connStr;
-
         public int Order { get; private set; }
+
+        volatile int _maxWords;
+        public int MaxWords
+        {
+            get { return _maxWords; }
+            set
+            {
+                if (value > 0)
+                    _maxWords = value;
+                else
+                    throw new ArgumentOutOfRangeException("value", "MaxWords cannot be less than or equal to 0.");
+            }
+        }
+
+        readonly string connStr;
+        private enum Direction
+        {
+            Forward,
+            Backward
+        }
 
 
         public SqliteBack(string path, int order)
         {
             connStr = "URI=file:" + path;
             Order = order;
+            MaxWords = 100;
 
             using (var connection = new SqliteConnection(connStr))
             {
@@ -22,7 +41,16 @@ namespace Chainey
 
                 using (var cmd = new SqliteCommand(connection))
                 {
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Chainey(chain TEXT NOT NULL, followup TEXT)";
+                    // ----- Populate the database with tables, if necessary -----
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS WordCount(" +
+                        "word TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 1, UNIQUE(word))";
+                    cmd.ExecuteNonQuery();
+
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Forward(" +
+                        "chain TEXT NOT NULL, followup TEXT NOT NULL DEFAULT '', UNIQUE(chain, followup))";
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Backward(" +
+                        "chain TEXT NOT NULL, followup TEXT NOT NULL DEFAULT '', UNIQUE(chain, followup))";
                     cmd.ExecuteNonQuery();
                 }
 
@@ -30,103 +58,231 @@ namespace Chainey
             }
         }
 
-        public void AddChains(string[][] chainCollection)
+
+        // -----
+        // Methods for adding sentences.
+        // -----
+
+        public void AddSentence(string sentence)
         {
+            if (sentence == null)
+                throw new ArgumentNullException("sentence");
+
+            string[] words = sentence.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+            AddSentence(words);
+        }
+
+        public void AddSentence(string[] sentence)
+        {
+            if (sentence == null)
+                throw new ArgumentNullException("sentence");
+            // Return early if there's nothing to do.
+            else if (sentence.Length < Order)
+                return;
+
+            string[] reversed = ReverseCopy(sentence);
+            
+            string[][] forwardChains = MarkovTools.TokenizeSentence(sentence, Order);
+            string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
+            
             using (var conn = new SqliteConnection(connStr))
             {
                 conn.Open();
                 using (SqliteTransaction tr = conn.BeginTransaction())
-                using (SqliteCommand insertCmd = conn.CreateCommand(),
-                                     checkCmd = conn.CreateCommand())
+                using (SqliteCommand insertCmd = conn.CreateCommand())
                 {
                     insertCmd.Transaction = tr;
-                    checkCmd.Transaction = tr;
-                    InsertChains(chainCollection, insertCmd, checkCmd);
+
+                    UpdateWordCount(sentence, insertCmd);
+
+                    InsertChains(forwardChains, Direction.Forward, insertCmd);
+                    InsertChains(backwardChains, Direction.Backward, insertCmd);
+
                     tr.Commit();
                 }
                 conn.Close();
             }
         }
 
-        static void InsertChains(string[][] chains, SqliteCommand insertCmd, SqliteCommand checkCmd)
+        static string[] ReverseCopy(string[] arr)
         {
-            insertCmd.CommandText = "INSERT INTO Chainey VALUES(@Chain, @FollowUp)";
-            insertCmd.Prepare();
-            // Use `IS` for the follow-up, since it can be null. Checking with `=` always returns false when checking if
-            // something is null.
-            checkCmd.CommandText = "SELECT EXISTS(SELECT 1 FROM Chainey WHERE chain=@Chain " +
-                "AND followup IS @FollowUp LIMIT 1)";
-            checkCmd.Prepare();
+            var reversed = new string[arr.Length];
 
+            int j = arr.Length - 1;
+            for (int i = 0; i < arr.Length; i++, j--)
+                reversed[i] = arr[j];
+
+            return reversed;
+        }
+
+
+        static void InsertChains(string[][] chains, Direction dir, SqliteCommand insertCmd)
+        {
+            const string cmd = "INSERT INTO {0} (chain, followup) SELECT @Chain, @FollowUp " +
+                "WHERE NOT EXISTS(SELECT 1 FROM {0} WHERE chain=@Chain AND followup=@FollowUp)";
+            insertCmd.CommandText = FormatSql(cmd, dir);
+            insertCmd.Prepare();
+
+            string insertChain, insertFollow;
             foreach (string[] chain in chains)
             {
-                var insertChain = string.Join(" ", chain, 0, chain.Length - 1);
-                var insertFollow = chain[chain.Length - 1];
+                insertChain = string.Join(" ", chain, 0, chain.Length - 1);
+                insertFollow = chain[chain.Length - 1] ?? string.Empty;
 
-                // Only add if it doesn't already exist.
-                if (!CheckIfExists(insertChain, insertFollow, checkCmd))
-                {
-                    insertCmd.Parameters.AddWithValue("@Chain", insertChain);
-                    insertCmd.Parameters.AddWithValue("@FollowUp", insertFollow);
-                    insertCmd.ExecuteNonQuery();
-                }
+                insertCmd.Parameters.AddWithValue("@Chain", insertChain);
+                insertCmd.Parameters.AddWithValue("@FollowUp", insertFollow);
+                insertCmd.ExecuteNonQuery();
             }
         }
 
-        static bool CheckIfExists(string chain, string followUp, SqliteCommand cmd)
-        {
-            cmd.Parameters.AddWithValue("@Chain", chain);
-            cmd.Parameters.AddWithValue("@FollowUp", followUp);
 
-            var value = Convert.ToInt32(cmd.ExecuteScalar());
-            if (value == 1)
-                return true;
-            else
-                return false;
+        // -----
+        // Methods having to do with WordCount.
+        // -----
+
+        static void UpdateWordCount(string[] sentence, SqliteCommand cmd)
+        {
+            const string countSql = "INSERT OR REPLACE INTO WordCount (word, count) " +
+                "VALUES( @Word, COALESCE( (SELECT count + 1 FROM WordCount WHERE word=@Word), 1 ) )";
+            cmd.CommandText = countSql;
+            cmd.Prepare();
+            
+            foreach (string word in sentence)
+            {
+                cmd.Parameters.AddWithValue("@Word", word.ToUpperInvariant());
+                cmd.ExecuteNonQuery();
+            }
         }
+
+
+        // Modifies `words` in place.
+        public void SortByWordCount(string[] words)
+        {
+            if (words == null)
+                throw new ArgumentNullException("words");
+            // Return early if there's nothing to sort.
+            else if (words.Length <= 1)
+                return;
+
+            var counts = new ulong[words.Length];
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    int i = 0;
+                    foreach (string word in words)
+                    {
+                        counts[i] = WordCount(word, cmd);
+                        i++;
+                    }
+                }
+                conn.Close();
+            }
+
+            Array.Sort(counts, words);
+        }
+
+
+        public void SortByRarity(string[] sentences)
+        {
+            if (sentences == null)
+                throw new ArgumentNullException("sentences");
+            // Return early if there's nothing to sort.
+            else if (sentences.Length <= 1)
+                return;
+
+            var rarities = new double[sentences.Length];
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    int i = 0;
+                    foreach (string sen in sentences)
+                    {
+                        rarities[i] = SentenceRarity(sen, cmd);
+                        i++;
+                    }
+                }
+                conn.Close();
+            }
+
+            Array.Sort(rarities, sentences);
+        }
+
+
+        static double SentenceRarity(string sentence, SqliteCommand cmd)
+        {
+            ulong sum = 0;
+            foreach ( string word in sentence.Split(' ') )
+                sum += WordCount(word, cmd);
+
+            return sum / (double)sentence.Length;
+        }
+
+
+        // Return as ulong (unsigned 64-bit integer) even though SQLite stores it as signed 64-bit integers because it
+        // allows easy usage for summing/addition. Count will also never be negative, so there's no drawbacks.
+        static ulong WordCount(string word, SqliteCommand cmd)
+        {
+            const string sqlCmd = "SELECT count FROM WordCount WHERE word=@Word";
+            if (cmd.CommandText != sqlCmd)
+            {
+                cmd.CommandText = sqlCmd;
+                cmd.Prepare();
+            }
+            cmd.Parameters.AddWithValue("@Word", word.ToUpperInvariant());
+
+            // If word is not found in the WordCount table, return 0.
+            var count = cmd.ExecuteScalar() as ulong?;
+            return count ?? 0;
+        }
+
+
+        // -----
+        // Methods for building sentences.
+        // -----
 
         // Returns an array of sentences equal or less of the size of the seeds array passed in. It can return an empty
         // array, in case none of the seeds resulted in a sentence.
-        public string[] BuildSentences(string[] seeds, int maxWords)
+        public IEnumerable<string> BuildSentences(IEnumerable<string> seeds)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
-
-            var sentences = new List<string>(seeds.Length);
 
             using (var connection = new SqliteConnection(connStr))
             {
                 connection.Open();
                 using (var cmd = new SqliteCommand(connection))
                 {
-                    string tmpSentence;
+                    string sentence;
                     foreach (string seed in seeds)
                     {
                         if (string.IsNullOrWhiteSpace(seed))
                             continue;
 
                         CreateSeedSql(seed, cmd);
-                        tmpSentence = BuildASentence(maxWords, cmd);
-
-                        if (tmpSentence != null)
-                            sentences.Add(tmpSentence);
+                        sentence = BuildASentence(cmd);
+                        if (sentence != null)
+                            yield return sentence;
                     }
                 }
                 connection.Close();
             }
-            return sentences.ToArray();
         }
 
-        public string BuildRandomSentence(int maxWords)
+
+        public string BuildRandomSentence()
         {
-            return BuildSentence(null, maxWords);
+            return BuildSentence(null);
         }
 
         // If seed is null it will build a sentence starting with a randomly selected chain.
         // This will return null in case no sentence could be constructed.
-        public string BuildSentence(string seed, int maxWords)
+        public string BuildSentence(string seed)
         {
-            const string randomChainSql = "SELECT * FROM Chainey ORDER BY RANDOM() LIMIT 1";
+            const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
 
             string sentence;
             using (var connection = new SqliteConnection(connStr))
@@ -139,7 +295,7 @@ namespace Chainey
                     else
                         CreateSeedSql(seed, cmd);
 
-                    sentence = BuildASentence(maxWords, cmd);
+                    sentence = BuildASentence(cmd);
                 }
                 connection.Close();
             }
@@ -147,48 +303,100 @@ namespace Chainey
             return sentence;
         }
 
+
         // This method assumes you've already set the CommandText in the calling method.
-        string BuildASentence(int maxWords, SqliteCommand cmd)
+        string BuildASentence(SqliteCommand cmd)
         {
-            string chain = null;
-            string followUp = null;
-            // Need to finish using the reader before the SqliteCommand is free for other commands (GetFollowUp).
+            string chain, followUp;
             using (SqliteDataReader reader = cmd.ExecuteReader())
             {
                 if (reader.Read())
                 {
                     chain = reader.GetString(0);
-                    // Leave at null if follow-up is null in DB.
-                    if (!reader.IsDBNull(1))
-                        followUp = reader.GetString(1);
+                    followUp = reader.GetString(1);
                 }
+                else
+                    return null;
             }
-            // In case we didn't get a result.
-            if (chain == null)
-                return null;
 
-            // Storage for the sentence-to-build.
-            var words = new List<string>();
-            words.AddRange( chain.Split(' ') );
-
-            // Only limit the word-count if maxWords is set to a sensible value.
-            bool limitWords = maxWords > 0;
-            // If the initial chain doesn't have a follow-up this loop will never be entered.
-            while (followUp != null)
+            // Backward search.
+            List<string> words = BackSearch(chain, cmd);
+            // Forward search.
+            if (!string.IsNullOrEmpty(followUp))
             {
                 words.Add(followUp);
-                if (limitWords && words.Count >= maxWords)
-                    break;
-
-                followUp = GetFollowUp(words, cmd);
+                CollectChains(words, Direction.Forward, cmd);
             }
 
             return string.Join(" ", words);
         }
 
+        // Put this into its own method, because of the Reverse stuff.
+        List<string> BackSearch(string start, SqliteCommand cmd)
+        {
+            var results = new List<string>( start.Split(' ') );
+            results.Reverse();
+
+            CollectChains(results, Direction.Backward, cmd);
+
+            results.Reverse();
+            return results;
+        }
+
+
+        void CollectChains(List<string> coll, Direction dir, SqliteCommand cmd)
+        {
+            const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
+            cmd.CommandText = FormatSql(searchSql, dir);
+            cmd.Prepare();
+
+            string followUp, chain;
+            while (coll.Count <= MaxWords)
+            {
+                chain = GetLatestChain(coll);
+                cmd.Parameters.AddWithValue("@Chain", chain);
+                
+                followUp = cmd.ExecuteScalar() as string;
+                if ( !string.IsNullOrEmpty(followUp) )
+                    coll.Add(followUp);
+                else
+                    return;
+            }
+        }
+
+        string GetLatestChain(List<string> sentence)
+        {
+            var chain = new string[Order];
+            
+            int j = (sentence.Count - Order);
+            for (int i = 0; i < Order; i++, j++)
+                chain[i] = sentence[j];
+            
+            return string.Join(" ", chain);
+        }
+
+
+        // -----
+        // Methods for constructing SQL statements.
+        // -----
+
+        static string FormatSql(string sql, Direction dir)
+        {
+            switch (dir)
+            {
+            case Direction.Forward:
+                return string.Format(sql, "Forward");
+            case Direction.Backward:
+                return string.Format(sql, "Backward");
+            default:
+                throw new InvalidOperationException("Unexpected Direction.");
+            }
+        }
+
+
         static void CreateSeedSql(string seed, SqliteCommand cmd)
         {
-            const string seedSql = "SELECT * FROM Chainey WHERE chain LIKE @SeedPat OR followup=@Seed " +
+            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup=@Seed " +
                 "ORDER BY RANDOM() LIMIT 1";
             if (cmd.CommandText != seedSql)
             {
@@ -197,25 +405,9 @@ namespace Chainey
                 cmd.CommandText = seedSql;
                 cmd.Prepare();
             }
-            var seedPattern = string.Concat("%", seed, "%");
+            var seedPattern = string.Concat(seed, "%");
             cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
             cmd.Parameters.AddWithValue("@Seed", seed);
-        }
-
-        // Will return null if follow-up is null or if the chain doesn't exist in the database.
-        string GetFollowUp(List<string> sentence, SqliteCommand cmd)
-        {
-            const string followUpSql = "SELECT followup FROM Chainey WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            if (cmd.CommandText != followUpSql)
-            {
-                cmd.CommandText = followUpSql;
-                cmd.Prepare();
-            }
-            string chain = MarkovTools.GetLatestChain(sentence, Order);
-            cmd.Parameters.AddWithValue("@Chain", chain);
-
-            var followUp = cmd.ExecuteScalar() as string;
-            return followUp;
         }
     }
 }

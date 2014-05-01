@@ -40,6 +40,7 @@
     <Compile Include="Database.cs" />
     <Compile Include="Chainey.cs" />
     <Compile Include="MarkovTools.cs" />
+    <Compile Include="Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
