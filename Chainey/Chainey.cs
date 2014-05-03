@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -66,7 +67,7 @@ public class IrcChainey : IMeidoHook
 
     public void HandleChannelMessage(IIrcMessage e)
     {
-        // If it's a trigger, ignore it.
+        // If it's a trigger, don't process it.
         if (e.Trigger == null)
         {
             lock (_locker)
@@ -74,6 +75,17 @@ public class IrcChainey : IMeidoHook
                 MessageQueue.Enqueue(e);
                 Monitor.Pulse(_locker);
             }
+        }
+        else if (e.Trigger == "markov")
+        {
+            var msg = e.Message.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+            msg = e.MessageArray.Slice(1, 0);
+
+            var sw = Stopwatch.StartNew();
+            EmitSentence(e.Channel, msg);
+            sw.Stop();
+
+            Console.WriteLine("Diagnostics time: " + sw.Elapsed);
         }
     }
 
@@ -110,12 +122,13 @@ public class IrcChainey : IMeidoHook
 
     void ThreadedHandler(IIrcMessage e)
     {
-        var msg = e.Message.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+        var msg = e.Message.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+
         string first = msg[0];
         string last = msg[msg.Length - 1];
         
         // If directly addressed. (nick: message)
-        if (first.Contains(irc.Nickname, StringComparison.OrdinalIgnoreCase))
+        if (first.StartsWith(irc.Nickname, StringComparison.OrdinalIgnoreCase))
         {
             msg = msg.Slice(1, 0);
             HandleAddressed(e.Channel, e.Nick, msg);
@@ -158,7 +171,7 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string[] respondTo)
     {
-        // It's okay to change respondTo in place, since it gets copied earlier by Splice.
+        // It's okay to change respondTo in place, since it gets copied earlier by Slice.
         chainey.SortByWordCount(respondTo);
         var selection = respondTo.
             Take(config.ResponseTries);
@@ -168,6 +181,7 @@ public class IrcChainey : IMeidoHook
             if (history.Add(sen))
             {
                 irc.SendMessage(channel, sen);
+                Console.WriteLine("\n[Chainey] [{0}] {1}", chainey.SentenceRarity(sen), sen);
                 return;
             }
         }
@@ -184,7 +198,7 @@ public class IrcChainey : IMeidoHook
         if (sentence.Length > 0)
         {
             history.Add( string.Join(" ", sentence) );
-            chainey.AddSentence(sentence);
+            chainey.AddSentence(sentence, false);
         }
     }
 

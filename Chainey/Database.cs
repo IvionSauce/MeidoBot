@@ -1,6 +1,7 @@
 using System;
 using Mono.Data.Sqlite;
 using System.Collections.Generic;
+using IvionSoft;
 
 namespace Chainey
 {
@@ -9,6 +10,13 @@ namespace Chainey
         public int Order { get; private set; }
 
         volatile int _maxWords;
+        /// <summary>
+        /// Gets or sets the maximum word count. This is used as a limit when building sentences, as a safeguard against
+        /// an infinite search. Thread safe, but if set when building a sentence resulting sentence will be of previous
+        /// value.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if MaxWords is set to 0 or lower.</exception>
+        /// <value>Maximum word count. Default: 100.</value>
         public int MaxWords
         {
             get { return _maxWords; }
@@ -59,27 +67,77 @@ namespace Chainey
         }
 
 
-        // -----
+        // ***
+        // -----------------------------
         // Methods for adding sentences.
-        // -----
+        // -----------------------------
+        // ***
 
+
+        /// <summary>
+        /// Adds sentence to the brain.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if sentence is null.</exception>
+        /// <param name="sentence">Sentence.</param>
         public void AddSentence(string sentence)
         {
             if (sentence == null)
                 throw new ArgumentNullException("sentence");
 
-            string[] words = sentence.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-            AddSentence(words);
+            string[] words = sentence.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+            InternalAdd(words);
         }
 
+        /// <summary>
+        /// Adds sentence to the brain. Null, empty and whitespace strings are filtered from sentence.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if sentence is null.</exception>
+        /// <param name="sentence">Sentence (array of words).</param>
         public void AddSentence(string[] sentence)
+        {
+            AddSentence(sentence, true);
+        }
+
+        /// <summary>
+        /// Adds sentence to the brain.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if sentence is null.</exception>
+        /// <param name="sentence">Sentence (array of words).</param>
+        /// <param name="filter">If set to <c>true</c> check input sentence for null, empty and whitespace strings and
+        /// remove those before adding.</param>
+        public void AddSentence(string[] sentence, bool filter)
         {
             if (sentence == null)
                 throw new ArgumentNullException("sentence");
-            // Return early if there's nothing to do.
-            else if (sentence.Length < Order)
-                return;
 
+            // Make sure the array doesn't contain any null, empty or whitespace items. Also trim before adding.
+            // Can be disabled by those who know for sure their array doesn't contain any and want to avoid this cost.
+            if (filter)
+            {
+                string trimmed;
+                var cleaned = new List<string>(sentence.Length);
+                for (int i = 0; i < sentence.Length; i++)
+                {
+                    if (sentence[i] != null)
+                    {
+                        trimmed = sentence[i].Trim();
+                        if (trimmed != string.Empty)
+                            cleaned.Add(trimmed);
+                    }
+                }
+
+                InternalAdd( cleaned.ToArray() );
+            }
+            else
+                InternalAdd(sentence);
+        }
+
+        void InternalAdd(string[] sentence)
+        {
+            // Return early if there's nothing to do.
+            if (sentence.Length < Order)
+                return;
+            
             string[] reversed = ReverseCopy(sentence);
             
             string[][] forwardChains = MarkovTools.TokenizeSentence(sentence, Order);
@@ -92,17 +150,18 @@ namespace Chainey
                 using (SqliteCommand insertCmd = conn.CreateCommand())
                 {
                     insertCmd.Transaction = tr;
-
+                    
                     UpdateWordCount(sentence, insertCmd);
-
+                    
                     InsertChains(forwardChains, Direction.Forward, insertCmd);
                     InsertChains(backwardChains, Direction.Backward, insertCmd);
-
+                    
                     tr.Commit();
                 }
                 conn.Close();
             }
         }
+
 
         static string[] ReverseCopy(string[] arr)
         {
@@ -120,6 +179,7 @@ namespace Chainey
         {
             const string cmd = "INSERT INTO {0} (chain, followup) SELECT @Chain, @FollowUp " +
                 "WHERE NOT EXISTS(SELECT 1 FROM {0} WHERE chain=@Chain AND followup=@FollowUp)";
+            // const string cmd = "INSERT INTO {0} VALUES(@Chain, @FollowUp) ON CONFLICT IGNORE";
             insertCmd.CommandText = FormatSql(cmd, dir);
             insertCmd.Prepare();
 
@@ -136,10 +196,13 @@ namespace Chainey
         }
 
 
-        // -----
+        // ***
+        // ------------------------------------
         // Methods having to do with WordCount.
-        // -----
+        // ------------------------------------
+        // ***
 
+        // Increment word count by 1 if it has an entry, else create entry with count 1.
         static void UpdateWordCount(string[] sentence, SqliteCommand cmd)
         {
             const string countSql = "INSERT OR REPLACE INTO WordCount (word, count) " +
@@ -155,7 +218,12 @@ namespace Chainey
         }
 
 
-        // Modifies `words` in place.
+        /// <summary>
+        /// Sorts words by their word count, from less to more common.
+        /// Words that are null, empty or whitespace will be treated as most common.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if words is null.</exception>
+        /// <param name="words">Words.</param>
         public void SortByWordCount(string[] words)
         {
             if (words == null)
@@ -164,7 +232,7 @@ namespace Chainey
             else if (words.Length <= 1)
                 return;
 
-            var counts = new ulong[words.Length];
+            var counts = new long[words.Length];
             using (var conn = new SqliteConnection(connStr))
             {
                 conn.Open();
@@ -173,7 +241,10 @@ namespace Chainey
                     int i = 0;
                     foreach (string word in words)
                     {
-                        counts[i] = WordCount(word, cmd);
+                        if (!string.IsNullOrWhiteSpace(word))
+                            counts[i] = WordCount(word, cmd);
+                        else
+                            counts[i] = long.MaxValue;
                         i++;
                     }
                 }
@@ -184,6 +255,12 @@ namespace Chainey
         }
 
 
+        /// <summary>
+        /// Sorts sentences by rarity, from less to more rare.
+        /// Sentences that are null or have no words (empty or whitespace) will be treated as least rare.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if sentences is null.</exception>
+        /// <param name="sentences">Sentences.</param>
         public void SortByRarity(string[] sentences)
         {
             if (sentences == null)
@@ -212,19 +289,140 @@ namespace Chainey
         }
 
 
-        static double SentenceRarity(string sentence, SqliteCommand cmd)
+        /// <summary>
+        /// Get the word count.
+        /// </summary>
+        /// <returns>The word count.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if word is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if word is empty or whitespace.</exception>
+        /// <param name="word">Word.</param>
+        public long WordCount(string word)
         {
-            ulong sum = 0;
-            foreach ( string word in sentence.Split(' ') )
-                sum += WordCount(word, cmd);
+            word.ThrowIfNullOrWhiteSpace("word");
 
-            return sum / (double)sentence.Length;
+            long count;
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    count = WordCount(word, cmd);
+                }
+                conn.Close();
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Get the word counts. Null, empty or whitespace "words" will be skipped.
+        /// </summary>
+        /// <returns>The word count.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if words is null.</exception>
+        /// <param name="words">Words.</param>
+        public IEnumerable<long> WordCount(IEnumerable<string> words)
+        {
+            if (words == null)
+                throw new ArgumentNullException("words");
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    foreach (string word in words)
+                    {
+                        if (!string.IsNullOrWhiteSpace(word))
+                            yield return (long)WordCount(word, cmd);
+                    }
+                }
+                conn.Close();
+            }
         }
 
 
-        // Return as ulong (unsigned 64-bit integer) even though SQLite stores it as signed 64-bit integers because it
-        // allows easy usage for summing/addition. Count will also never be negative, so there's no drawbacks.
-        static ulong WordCount(string word, SqliteCommand cmd)
+        /// <summary>
+        /// Get the rarity of a sentence. The further away (positive) from 0, the rarer.
+        /// A sentence with no words (empty or whitespace) will have a rarity of Negative Infinity.
+        /// </summary>
+        /// <returns>The rarity.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if sentence is null.</exception>
+        /// <param name="sentence">Sentence.</param>
+        public double SentenceRarity(string sentence)
+        {
+            if (sentence == null)
+                throw new ArgumentNullException("sentence");
+
+            double rarity;
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    rarity =  SentenceRarity(sentence, cmd);
+                }
+                conn.Close();
+            }
+
+            return rarity;
+        }
+
+        /// <summary>
+        /// Get the rarity of sentences. The further away (positive) from 0, the rarer.
+        /// A sentence with no words (empty or whitespace) will have a rarity of Negative Infinity. Null will beget NaN.
+        /// </summary>
+        /// <returns>The rarity.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if sentences is null.</exception>
+        /// <param name="sentences">Sentences.</param>
+        public IEnumerable<double> SentenceRarity(IEnumerable<string> sentences)
+        {
+            if (sentences == null)
+                throw new ArgumentNullException("sentences");
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    foreach (string sen in sentences)
+                        yield return SentenceRarity(sen, cmd);
+                }
+                conn.Close();
+            }
+        }
+
+
+        // The closer to 0, the less rare the sentence is. If the sentence contains only words we've never seen before
+        // the rarity will be `Infinity`.
+        // Will return `-Infinity` if the sentence has no words.
+        // Will return `NaN` if the sentence is null.
+        // If sorted order will be: NaN, -Infinity, [...], Infinity
+        static double SentenceRarity(string sentence, SqliteCommand cmd)
+        {
+            if (sentence == null)
+                return double.NaN;
+
+            var split = sentence.Split();
+
+            // Sum word counts in ulong for extra headroom.
+            ulong sum = 0;
+            int len = split.Length;
+            foreach (string word in split)
+            {
+                if (word != string.Empty)
+                    sum += (ulong)WordCount(word, cmd);
+                else
+                    len--;
+            }
+
+            if (len > 0)
+                return (double)len / sum;
+            else
+                return double.NegativeInfinity;
+        }
+
+
+        static long WordCount(string word, SqliteCommand cmd)
         {
             const string sqlCmd = "SELECT count FROM WordCount WHERE word=@Word";
             if (cmd.CommandText != sqlCmd)
@@ -235,17 +433,18 @@ namespace Chainey
             cmd.Parameters.AddWithValue("@Word", word.ToUpperInvariant());
 
             // If word is not found in the WordCount table, return 0.
-            var count = cmd.ExecuteScalar() as ulong?;
+            var count = cmd.ExecuteScalar() as long?;
             return count ?? 0;
         }
 
 
-        // -----
+        // ***
+        // -------------------------------
         // Methods for building sentences.
-        // -----
+        // -------------------------------
+        // ***
 
-        // Returns an array of sentences equal or less of the size of the seeds array passed in. It can return an empty
-        // array, in case none of the seeds resulted in a sentence.
+
         public IEnumerable<string> BuildSentences(IEnumerable<string> seeds)
         {
             if (seeds == null)
@@ -273,13 +472,20 @@ namespace Chainey
         }
 
 
+        /// <summary>
+        /// Builds a random sentence.
+        /// </summary>
+        /// <returns>The sentence.</returns>
         public string BuildRandomSentence()
         {
             return BuildSentence(null);
         }
 
-        // If seed is null it will build a sentence starting with a randomly selected chain.
-        // This will return null in case no sentence could be constructed.
+        /// <summary>
+        /// Builds a sentence. If seed is null builds a random sentence.
+        /// </summary>
+        /// <returns>The sentence, or null if no sentence could be build.</returns>
+        /// <param name="seed">Seed.</param>
         public string BuildSentence(string seed)
         {
             const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
@@ -319,44 +525,39 @@ namespace Chainey
                     return null;
             }
 
-            // Backward search.
-            List<string> words = BackSearch(chain, cmd);
-            // Forward search.
-            if (!string.IsNullOrEmpty(followUp))
-            {
+            // Populate the sentence-to-be with the initial chain and follow up.
+            var words = new List<string>( chain.Split(' ') );
+            if (followUp != string.Empty)
                 words.Add(followUp);
-                CollectChains(words, Direction.Forward, cmd);
-            }
+
+            // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
+            int maxWords = MaxWords;
+            // Backward search.
+            words.Reverse();
+            CollectChains(words, Direction.Backward, maxWords, cmd);
+            words.Reverse();
+            // Forward search.
+            CollectChains(words, Direction.Forward, maxWords, cmd);
 
             return string.Join(" ", words);
         }
 
-        // Put this into its own method, because of the Reverse stuff.
-        List<string> BackSearch(string start, SqliteCommand cmd)
-        {
-            var results = new List<string>( start.Split(' ') );
-            results.Reverse();
 
-            CollectChains(results, Direction.Backward, cmd);
-
-            results.Reverse();
-            return results;
-        }
-
-
-        void CollectChains(List<string> coll, Direction dir, SqliteCommand cmd)
+        void CollectChains(List<string> coll, Direction dir, int maxWords, SqliteCommand cmd)
         {
             const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
             cmd.CommandText = FormatSql(searchSql, dir);
             cmd.Prepare();
 
             string followUp, chain;
-            while (coll.Count <= MaxWords)
+            while (coll.Count <= maxWords)
             {
                 chain = GetLatestChain(coll);
                 cmd.Parameters.AddWithValue("@Chain", chain);
                 
                 followUp = cmd.ExecuteScalar() as string;
+                // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
+                // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )
                     coll.Add(followUp);
                 else
@@ -376,9 +577,11 @@ namespace Chainey
         }
 
 
-        // -----
+        // ***
+        // ----------------------------------------
         // Methods for constructing SQL statements.
-        // -----
+        // ----------------------------------------
+        // ***
 
         static string FormatSql(string sql, Direction dir)
         {
