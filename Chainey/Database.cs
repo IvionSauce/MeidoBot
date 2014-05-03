@@ -177,9 +177,7 @@ namespace Chainey
 
         static void InsertChains(string[][] chains, Direction dir, SqliteCommand insertCmd)
         {
-            const string cmd = "INSERT INTO {0} (chain, followup) SELECT @Chain, @FollowUp " +
-                "WHERE NOT EXISTS(SELECT 1 FROM {0} WHERE chain=@Chain AND followup=@FollowUp)";
-            // const string cmd = "INSERT INTO {0} VALUES(@Chain, @FollowUp) ON CONFLICT IGNORE";
+            const string cmd = "INSERT OR IGNORE INTO {0} VALUES(@Chain, @FollowUp)";
             insertCmd.CommandText = FormatSql(cmd, dir);
             insertCmd.Prepare();
 

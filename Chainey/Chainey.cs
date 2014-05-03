@@ -171,6 +171,9 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string[] respondTo)
     {
+        // Keep a random sentence as fallback.
+        string sentence = chainey.BuildRandomSentence();
+
         // It's okay to change respondTo in place, since it gets copied earlier by Slice.
         chainey.SortByWordCount(respondTo);
         var selection = respondTo.
@@ -180,16 +183,16 @@ public class IrcChainey : IMeidoHook
         {
             if (history.Add(sen))
             {
-                irc.SendMessage(channel, sen);
-                Console.WriteLine("\n[Chainey] [{0}] {1}", chainey.SentenceRarity(sen), sen);
-                return;
+                sentence = sen;
+                break;
             }
         }
 
-        // We'll get here if none of the seeds gave us a sentence.
-        string sentence = chainey.BuildRandomSentence();
         if (sentence != null)
+        {
             irc.SendMessage(channel, sentence);
+            Console.WriteLine("\n[Chainey] [{0}] {1}", chainey.SentenceRarity(sentence), sentence);
+        }
     }
 
 
