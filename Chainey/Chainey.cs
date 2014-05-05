@@ -12,11 +12,10 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class IrcChainey : IMeidoHook
 {
-    IIrcComm irc;
-    SqliteBack chainey;
-    Config config = new Config();
+    readonly IIrcComm irc;
+    readonly BrainFrontend chainey;
 
-    History<string> history = new History<string>(100);
+    Config config = new Config();
 
     Thread[] consumers;
     readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
@@ -57,8 +56,7 @@ public class IrcChainey : IMeidoHook
     [ImportingConstructor]
     public IrcChainey(IIrcComm ircComm)
     {
-        chainey = new SqliteBack("conf/chainey.sqlite", config.Order);
-        chainey.MaxWords = config.MaxWords;
+        chainey = new BrainFrontend( new SqliteBrain("conf/chainey.sqlite", config.Order) );
         StartConsumers(config.Threads);
 
         irc = ircComm;
@@ -67,25 +65,27 @@ public class IrcChainey : IMeidoHook
 
     public void HandleChannelMessage(IIrcMessage e)
     {
-        // If it's a trigger, don't process it.
-        if (e.Trigger == null)
+        switch (e.Trigger)
         {
+        case null:
+
             lock (_locker)
             {
                 MessageQueue.Enqueue(e);
                 Monitor.Pulse(_locker);
             }
-        }
-        else if (e.Trigger == "markov")
-        {
-            var msg = e.Message.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-            msg = e.MessageArray.Slice(1, 0);
+            return;
+        case "markov":
 
+            var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            msg = e.MessageArray.Slice(1, 0);
+            
             var sw = Stopwatch.StartNew();
             EmitSentence(e.Channel, msg);
             sw.Stop();
-
             Console.WriteLine("Diagnostics time: " + sw.Elapsed);
+
+            return;
         }
     }
 
@@ -122,7 +122,7 @@ public class IrcChainey : IMeidoHook
 
     void ThreadedHandler(IIrcMessage e)
     {
-        var msg = e.Message.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+        var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
         string first = msg[0];
         string last = msg[msg.Length - 1];
@@ -150,6 +150,14 @@ public class IrcChainey : IMeidoHook
             HandleUnaddressed(msg);
     }
 
+    bool LearningChannel(string channel)
+    {
+        if (config.Learning)
+            return config.LearningChannels.Contains(channel);
+        else
+            return false;
+    }
+
 
     void HandleAddressed(string channel, string nick, string[] message)
     {        
@@ -169,48 +177,21 @@ public class IrcChainey : IMeidoHook
     }
 
 
-    void EmitSentence(string channel, string[] respondTo)
-    {
-        // Keep a random sentence as fallback.
-        string sentence = chainey.BuildRandomSentence();
-
-        // It's okay to change respondTo in place, since it gets copied earlier by Slice.
-        chainey.SortByWordCount(respondTo);
-        var selection = respondTo.
-            Take(config.ResponseTries);
-
-        foreach ( string sen in chainey.BuildSentences(selection) )
-        {
-            if (history.Add(sen))
-            {
-                sentence = sen;
-                break;
-            }
-        }
-
-        if (sentence != null)
-        {
-            irc.SendMessage(channel, sentence);
-            Console.WriteLine("\n[Chainey] [{0}] {1}", chainey.SentenceRarity(sentence), sentence);
-        }
-    }
-
-
     void AbsorbSentence(string[] sentence)
     {
         if (sentence.Length > 0)
+            chainey.Add(sentence, false);
+    }
+
+    void EmitSentence(string channel, string[] respondTo)
+    {
+        var sentence = chainey.BuildResponse(respondTo);
+
+        if (sentence.Content != string.Empty)
         {
-            history.Add( string.Join(" ", sentence) );
-            chainey.AddSentence(sentence, false);
+            irc.SendMessage(channel, sentence.Content);
+            Console.WriteLine("\n[Chainey] [{0}] {1}", sentence.Rarity, sentence.Content);
         }
     }
 
-
-    bool LearningChannel(string channel)
-    {
-        if (config.Learning)
-            return config.LearningChannels.Contains(channel);
-        else
-            return false;
-    }
 }

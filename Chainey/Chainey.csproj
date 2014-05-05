@@ -41,6 +41,9 @@
     <Compile Include="Chainey.cs" />
     <Compile Include="MarkovTools.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="Sentence.cs" />
+    <Compile Include="BrainBackend.cs" />
+    <Compile Include="BrainFrontend.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

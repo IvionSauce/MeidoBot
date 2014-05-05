@@ -12,9 +12,7 @@ class Config
     public HashSet<string> LearningChannels { get; set; }
     
     public int Threads { get; set; }
-    
-    // Max number words you want a constructed sentence to have.
-    public int MaxWords { get; set; }
+
     // The number of words it tries as individual seeds before building a random sentence.
     public int ResponseTries { get; set; }
     
@@ -32,8 +30,7 @@ class Config
         {"#sankakucomplex", "#SteelGolem"};
         
         Threads = 3;
-        
-        MaxWords = 40;
+
         ResponseTries = 4;
         
         MaxConsecutive = 3;

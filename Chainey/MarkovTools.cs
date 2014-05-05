@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Chainey
 {
-    static public class MarkovTools
+    public static class MarkovTools
     {
-        static public string[][] TokenizeSentence(string[] sentence, int order)
+        public static string[][] TokenizeSentence(string[] sentence, int order)
         {
             if (sentence.Length < order)
                 return new string[0][];
@@ -32,8 +32,26 @@ namespace Chainey
         }
 
 
+        public static string[] Filter(string[] sentence)
+        {
+            string trimmed;
+            var cleaned = new List<string>(sentence.Length);
+            for (int i = 0; i < sentence.Length; i++)
+            {
+                if (sentence[i] != null)
+                {
+                    trimmed = sentence[i].Trim();
+                    if (trimmed != string.Empty)
+                        cleaned.Add(trimmed);
+                }
+            }
+
+            return cleaned.ToArray();
+        }
+
+
         // Will return true if a word occurs consecutively and exceeds the threshold.
-        static public bool FoulPlay(string[] words, int consecutiveThreshold, int totalThreshold)
+        public static bool FoulPlay(string[] words, int consecutiveThreshold, int totalThreshold)
         {
             // Total and consecutive occurrences count.
             int occurrences, consecutive;
