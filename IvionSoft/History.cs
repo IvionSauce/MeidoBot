@@ -5,23 +5,30 @@ namespace IvionSoft
 {
     public class History<T>
     {
-        int length;
+        public int Length { get; private set; }
+
         HashSet<T> hashes;
         Queue<T> queue;
-        object _locker;
+        object _locker = new object();
 
 
-        public History(int length)
+        public History(int length) : this(length, null)
+        {}
+
+        public History(int length, IEqualityComparer<T> comparer)
         {
             if (length < 1)
                 throw new ArgumentException("Must be 1 or larger", "length");
-
-            this.length = length;
-            hashes = new HashSet<T>();
+            
+            Length = length;
             queue = new Queue<T>(length + 1);
 
-            _locker = new object();
+            if (comparer != null)
+                hashes = new HashSet<T>(comparer);
+            else
+                hashes = new HashSet<T>();
         }
+
 
         public bool Contains(T item)
         {
@@ -38,7 +45,7 @@ namespace IvionSoft
                 if (added)
                 {
                     queue.Enqueue(item);
-                    if (queue.Count > length)
+                    if (queue.Count > Length)
                     {
                         T toRemove = queue.Dequeue();
                         hashes.Remove(toRemove);
