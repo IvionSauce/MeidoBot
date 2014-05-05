@@ -156,55 +156,6 @@ public class NyaaPatterns : IDisposable
     }
 
 
-    public void ClearPatterns(string channel)
-    {
-        lock (_locker)
-        {
-            ChannelPatterns chanPat = storage.Get(channel);
-
-            if (chanPat != null)
-            {
-                chanPat.Patterns = new List<PatternEntry>();
-                Write();
-            }
-        }
-    }
-
-    public void ClearAllExcludes(string channel)
-    {
-        lock (_locker)
-        {
-            ChannelPatterns chanPat = storage.Get(channel);
-
-            if (chanPat != null)
-            {
-                foreach (PatternEntry entry in chanPat.Patterns)
-                    entry.ExcludePatterns = new List<string[]>();
-                Write();
-            }
-        }
-    }
-
-    public void ClearExcludes(string channel, int assocPat)
-    {
-        lock (_locker)
-        {
-            ChannelPatterns chanPat = storage.Get(channel);
-
-            if ( IndexExists(chanPat, assocPat) )
-            {
-                chanPat.Patterns[assocPat].ExcludePatterns = new List<string[]>();
-                Write();
-            }
-            else if ( GlobalRequest(chanPat, assocPat) )
-            {
-                chanPat.GlobalExcludePatterns = new List<string[]>();
-                Write();
-            }
-        }
-    }
-
-
     public int AddGlobalExclude(string channel, string exclude)
     {
         return AddExclude(channel, -1, exclude);
@@ -218,11 +169,6 @@ public class NyaaPatterns : IDisposable
     public string RemoveGlobalExclude(string channel, int iExclude)
     {
         return RemoveExclude(channel, -1, iExclude);
-    }
-
-    public void ClearGlobalExcludes(string channel)
-    {
-        ClearExcludes(channel, -1);
     }
 
 
