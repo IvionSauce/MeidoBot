@@ -249,9 +249,45 @@ namespace Chainey
 
         // For when adding or looking up a word. To make sure each word is approached consistently, regardless of the
         // splitting method used.
+        // Inspired by http://www.dotnetperls.com/punctuation
         static string Normalize(string word)
         {
-            return word.Trim().ToUpperInvariant();
+            // Count start whitespace and punctuation.
+            int removeFromStart = 0;
+            for (int i = 0; i < word.Length; i++)
+            {
+                if (char.IsWhiteSpace(word[i]) || char.IsPunctuation(word[i]))
+                    removeFromStart++;
+                else
+                    break;
+            }
+
+            // If only punctuation, return as is.
+            if (removeFromStart == word.Length)
+                return word;
+
+            // Count end whitespace and punctuation.
+            int removeFromEnd = 0;
+            for (int i = (word.Length - 1); i >= 0; i--)
+            {
+                if (char.IsWhiteSpace(word[i]) || char.IsPunctuation(word[i]))
+                    removeFromEnd++;
+                else
+                    break;
+            }
+
+            // If no leading and/or trailing whitespace/punctuation, just uppercase it.
+            if (removeFromStart == 0 && removeFromEnd == 0)
+                return word.ToUpperInvariant();
+
+            // Remove leading and trailing whitespace/punctuation before uppercasing.
+            else
+            {
+                int len = word.Length - removeFromEnd - removeFromStart;
+                string removed = word.Substring(removeFromStart, len);
+
+                return removed.ToUpperInvariant();
+            }
         }
 
 
