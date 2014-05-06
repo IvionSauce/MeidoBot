@@ -138,11 +138,10 @@ namespace Chainey
             insertCmd.CommandText = FormatSql(cmd, dir);
             insertCmd.Prepare();
 
-            string insertChain, insertFollow;
             foreach (string[] chain in chains)
             {
-                insertChain = string.Join(" ", chain, 0, chain.Length - 1);
-                insertFollow = chain[chain.Length - 1] ?? string.Empty;
+                var insertChain = string.Join(" ", chain, 0, chain.Length - 1);
+                var insertFollow = chain[chain.Length - 1] ?? string.Empty;
 
                 insertCmd.Parameters.AddWithValue("@Chain", insertChain);
                 insertCmd.Parameters.AddWithValue("@FollowUp", insertFollow);
@@ -169,7 +168,7 @@ namespace Chainey
             {
                 if (!string.IsNullOrWhiteSpace(word))
                 {
-                    cmd.Parameters.AddWithValue("@Word", word.ToUpperInvariant());
+                    cmd.Parameters.AddWithValue("@Word", Normalize(word));
                     cmd.ExecuteNonQuery();
                 }
                 else
@@ -240,11 +239,19 @@ namespace Chainey
                 cmd.CommandText = sqlCmd;
                 cmd.Prepare();
             }
-            cmd.Parameters.AddWithValue("@Word", word.ToUpperInvariant());
+            cmd.Parameters.AddWithValue("@Word", Normalize(word));
 
             // If word is not found in the WordCount table, return 0.
             var count = cmd.ExecuteScalar() as long?;
             return count ?? 0;
+        }
+
+
+        // For when adding or looking up a word. To make sure each word is approached consistently, regardless of the
+        // splitting method used.
+        static string Normalize(string word)
+        {
+            return word.Trim().ToUpperInvariant();
         }
 
 
@@ -356,7 +363,6 @@ namespace Chainey
                 connection.Open();
                 using (var cmd = new SqliteCommand(connection))
                 {
-                    string sentence;
                     foreach (string seed in seeds)
                     {
                         if (string.IsNullOrWhiteSpace(seed))
@@ -364,7 +370,7 @@ namespace Chainey
                         else
                             CreateSeedSql(seed, cmd);
 
-                        sentence = BuildASentence(cmd);
+                        string sentence = BuildASentence(cmd);
                         if (sentence != null)
                             yield return sentence;
                     }
@@ -445,13 +451,12 @@ namespace Chainey
             cmd.CommandText = FormatSql(searchSql, dir);
             cmd.Prepare();
 
-            string followUp, chain;
             while (coll.Count <= maxWords)
             {
-                chain = GetLatestChain(coll);
+                string chain = GetLatestChain(coll);
                 cmd.Parameters.AddWithValue("@Chain", chain);
                 
-                followUp = cmd.ExecuteScalar() as string;
+                var followUp = cmd.ExecuteScalar() as string;
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )

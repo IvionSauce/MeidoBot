@@ -9,33 +9,36 @@ namespace Chainey
     public class BrainFrontend
     {
         readonly IBrainBackend brain;
-        // Our history/memory, keeps track of sentences recently inputted or outputted.
-        volatile History<string> history;
 
+        // Our history/memory, keeps track of sentences recently inputted or outputted.
+        History<string> history;
+        object _historyLock = new object();
         public int Memory
         {
-            get { return history.Length; }
+            get
+            {
+                lock (_historyLock)
+                    return history.Length;
+            }
             set
             {
-                if (value > 0)
+                lock (_historyLock)
                     history = new History<string>(value);
-                else
-                    history = null;
             }
         }
 
         TimeSpan _limit;
-        object _locker = new object();
+        object _limitLock = new object();
         public TimeSpan TimeLimit
         {
             get
             {
-                lock (_locker)
+                lock (_limitLock)
                     return _limit;
             }
             set
             {
-                lock (_locker)
+                lock (_limitLock)
                     _limit = value;
             }
         }
@@ -75,7 +78,7 @@ namespace Chainey
 
         void InternalAdd(string[] sentence, bool filter)
         {
-            if (history != null)
+            lock (_historyLock)
                 history.Add( string.Join(" ", sentence) );
 
             // Make sure the array doesn't contain any null, empty or whitespace items. Also trim before adding.
@@ -108,7 +111,6 @@ namespace Chainey
             return InternalResponse( message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries) );
         }
 
-        // Input message will be modified, due to sort.
         public Sentence BuildResponse(string[] message)
         {
             if (message == null)
@@ -120,12 +122,12 @@ namespace Chainey
         Sentence InternalResponse(string[] message)
         {
             // Add to history/memory, so that we don't go straight up repeating people.
-            if (history != null)
+            lock (_historyLock)
                 history.Add( string.Join(" ", message) );
             
             // Sort so that the rarer words get tried first as seeds.
-            SortByWordCount(message);
-            var responses = Build(message);
+            string[] sorted = SortByWordCount(message);
+            List<Sentence> responses = InternalBuild(sorted);
             // Sort sentences on rarity.
             responses.Sort( (a, b) => a.Rarity.CompareTo(b.Rarity) );
             
@@ -133,7 +135,8 @@ namespace Chainey
             if (responses.Count > 0)
             {
                 var resp = responses[responses.Count - 1];
-                if (history != null)
+                // Add to history/memory, so that we don't go repeating ourselves.
+                lock (_historyLock)
                     history.Add(resp.Content);
 
                 return resp;
@@ -143,22 +146,37 @@ namespace Chainey
                 return BuildRandom();
         }
 
-        void SortByWordCount(string[] words)
+        string[] SortByWordCount(string[] words)
         {
+            var copy = new string[words.Length];
+            Array.Copy(words, copy, words.Length);
+
             var wordCounts = brain.WordCount(words);
-            Array.Sort(wordCounts.ToArray(), words);
+            // Sort the copy, so that we leave the input alone.
+            Array.Sort(wordCounts.ToArray(), copy);
+
+            return copy;
         }
 
 
         public List<Sentence> Build(IEnumerable<string> seeds)
         {
+            if (seeds == null)
+                throw new ArgumentNullException("seeds");
+
+            return InternalBuild(seeds);
+        }
+
+        List<Sentence> InternalBuild(IEnumerable<string> seeds)
+        {
             // Get as much sentences from the seeds as time allows.
             var candidates = GetSentences(seeds);
-
-            // Remove sentences still in the history/memory.
-            if (history != null)
+            
+            // Remove sentences still in the history/memory. We don't want to repeat what's been recently said to us or
+            // said by us.
+            lock (_historyLock)
                 candidates.RemoveAll( sen => history.Contains(sen.Content) );
-
+            
             return candidates;
         }
 
@@ -174,7 +192,7 @@ namespace Chainey
 
             // Make sure we have a consistent TimeLimit during the loop execution.
             TimeSpan limit;
-            lock (_locker)
+            lock (_limitLock)
                 limit = TimeLimit;
 
             var coll = new List<Sentence>();
@@ -188,7 +206,7 @@ namespace Chainey
                         break;
                 }
             }
-            // Otherwise simply add all Sentence objects.
+            // Add all Sentence objects when time is not of the essence.
             else
                 coll.AddRange(pairs);
 

@@ -12,12 +12,10 @@ namespace Chainey
 
             var chainCollection = new List<string[]>();
 
-            string[] chain;
-
             int last = sentence.Length - order;
             for (int i = 0; i <= last; i++)
             {
-                chain = new string[order + 1];
+                var chain = new string[order + 1];
                 for (int j = 0; j < chain.Length; j++)
                 {
                     if ( (i + j) < sentence.Length )
@@ -34,13 +32,12 @@ namespace Chainey
 
         public static string[] Filter(string[] sentence)
         {
-            string trimmed;
             var cleaned = new List<string>(sentence.Length);
             for (int i = 0; i < sentence.Length; i++)
             {
                 if (sentence[i] != null)
                 {
-                    trimmed = sentence[i].Trim();
+                    string trimmed = sentence[i].Trim();
                     if (trimmed != string.Empty)
                         cleaned.Add(trimmed);
                 }
@@ -53,16 +50,15 @@ namespace Chainey
         // Will return true if a word occurs consecutively and exceeds the threshold.
         public static bool FoulPlay(string[] words, int consecutiveThreshold, int totalThreshold)
         {
-            // Total and consecutive occurrences count.
-            int occurrences, consecutive;
-            string toCheck;
             // `Length - 1` because we don't need to check the final word, there would be nothing left to match against.
             // This could be more efficient, but I can't be arsed.
             for (int i = 0; i < (words.Length - 1); i++)
             {
+                // Total and consecutive occurrences count.
                 // Set to 1, because whatever word we start on has already occurred once.
-                occurrences = consecutive = 1;
-                toCheck = words[i];
+                int occurrences = 1;
+                int consecutive = 1;
+                string toCheck = words[i];
                 
                 // We can safely use `i + 1` here because the outer loop always stops 1 short.
                 for (int j = (i + 1); j < words.Length; j++)
