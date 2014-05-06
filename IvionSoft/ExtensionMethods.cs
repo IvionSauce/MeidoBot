@@ -9,7 +9,8 @@ namespace IvionSoft
         {
             return source.IndexOf(value, comp) >= 0;
         }
-        
+
+
         // Fisher–Yates shuffle
         // http://stackoverflow.com/questions/108819/
         public static void Shuffle<T> (this Random rng, T[] array)
@@ -43,6 +44,43 @@ namespace IvionSoft
 
             return res;
         }
+
+        // http://www.dotnetperls.com/punctuation
+        public static string TrimPunctuation(this string value)
+        {
+            // Count start punctuation.
+            int removeFromStart = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (char.IsPunctuation(value[i]))
+                    removeFromStart++;
+                else
+                    break;
+            }
+            // Count end punctuation.
+            int removeFromEnd = 0;
+            for (int i = (value.Length - 1); i >= 0; i--)
+            {
+                if (char.IsPunctuation(value[i]))
+                    removeFromEnd++;
+                else
+                    break;
+            }
+
+            // No characters were punctuation.
+            if (removeFromStart == 0 && removeFromEnd == 0)
+                return value;
+            // All characters were punctuation.
+            else if (removeFromStart == value.Length && removeFromEnd == value.Length)
+                return string.Empty;
+            // Substring.
+            else
+            {
+                int len = value.Length - removeFromEnd - removeFromStart;
+                return value.Substring(removeFromStart, len);
+            }
+        }
+
 
         public static void ThrowIfNullOrEmpty(this string source, string argName)
         {
