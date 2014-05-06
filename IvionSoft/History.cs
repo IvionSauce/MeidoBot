@@ -9,8 +9,12 @@ namespace IvionSoft
 
         HashSet<T> hashes;
         Queue<T> queue;
-        object _locker = new object();
 
+
+        public History()
+        {
+            Length = 0;
+        }
 
         public History(int length) : this(length, null)
         {}
@@ -18,7 +22,7 @@ namespace IvionSoft
         public History(int length, IEqualityComparer<T> comparer)
         {
             if (length < 1)
-                throw new ArgumentException("Must be 1 or larger", "length");
+                throw new ArgumentException("Cannot be less than or equal to 0.", "length");
             
             Length = length;
             queue = new Queue<T>(length + 1);
@@ -32,24 +36,27 @@ namespace IvionSoft
 
         public bool Contains(T item)
         {
-            return hashes.Contains(item);
+            if (Length > 0)
+                return hashes.Contains(item);
+            else
+                return false;
         }
 
         public bool Add(T item)
         {
-            bool added;
-            lock (_locker)
-            {
-                added = hashes.Add(item);
+            if (Length == 0)
+                return false;
 
-                if (added)
+            bool added;
+            added = hashes.Add(item);
+
+            if (added)
+            {
+                queue.Enqueue(item);
+                if (queue.Count > Length)
                 {
-                    queue.Enqueue(item);
-                    if (queue.Count > Length)
-                    {
-                        T toRemove = queue.Dequeue();
-                        hashes.Remove(toRemove);
-                    }
+                    T toRemove = queue.Dequeue();
+                    hashes.Remove(toRemove);
                 }
             }
 
