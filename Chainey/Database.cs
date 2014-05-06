@@ -104,7 +104,7 @@ namespace Chainey
             {
                 conn.Open();
                 using (SqliteTransaction tr = conn.BeginTransaction())
-                    using (SqliteCommand insertCmd = conn.CreateCommand())
+                using (SqliteCommand insertCmd = conn.CreateCommand())
                 {
                     insertCmd.Transaction = tr;
                     

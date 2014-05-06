@@ -136,6 +136,11 @@ namespace Chainey
             if (responses.Count > 0)
             {
                 var resp = responses[responses.Count - 1];
+
+                // Debug
+                Console.WriteLine("Responses: {0} - High: {1}, Low: {2}",
+                                  responses.Count, resp.Rarity, responses[0].Rarity);
+
                 // Add to history/memory, so that we don't go repeating ourselves.
                 lock (_historyLock)
                     history.Add(resp.Content);

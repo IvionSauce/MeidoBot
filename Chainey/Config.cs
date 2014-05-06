@@ -27,7 +27,7 @@ class Config
         
         Learning = true;
         LearningChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {"#sankakucomplex", "#SteelGolem"};
+        {"#sankakucomplex", "#SteelGolem", "#blaat"};
         
         Threads = 3;
 
