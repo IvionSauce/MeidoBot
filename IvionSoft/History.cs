@@ -11,26 +11,26 @@ namespace IvionSoft
         Queue<T> queue;
 
 
-        public History()
-        {
-            Length = 0;
-        }
+        public History() : this(0, null)
+        {}
 
         public History(int length) : this(length, null)
         {}
 
         public History(int length, IEqualityComparer<T> comparer)
         {
-            if (length < 1)
-                throw new ArgumentException("Cannot be less than or equal to 0.", "length");
-            
-            Length = length;
-            queue = new Queue<T>(length + 1);
+            if (length > 0)
+            {
+                Length = length;
+                queue = new Queue<T>(length + 1);
 
-            if (comparer != null)
-                hashes = new HashSet<T>(comparer);
+                if (comparer != null)
+                    hashes = new HashSet<T>(comparer);
+                else
+                    hashes = new HashSet<T>();
+            }
             else
-                hashes = new HashSet<T>();
+                Length = 0;
         }
 
 

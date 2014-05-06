@@ -78,6 +78,7 @@ namespace Chainey
 
         void InternalAdd(string[] sentence, bool filter)
         {
+            // Add to history/memory, we don't want to parrot things we've just learned, like a 3yo.
             lock (_historyLock)
                 history.Add( string.Join(" ", sentence) );
 
