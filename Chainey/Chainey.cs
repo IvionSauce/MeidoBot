@@ -83,7 +83,7 @@ public class IrcChainey : IMeidoHook
             var sw = Stopwatch.StartNew();
             EmitSentence(e.Channel, msg);
             sw.Stop();
-            Console.WriteLine("Diagnostics time: " + sw.Elapsed);
+            Console.WriteLine("Diagnostics time: " + sw.ElapsedMilliseconds + "ms");
 
             return;
         }

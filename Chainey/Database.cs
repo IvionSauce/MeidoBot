@@ -30,21 +30,24 @@ namespace Chainey
         }
 
         readonly string connStr;
+
         private enum Direction
         {
             Forward,
             Backward
         }
 
+        // Used in both BuildSentence and BuildSentences.
         const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
 
 
-        public SqliteBrain(string path, int order)
+        public SqliteBrain(string file, int order)
         {
+            file.ThrowIfNullOrWhiteSpace("file");
             if (order < 1)
                 throw new ArgumentOutOfRangeException("order", "Cannot be less than or equal to 0.");
 
-            connStr = "URI=file:" + path;
+            connStr = string.Concat("URI=file:", file, ";Pooling=true");
             Order = order;
             MaxWords = 100;
 
@@ -178,32 +181,7 @@ namespace Chainey
 
 
         /// <summary>
-        /// Get the word count.
-        /// </summary>
-        /// <returns>The word count.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if word is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if word is empty or whitespace.</exception>
-        /// <param name="word">Word.</param>
-        public long WordCount(string word)
-        {
-            word.ThrowIfNullOrWhiteSpace("word");
-
-            long count;
-            using (var conn = new SqliteConnection(connStr))
-            {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    count = WordCount(word, cmd);
-                }
-                conn.Close();
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// Get the word counts. Null, empty or whitespace "words" will be treated as if very common, yielding MaxValue.
+        /// Get the word counts. Null, empty or whitespace "words" will yield -1.
         /// </summary>
         /// <returns>The word count.</returns>
         /// <exception cref="ArgumentNullException">Thrown if words is null.</exception>
@@ -219,12 +197,7 @@ namespace Chainey
                 using (var cmd = conn.CreateCommand())
                 {
                     foreach (string word in words)
-                    {
-                        if (!string.IsNullOrWhiteSpace(word))
-                            yield return WordCount(word, cmd);
-                        else
-                            yield return long.MaxValue;
-                    }
+                        yield return WordCount(word, cmd);
                 }
                 conn.Close();
             }
@@ -233,6 +206,9 @@ namespace Chainey
 
         static long WordCount(string word, SqliteCommand cmd)
         {
+            if (string.IsNullOrWhiteSpace(word))
+                return -1;
+
             const string sqlCmd = "SELECT count FROM WordCount WHERE word=@Word";
             if (cmd.CommandText != sqlCmd)
             {
@@ -263,6 +239,7 @@ namespace Chainey
             }
 
             // If only punctuation, return as is.
+            // This will never be empty or whitespace, since calling methods guard against that.
             if (removeFromStart == word.Length)
                 return word;
 
@@ -288,97 +265,6 @@ namespace Chainey
 
                 return removed.ToUpperInvariant();
             }
-        }
-
-
-        // ***
-        // ------------------------------------------
-        // Methods having to do with Sentence Rarity.
-        // (Builds upon WordCount)
-        // ------------------------------------------
-        // ***
-
-
-        /// <summary>
-        /// Get the rarity of a sentence. The further away (positive) from 0, the rarer.
-        /// A sentence with no words (empty or whitespace) will have a rarity of Negative Infinity.
-        /// </summary>
-        /// <returns>The rarity.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if sentence is null.</exception>
-        /// <param name="sentence">Sentence.</param>
-        public double SentenceRarity(string sentence)
-        {
-            if (sentence == null)
-                throw new ArgumentNullException("sentence");
-            
-            double rarity;
-            using (var conn = new SqliteConnection(connStr))
-            {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    rarity =  SentenceRarity(sentence, cmd);
-                }
-                conn.Close();
-            }
-            
-            return rarity;
-        }
-        
-        /// <summary>
-        /// Get the rarity of sentences. The further away (positive) from 0, the rarer.
-        /// A sentence with no words (empty or whitespace) will have a rarity of Negative Infinity. Null will beget NaN.
-        /// </summary>
-        /// <returns>The rarity.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if sentences is null.</exception>
-        /// <param name="sentences">Sentences.</param>
-        public IEnumerable<double> SentenceRarity(IEnumerable<string> sentences)
-        {
-            if (sentences == null)
-                throw new ArgumentNullException("sentences");
-            
-            using (var conn = new SqliteConnection(connStr))
-            {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    foreach (string sen in sentences)
-                    {
-                        if (sen != null)
-                            yield return SentenceRarity(sen, cmd);
-                        else
-                            yield return double.NaN;
-                    }
-                }
-                conn.Close();
-            }
-        }
-        
-        
-        // The closer to 0, the less rare the sentence is. If the sentence contains only words we've never seen before
-        // the rarity will be `Infinity`.
-        // Will return `-Infinity` if the sentence has no words.
-        // Will return `NaN` if the sentence is null.
-        // If sorted order will be: NaN, -Infinity, [...], Infinity
-        static double SentenceRarity(string sentence, SqliteCommand cmd)
-        {            
-            var split = sentence.Split();
-            
-            // Sum word counts in ulong for extra headroom.
-            ulong sum = 0;
-            int len = split.Length;
-            foreach (string word in split)
-            {
-                if (word != string.Empty)
-                    sum += (ulong)WordCount(word, cmd);
-                else
-                    len--;
-            }
-            
-            if (len > 0)
-                return (double)len / sum;
-            else
-                return double.NegativeInfinity;
         }
 
 

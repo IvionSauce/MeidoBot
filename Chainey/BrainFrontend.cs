@@ -99,7 +99,7 @@ namespace Chainey
         {
             // Fall back to an empty string if it fails to build a random sentence.
             string sen = brain.BuildRandomSentence() ?? string.Empty;
-            double rarity = brain.SentenceRarity(sen);
+            double rarity = SentenceRarity(sen);
             return new Sentence(sen, rarity);
         }
 
@@ -138,7 +138,7 @@ namespace Chainey
                 var resp = responses[responses.Count - 1];
 
                 // Debug
-                Console.WriteLine("Responses: {0} - High: {1}, Low: {2}",
+                Console.WriteLine("---\nDebug -- Responses: {0} - High: {1}, Low: {2}",
                                   responses.Count, resp.Rarity, responses[0].Rarity);
 
                 // Add to history/memory, so that we don't go repeating ourselves.
@@ -191,10 +191,8 @@ namespace Chainey
             var sw = Stopwatch.StartNew();
 
             var sentences = brain.BuildSentences(seeds);
-            var rarities = brain.SentenceRarity(sentences);
-            
-            var pairs = Enumerable.Zip( sentences, rarities,
-                                       (s, r) => new Sentence(s, r) );
+            // Sentence and rarity pairs, united in a Sentence struct.
+            var pairs = SentenceAndRarity(sentences);
 
             // Make sure we have a consistent TimeLimit during the loop execution.
             TimeSpan limit;
@@ -218,6 +216,48 @@ namespace Chainey
 
             sw.Stop();
             return coll;
+        }
+
+
+        // ----------------------------------------
+        // Methods for calculating sentence rarity.
+        // ----------------------------------------
+
+
+        IEnumerable<Sentence> SentenceAndRarity(IEnumerable<string> sentences)
+        {
+            foreach (string sen in sentences)
+                yield return new Sentence(sen, SentenceRarity(sen));
+        }
+
+        double SentenceRarity(string sentence)
+        {            
+            var split = sentence.Split();
+            var counts = brain.WordCount(split);
+
+            return CalculateRarity(counts);
+        }
+
+        // The closer to 0, the less rare the sentence is. If the sentence contains only words we've never seen before
+        // the rarity will be `Infinity`.
+        // Will return `-Infinity` if the sentence has no words.
+        // If sorted order will be: NaN, -Infinity, [...], Infinity
+        double CalculateRarity(IEnumerable<long> counts)
+        {
+            int len = 0;
+            // Sum word counts in ulong for extra headroom.
+            ulong sum = 0;
+            foreach (long count in counts)
+            {
+                // Skip negative word counts.
+                if (count >= 0)
+                {
+                    sum += (ulong)count;
+                    len++;
+                }
+            }
+
+            return (double)len / sum;
         }
 
     }
