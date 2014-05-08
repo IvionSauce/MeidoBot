@@ -83,12 +83,11 @@ namespace Chainey
 
 
         /// <summary>
-        /// Adds sentence to the brain. Sentence should not have null, empty or whitespace entries.
+        /// Adds sentence to the brain. Sentence should not have null or empty entries.
         /// On what you Split (besides spaces) depends on how much whitespace 'formatting' you want the brain to retain.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown if sentenceWords is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if sentenceWords contains null, empty or whitespace
-        /// entries.</exception>
+        /// <exception cref="ArgumentException">Thrown if sentenceWords contains null or empty entries.</exception>
         /// <param name="sentenceWords">Sentence (array of words).</param>
         public void AddSentence(string[] sentenceWords)
         {
@@ -169,19 +168,19 @@ namespace Chainey
             
             foreach (string word in sentence)
             {
-                if (!string.IsNullOrWhiteSpace(word))
+                if (!string.IsNullOrEmpty(word))
                 {
                     cmd.Parameters.AddWithValue("@Word", Normalize(word));
                     cmd.ExecuteNonQuery();
                 }
                 else
-                    throw new ArgumentException("Null, empty or whitespace \"word\" detected.", "sentenceWords");
+                    throw new ArgumentException("Null or empty \"word\" detected.", "sentenceWords");
             }
         }
 
 
         /// <summary>
-        /// Get the word counts. Null, empty or whitespace "words" will yield -1.
+        /// Get the word counts. Null or empty "words" will yield -1.
         /// </summary>
         /// <returns>The word count.</returns>
         /// <exception cref="ArgumentNullException">Thrown if words is null.</exception>
@@ -206,7 +205,7 @@ namespace Chainey
 
         static long WordCount(string word, SqliteCommand cmd)
         {
-            if (string.IsNullOrWhiteSpace(word))
+            if (string.IsNullOrEmpty(word))
                 return -1;
 
             const string sqlCmd = "SELECT count FROM WordCount WHERE word=@Word";
@@ -238,8 +237,8 @@ namespace Chainey
                     break;
             }
 
-            // If only punctuation, return as is.
-            // This will never be empty or whitespace, since calling methods guard against that.
+            // If only punctuation/whitespace, return as is.
+            // This will never be empty, since calling methods guard against that.
             if (removeFromStart == word.Length)
                 return word;
 
@@ -373,7 +372,7 @@ namespace Chainey
             cmd.CommandText = FormatSql(searchSql, dir);
             cmd.Prepare();
 
-            while (coll.Count <= maxWords)
+            while (coll.Count < maxWords)
             {
                 string chain = GetLatestChain(coll);
                 cmd.Parameters.AddWithValue("@Chain", chain);
@@ -392,7 +391,7 @@ namespace Chainey
         {
             var chain = new string[Order];
             
-            int j = (sentence.Count - Order);
+            int j = sentence.Count - Order;
             for (int i = 0; i < Order; i++, j++)
                 chain[i] = sentence[j];
             

@@ -57,6 +57,8 @@ public class IrcChainey : IMeidoHook
     public IrcChainey(IIrcComm ircComm)
     {
         chainey = new BrainFrontend( new SqliteBrain("conf/chainey.sqlite", config.Order) );
+        chainey.Filter = false;
+
         StartConsumers(config.Threads);
 
         irc = ircComm;
@@ -180,7 +182,7 @@ public class IrcChainey : IMeidoHook
     void AbsorbSentence(string[] sentence)
     {
         if (sentence.Length > 0)
-            chainey.Add(sentence, false);
+            chainey.Add(sentence);
     }
 
     void EmitSentence(string channel, string[] respondTo)
