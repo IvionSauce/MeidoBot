@@ -32,7 +32,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.60"; }
+        get { return "0.64"; }
     }
     
     public Dictionary<string,string> Help
@@ -155,14 +155,6 @@ public class IrcChainey : IMeidoHook
             HandleUnaddressed(e.Channel, msg);
     }
 
-    bool LearningChannel(string channel)
-    {
-        if (conf.Learning)
-            return conf.LearningChannels.Contains(channel);
-        else
-            return false;
-    }
-
 
     void HandleAddressed(string channel, string nick, string[] message)
     {        
@@ -187,6 +179,14 @@ public class IrcChainey : IMeidoHook
             if ( !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
                 AbsorbSentence(message);
         }
+    }
+
+    bool LearningChannel(string channel)
+    {
+        if (conf.Learning)
+            return conf.LearningChannels.Contains(channel);
+        else
+            return false;
     }
 
     bool RandomRespond()
