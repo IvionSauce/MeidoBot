@@ -13,12 +13,13 @@ using System.ComponentModel.Composition;
 public class IrcChainey : IMeidoHook
 {
     readonly IIrcComm irc;
-    readonly BrainFrontend chainey;
 
+    readonly BrainFrontend chainey;
     readonly Random rnd = new Random();
 
     readonly Config conf = new Config();
 
+    // Housekeeping for producer-consumer queue.
     Thread[] consumers;
     readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
     readonly object _locker = new object();
@@ -214,7 +215,7 @@ public class IrcChainey : IMeidoHook
         if (sentence.Content != string.Empty)
         {
             irc.SendMessage(channel, sentence.Content);
-            Console.WriteLine("\n[Chainey] [{0}] {1}", sentence.Rarity, sentence.Content);
+            Console.WriteLine("\n[Chainey] [{0}] {1}", sentence.Rarity, sentence);
         }
     }
 
