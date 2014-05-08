@@ -15,7 +15,9 @@ public class IrcChainey : IMeidoHook
     readonly IIrcComm irc;
     readonly BrainFrontend chainey;
 
-    Config config = new Config();
+    readonly Random rnd = new Random();
+
+    readonly Config conf = new Config();
 
     Thread[] consumers;
     readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
@@ -56,10 +58,10 @@ public class IrcChainey : IMeidoHook
     [ImportingConstructor]
     public IrcChainey(IIrcComm ircComm)
     {
-        chainey = new BrainFrontend( new SqliteBrain("conf/chainey.sqlite", config.Order) );
+        chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
 
-        StartConsumers(config.Threads);
+        StartConsumers(conf.Threads);
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
@@ -85,7 +87,7 @@ public class IrcChainey : IMeidoHook
             var sw = Stopwatch.StartNew();
             EmitSentence(e.Channel, msg);
             sw.Stop();
-            Console.WriteLine("Diagnostics time: " + sw.ElapsedMilliseconds + "ms");
+            Console.WriteLine("Diagnostics time: " + sw.Elapsed);
 
             return;
         }
@@ -148,14 +150,14 @@ public class IrcChainey : IMeidoHook
             HandleAddressed(e.Channel, e.Nick, msg);
         }
         
-        else if (LearningChannel(e.Channel))
-            HandleUnaddressed(msg);
+        else
+            HandleUnaddressed(e.Channel, msg);
     }
 
     bool LearningChannel(string channel)
     {
-        if (config.Learning)
-            return config.LearningChannels.Contains(channel);
+        if (conf.Learning)
+            return conf.LearningChannels.Contains(channel);
         else
             return false;
     }
@@ -163,7 +165,7 @@ public class IrcChainey : IMeidoHook
 
     void HandleAddressed(string channel, string nick, string[] message)
     {        
-        if ( !MarkovTools.FoulPlay(message, config.MaxConsecutive, config.MaxTotal) )
+        if ( !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
         {
             EmitSentence(channel, message);
             AbsorbSentence(message);
@@ -172,10 +174,30 @@ public class IrcChainey : IMeidoHook
             irc.SendMessage(channel, "Foul play detected! Stop trying to teach me stupid things, {0}", nick);
     }
 
-    void HandleUnaddressed(string[] message)
+    void HandleUnaddressed(string channel, string[] message)
     {
-        if ( !MarkovTools.FoulPlay(message, config.MaxConsecutive, config.MaxTotal) )
-            AbsorbSentence(message);
+        /* Disable it for now.
+        if (RandomRespond())
+            EmitSentence(channel, message);
+            */
+
+        if ( LearningChannel(channel) )
+        {
+            if ( !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
+                AbsorbSentence(message);
+        }
+    }
+
+    bool RandomRespond()
+    {
+        int chance;
+        lock (rnd)
+            chance = rnd.Next(conf.ResponseChance);
+        
+        if (chance == 0)
+            return true;
+        else
+            return false;
     }
 
 
