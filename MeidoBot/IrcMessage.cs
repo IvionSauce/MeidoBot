@@ -20,7 +20,6 @@ namespace MeidoBot
 
         // My own additions.
         public string Trigger { get; private set; }
-        // public string[] Args { get; private set; }
         public string ReturnTo { get; private set; }
         
         readonly IrcClient irc;
@@ -40,16 +39,6 @@ namespace MeidoBot
             Host = messageData.Host;
             
             Trigger = ParseTrigger(prefix);
-
-            /* if (Trigger != null)
-            {
-                Args = new string[MessageArray.Length - 1];
-                for (int i = 1; i < MessageArray.Length; i++)
-                    Args[i - 1] = MessageArray[i];
-            }
-            else
-                Args = new string[0]; */
-
             ReturnTo = Channel ?? Nick;
         }
         
@@ -59,6 +48,10 @@ namespace MeidoBot
         // In case of a query message it will contain the first word, even if it didn't start with the prefix.
         string ParseTrigger(string prefix)
         {
+            // Don't parse trigger if it's an action message.
+            if (type == ReceiveType.ChannelAction || type == ReceiveType.QueryAction)
+                return null;
+
             if (Message.StartsWith(prefix, StringComparison.Ordinal))
             {
                 if (MessageArray[0].Length == prefix.Length)
@@ -71,18 +64,6 @@ namespace MeidoBot
             else
                 return null;
         }
-
-
-        /* public string this[int index]
-        {
-            get
-            {
-                if (index < MessageArray.Length && index >= 0)
-                    return MessageArray[index];
-                else
-                    return null;
-            }
-        } */
         
         
         public void Reply(string message, params object[] args)
