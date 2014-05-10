@@ -11,9 +11,9 @@ class Config
     public int Threads { get; set; }
 
     // If she's learning and from which channels she should be learning.
-    public bool Learning { get; set; }
     public HashSet<string> LearningChannels { get; set; }
 
+    public HashSet<string> RandomResponseChannels { get; set; }
     // One in n (1/n) chance of responding to unaddressed messages.
     public int ResponseChance { get; set; }
 
@@ -27,12 +27,13 @@ class Config
         Location = "conf/chainey.sqlite";
         Order = 2;
         Threads = 3;
-        
-        Learning = true;
+
         LearningChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {"#sankakucomplex", "#SteelGolem", "#blaat"};
 
-        ResponseChance = 5000;
+        RandomResponseChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {"#sankakucomplex", "#SteelGolem", "#blaat"};
+        ResponseChance = 500;
         
         MaxConsecutive = 3;
         MaxTotal = 5;

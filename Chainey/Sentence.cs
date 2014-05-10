@@ -14,6 +14,13 @@ namespace Chainey
             Rarity = rarity;
         }
 
+        public Sentence(string[] words, double rarity)
+        {
+            Content = string.Join(" ", words);
+            Rarity = rarity;
+        }
+
+
         public override string ToString()
         {
             return Content;

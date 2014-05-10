@@ -32,7 +32,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.64"; }
+        get { return "0.65"; }
     }
     
     public Dictionary<string,string> Help
@@ -65,10 +65,10 @@ public class IrcChainey : IMeidoHook
         StartConsumers(conf.Threads);
 
         irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
+        irc.AddChannelMessageHandler(Handle);
     }
 
-    public void HandleChannelMessage(IIrcMessage e)
+    public void Handle(IIrcMessage e)
     {
         switch (e.Trigger)
         {
@@ -169,36 +169,32 @@ public class IrcChainey : IMeidoHook
 
     void HandleUnaddressed(string channel, string[] message)
     {
-        /* Disable it for now.
-        if (RandomRespond())
+        if ( RandomRespond(channel) )
             EmitSentence(channel, message);
-            */
 
-        if ( LearningChannel(channel) )
+        if ( Learning(channel) && !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
         {
-            if ( !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
-                AbsorbSentence(message);
+            AbsorbSentence(message);
         }
     }
 
-    bool LearningChannel(string channel)
+    bool Learning(string channel)
     {
-        if (conf.Learning)
-            return conf.LearningChannels.Contains(channel);
-        else
-            return false;
+        return conf.LearningChannels.Contains(channel);
     }
 
-    bool RandomRespond()
+    bool RandomRespond(string channel)
     {
-        int chance;
-        lock (rnd)
-            chance = rnd.Next(conf.ResponseChance);
-        
-        if (chance == 0)
-            return true;
-        else
-            return false;
+        if (conf.RandomResponseChannels.Contains(channel))
+        {
+            int chance;
+            lock (rnd)
+                chance = rnd.Next(conf.ResponseChance);
+            
+            if (chance == 0)
+                return true;
+        }
+        return false;
     }
 
 
