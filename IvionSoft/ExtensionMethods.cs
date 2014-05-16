@@ -25,6 +25,7 @@ namespace IvionSoft
             }
         }
 
+
         // http://www.dotnetperls.com/array-slice
         // Modification: allow `end` to be 0, this will mean it will slice from `start` to whatever length the array is.
         // This will allow you to have an inclusive end; -1 slices off the last item and 0 would cause an error
@@ -44,6 +45,7 @@ namespace IvionSoft
 
             return res;
         }
+
 
         // http://www.dotnetperls.com/punctuation
         public static string TrimPunctuation(this string value)
@@ -122,5 +124,16 @@ namespace IvionSoft
             }
             return item;
         }
+
+
+        public static IEnumerable<T> Multiply<T>(this IEnumerable<T> items, int count)
+        {
+            foreach (T item in items)
+            {
+                for (int i = 0; i < count; i++)
+                    yield return item;
+            }
+        }
+
     }
 }
