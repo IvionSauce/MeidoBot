@@ -31,7 +31,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.65"; }
+        get { return "0.66"; }
     }
     
     public Dictionary<string,string> Help
