@@ -127,7 +127,7 @@ public class NyaaSpam : IMeidoHook
                 ShowAll(e.Channel, e.Nick, assocPat);
                 return;
             }
-        }
+        } // if
     }
 
 
@@ -269,7 +269,8 @@ public class NyaaSpam : IMeidoHook
         
         var patterns = new List<string>();
         // If enclosed in quotation marks, add string within the marks verbatim.
-        if ( patternsStr.StartsWith(quot) && patternsStr.EndsWith(quot) )
+        if ( patternsStr.StartsWith(quot, StringComparison.OrdinalIgnoreCase) &&
+            patternsStr.EndsWith(quot, StringComparison.OrdinalIgnoreCase) )
         {
             // Slice off the quotation marks.
             string pattern = patternsStr.Substring(1, patternsStr.Length - 2);

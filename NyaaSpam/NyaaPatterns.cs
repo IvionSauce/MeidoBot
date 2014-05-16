@@ -39,7 +39,7 @@ public class NyaaPatterns : IDisposable
         if (string.IsNullOrWhiteSpace(pattern))
             return -1;
 
-        string[] split = pattern.Split(' ');
+        string[] split = pattern.Split();
         lock (_locker)
         {
             ChannelPatterns chanPat = GetOrAdd(channel);
@@ -56,7 +56,7 @@ public class NyaaPatterns : IDisposable
         if (string.IsNullOrWhiteSpace(exclude))
             return index;
         
-        string[] split = exclude.Split(' ');
+        string[] split = exclude.Split();
         lock (_locker)
         {
             ChannelPatterns chanPat = GetOrAdd(channel);
