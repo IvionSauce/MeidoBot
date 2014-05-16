@@ -33,7 +33,7 @@ class Config
 
         RandomResponseChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {"#sankakucomplex", "#SteelGolem", "#blaat"};
-        ResponseChance = 500;
+        ResponseChance = 300;
         
         MaxConsecutive = 3;
         MaxTotal = 5;

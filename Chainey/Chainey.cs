@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Chainey;
 using IvionSoft;
@@ -83,7 +82,7 @@ public class IrcChainey : IMeidoHook
         case "markov":
 
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-            msg = e.MessageArray.Slice(1, 0);
+            msg = msg.Slice(1, 0);
             
             var sw = Stopwatch.StartNew();
             EmitSentence(e.Channel, msg);

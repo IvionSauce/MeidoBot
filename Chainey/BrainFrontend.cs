@@ -61,7 +61,7 @@ namespace Chainey
             this.brain = brain;
             Filter = true;
             Memory = 100;
-            TimeLimit = TimeSpan.FromSeconds(5);
+            TimeLimit = TimeSpan.FromSeconds(2);
         }
 
 
@@ -131,7 +131,7 @@ namespace Chainey
             
             // Sort so that the rarer words get tried first as seeds.
             string[] sorted = SortByWordCount(message);
-            List<Sentence> responses = InternalBuild(sorted, true);
+            List<Sentence> responses = InternalBuild(sorted.Multiply(4), true);
 
             // If we got response sentences, return the most 'rare'.
             if (responses.Count > 0)
