@@ -224,7 +224,8 @@ public class TimeLeft : IMeidoHook
         {
             bool modified = false;
 
-            foreach ( TimeLeftUnit unit in storage.GetAll() )
+            var all = storage.GetAll().ToArray();
+            foreach ( TimeLeftUnit unit in all )
             {
                 if (DateTime.UtcNow > unit.Date)
                 {
