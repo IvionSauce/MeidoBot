@@ -224,6 +224,9 @@ namespace WebHelp
             if (source == Source.Fourchan)
             {
                 opSubject = threadJson.posts[0].sub;
+                if (!string.IsNullOrEmpty(opSubject))
+                    opSubject = HttpUtility.HtmlDecode(opSubject);
+
                 opComment = threadJson.posts[0].com;
                 if (!string.IsNullOrEmpty(opComment))
                     opComment = Fix4chanPost(opComment);
@@ -293,7 +296,7 @@ namespace WebHelp
         /// <param name="post">String content of a post.</param>
         public static string RemoveSpoilerTags(string post)
         {
-            return ReplaceSpoilerTags(post, "", "");
+            return ReplaceSpoilerTags(post, string.Empty, string.Empty);
         }
         
         /// <summary>
