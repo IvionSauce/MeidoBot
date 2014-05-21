@@ -52,8 +52,6 @@ namespace Chainey
 
         readonly IBrainBackend brain;
 
-        const int SignificantSeeds = 2;
-
 
         public BrainFrontend(IBrainBackend brain)
         {
@@ -169,11 +167,14 @@ namespace Chainey
             Console.WriteLine("---");
 
             List<Sentence> candidates;
-            if (seeds.Length >= SignificantSeeds)
+            if (seeds.Length > 1)
             {
-                int i = SignificantSeeds - 1;
+                // Prepend space so as to not match irrelevant words. Do allow other characters to follow it (plural, 
+                // punctuation, conjugation).
+                var word = string.Concat(" ", seeds[1]);
                 candidates = responses.FindAll( sen =>
-                                               sen.Content.Contains(seeds[i], StringComparison.OrdinalIgnoreCase) );
+                                               sen.Content.Contains(word, StringComparison.OrdinalIgnoreCase) );
+
                 if (candidates.Count == 0)
                     candidates = responses;
                 // Debug
