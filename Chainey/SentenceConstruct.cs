@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace Chainey
 {
-    public class SentenceConstruct
+    internal class SentenceConstruct
     {
-        public int WordCount
+        internal int WordCount
         {
             get { return Forwards.Count + Backwards.Count - order; }
         }
         
-        public string Sentence
+        internal string Sentence
         {
             get
             {
@@ -30,7 +30,7 @@ namespace Chainey
         readonly int order;
         
         
-        public SentenceConstruct(string initialChain, int order)
+        internal SentenceConstruct(string initialChain, int order)
         {
             string[] split = initialChain.Split(' ');
             Forwards = new List<string>(split);
@@ -40,18 +40,18 @@ namespace Chainey
             this.order = order;
         }
         
-        public void Append(string word)
+        internal void Append(string word)
         {
             Forwards.Add(word);
         }
         
-        public void Prepend(string word)
+        internal void Prepend(string word)
         {
             Backwards.Add(word);
         }
         
         
-        public string LatestForwardChain()
+        internal string LatestForwardChain()
         {
             if (Forwards.Count < order)
                 return string.Empty;
@@ -63,7 +63,7 @@ namespace Chainey
             return string.Join(" ", chain);
         }
         
-        public string LatestBackwardChain()
+        internal string LatestBackwardChain()
         {
             if (Backwards.Count < order)
                 return string.Empty;

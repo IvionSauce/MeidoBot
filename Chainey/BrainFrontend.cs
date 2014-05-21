@@ -52,6 +52,8 @@ namespace Chainey
 
         readonly IBrainBackend brain;
 
+        const int SignificantSeeds = 2;
+
 
         public BrainFrontend(IBrainBackend brain)
         {
@@ -163,16 +165,20 @@ namespace Chainey
 
         Sentence Select(List<Sentence> responses, string[] seeds)
         {
+            // Debug
+            Console.WriteLine("---");
+
             List<Sentence> candidates;
-            if (seeds.Length > 1)
+            if (seeds.Length >= SignificantSeeds)
             {
+                int i = SignificantSeeds - 1;
                 candidates = responses.FindAll( sen =>
-                                               sen.Content.Contains(seeds[1], StringComparison.OrdinalIgnoreCase) );
+                                               sen.Content.Contains(seeds[i], StringComparison.OrdinalIgnoreCase) );
                 if (candidates.Count == 0)
                     candidates = responses;
                 // Debug
                 else
-                    Console.WriteLine("---\n2ND SEED FOUND");
+                    Console.WriteLine("2ND SEED FOUND");
             }
             else
                 candidates = responses;
@@ -188,6 +194,7 @@ namespace Chainey
 
             return response;
         }
+
 
         // -------------------------------
         // Methods for building sentences.
