@@ -131,7 +131,7 @@ namespace Chainey
             
             // Sort so that the rarer words get tried first as seeds.
             string[] sorted = SortByWordCount(message);
-            List<Sentence> responses = InternalBuild(sorted.Multiply(4), true);
+            List<Sentence> responses = InternalBuild(sorted, true);
 
             // If we got response sentences, return the most 'rare'.
             if (responses.Count > 0)
@@ -190,7 +190,7 @@ namespace Chainey
         }
 
 
-        public List<Sentence> Build(IEnumerable<string> seeds)
+        public List<Sentence> Build(string[] seeds)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -198,7 +198,7 @@ namespace Chainey
             return InternalBuild(seeds, false);
         }
 
-        public List<Sentence> Build(IEnumerable<string> seeds, bool memoryFilter)
+        public List<Sentence> Build(string[] seeds, bool memoryFilter)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -206,7 +206,7 @@ namespace Chainey
             return InternalBuild(seeds, memoryFilter);
         }
 
-        List<Sentence> InternalBuild(IEnumerable<string> seeds, bool memoryFilter)
+        List<Sentence> InternalBuild(string[] seeds, bool memoryFilter)
         {
             var responses = GetSentences(seeds);
             if (memoryFilter)
@@ -222,11 +222,14 @@ namespace Chainey
 
 
         // Get as much sentences from the seeds as time allows.
-        List<Sentence> GetSentences(IEnumerable<string> seeds)
+        List<Sentence> GetSentences(string[] seeds)
         {
+            if (seeds.Length == 0)
+                return new List<Sentence>();
+
             var sw = Stopwatch.StartNew();
 
-            var sentences = brain.BuildSentences(seeds);
+            var sentences = brain.BuildSentences( seeds[0] );
             // Sentence and rarity pairs, united in a Sentence struct.
             var pairs = SentenceAndRarity(sentences);
 

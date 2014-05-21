@@ -12,13 +12,9 @@ namespace Chainey
         // Also used to calculate the rarity of a sentence.
         IEnumerable<long> WordCount(IEnumerable<string> words);
 
-        // Used to determine which sentence to respond with.
-        //double SentenceRarity(string sentence);
-        //IEnumerable<double> SentenceRarity(IEnumerable<string> sentences);
-
         // Fallback for when seed-building fails.
         string BuildRandomSentence();
-        // Build sentences around given seeds.
-        IEnumerable<string> BuildSentences(IEnumerable<string> seeds);
+        // Build sentences around given seed.
+        IEnumerable<string> BuildSentences(string seed);
     }
 }

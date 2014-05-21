@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Mono.Data.Sqlite;
 using System.Collections.Generic;
 using IvionSoft;
@@ -36,9 +37,6 @@ namespace Chainey
             Forward,
             Backward
         }
-
-        // Used in both BuildSentence and BuildSentences.
-        const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
 
 
         public SqliteBrain(string file, int order)
@@ -274,128 +272,157 @@ namespace Chainey
         // ***
 
 
-        public IEnumerable<string> BuildSentences(IEnumerable<string> seeds)
+        public IEnumerable<string> BuildSentences(string seed)
         {
-            if (seeds == null)
-                throw new ArgumentNullException("seeds");
+            seed.ThrowIfNullOrEmpty("seed");
 
-            using (var connection = new SqliteConnection(connStr))
+            using (var conn = new SqliteConnection(connStr))
             {
-                connection.Open();
-                using (var cmd = new SqliteCommand(connection))
+                conn.Open();
+                using (SqliteCommand chainCmd = conn.CreateCommand(),
+                       collectCmd = conn.CreateCommand())
                 {
-                    foreach (string seed in seeds)
-                    {
-                        if (string.IsNullOrWhiteSpace(seed))
-                            cmd.CommandText = randomChainSql;
-                        else
-                            CreateSeedSql(seed, cmd);
+                    CreateSeedSql(seed, chainCmd);
 
-                        string sentence = BuildASentence(cmd);
-                        if (sentence != null)
-                            yield return sentence;
-                    }
+                    foreach (string sentence in Builder(chainCmd, collectCmd))
+                        yield return sentence;
                 }
-                connection.Close();
+                conn.Close();
             }
         }
+
+
+        IEnumerable<string> Builder(SqliteCommand chainCmd, SqliteCommand collectCmd)
+        {
+            using (var reader = chainCmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string chain = reader.GetString(0);
+                    string followUp = reader.GetString(1);
+
+                    var words = new SentenceConstruct(chain, Order);
+
+                    // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
+                    int maxWords = MaxWords;
+
+                    // Backward search.
+                    CollectChains(words, Direction.Backward, maxWords, collectCmd);
+
+                    if (followUp != string.Empty)
+                    {
+                        // Forward search.
+                        words.Append(followUp);
+                        CollectChains(words, Direction.Forward, maxWords, collectCmd);
+                    }
+
+                    yield return words.Sentence;
+                }
+            }
+        }
+
+
+        /* IEnumerable<string> Search(SentenceConstruct words, SqliteCommand cmd)
+        {
+            var forward = GetPossibilities(words, Direction.Forward, cmd);
+            var backward = GetPossibilities(words, Direction.Backward, cmd);
+        }
+
+
+        // Gets possible follow-ups.
+        List<string> GetPossibilities(SentenceConstruct words, Direction dir, SqliteCommand cmd)
+        {
+            const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM()";
+            cmd.CommandText = FormatSql(searchSql, dir);
+            cmd.Prepare();
+
+            string chain = GetLatestChain(words, dir);
+            cmd.Parameters.AddWithValue("@Chain", chain);
+
+            var possibilities = new List<string>();
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string followUp = reader.GetString(0);
+                    if (followUp != string.Empty)
+                        possibilities.Add(followUp);
+                }
+            }
+            return possibilities;
+        } */
 
 
         public string BuildRandomSentence()
         {
-            return BuildSentence(null);
-        }
+            const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
 
-        /// <summary>
-        /// Builds a sentence with seed. Builds a random sentence if seed is null, empty or whitespace.
-        /// </summary>
-        /// <returns>The sentence, or null if no sentence could be build.</returns>
-        /// <param name="seed">Seed.</param>
-        public string BuildSentence(string seed)
-        {
-            string sentence;
-            using (var connection = new SqliteConnection(connStr))
+            string[] result;
+            using (var conn = new SqliteConnection(connStr))
             {
-                connection.Open();
-                using (var cmd = new SqliteCommand(connection))
+                conn.Open();
+                using (SqliteCommand chainCmd = conn.CreateCommand(),
+                       collectCmd = conn.CreateCommand())
                 {
-                    if (string.IsNullOrWhiteSpace(seed))
-                        cmd.CommandText = randomChainSql;
-                    else
-                        CreateSeedSql(seed, cmd);
-
-                    sentence = BuildASentence(cmd);
+                    chainCmd.CommandText = randomChainSql;
+                    result = Builder(chainCmd, collectCmd).ToArray();
                 }
-                connection.Close();
+                conn.Close();
             }
-
-            return sentence;
+            if (result.Length == 1)
+                return result[0];
+            else
+                return null;
         }
 
 
-        // This method assumes you've already set the CommandText in the calling method.
-        string BuildASentence(SqliteCommand cmd)
-        {
-            string chain, followUp;
-            using (SqliteDataReader reader = cmd.ExecuteReader())
-            {
-                if (reader.Read())
-                {
-                    chain = reader.GetString(0);
-                    followUp = reader.GetString(1);
-                }
-                else
-                    return null;
-            }
-
-            // Populate the sentence-to-be with the initial chain and follow up.
-            var words = new List<string>( chain.Split(' ') );
-            if (followUp != string.Empty)
-                words.Add(followUp);
-
-            // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
-            int maxWords = MaxWords;
-            // Backward search.
-            words.Reverse();
-            CollectChains(words, Direction.Backward, maxWords, cmd);
-            words.Reverse();
-            // Forward search.
-            CollectChains(words, Direction.Forward, maxWords, cmd);
-
-            return string.Join(" ", words);
-        }
-
-
-        void CollectChains(List<string> coll, Direction dir, int maxWords, SqliteCommand cmd)
+        void CollectChains(SentenceConstruct sen, Direction dir, int maxWords, SqliteCommand cmd)
         {
             const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
             cmd.CommandText = FormatSql(searchSql, dir);
             cmd.Prepare();
 
-            while (coll.Count < maxWords)
+            while (sen.WordCount < maxWords)
             {
-                string chain = GetLatestChain(coll);
+                string chain = GetLatestChain(sen, dir);
                 cmd.Parameters.AddWithValue("@Chain", chain);
                 
                 var followUp = cmd.ExecuteScalar() as string;
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )
-                    coll.Add(followUp);
+                    Add(sen, dir, followUp);
                 else
                     return;
             }
         }
 
-        string GetLatestChain(List<string> sentence)
+
+        string GetLatestChain(SentenceConstruct sen, Direction dir)
         {
-            var chain = new string[Order];
-            
-            int j = sentence.Count - Order;
-            for (int i = 0; i < Order; i++, j++)
-                chain[i] = sentence[j];
-            
-            return string.Join(" ", chain);
+            switch (dir)
+            {
+            case Direction.Forward:
+                return sen.LatestForwardChain();
+            case Direction.Backward:
+                return sen.LatestBackwardChain();
+            default:
+                throw new InvalidOperationException("Unexpected Direction.");
+            }
+        }
+
+
+        void Add(SentenceConstruct sen, Direction dir, string followUp)
+        {
+            switch (dir)
+            {
+            case Direction.Forward:
+                sen.Append(followUp);
+                return;
+            case Direction.Backward:
+                sen.Prepend(followUp);
+                return;
+            }
         }
 
 
@@ -421,8 +448,8 @@ namespace Chainey
 
         static void CreateSeedSql(string seed, SqliteCommand cmd)
         {
-            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup=@Seed " +
-                "ORDER BY RANDOM() LIMIT 1";
+            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @Seed " +
+                "ORDER BY RANDOM()";
             if (cmd.CommandText != seedSql)
             {
                 cmd.CommandText = seedSql;
