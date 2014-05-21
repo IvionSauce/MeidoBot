@@ -129,14 +129,13 @@ namespace Chainey
             lock (_historyLock)
                 history.Add( string.Join(" ", message) );
             
-            // Sort so that the rarer words get tried first as seeds.
-            string[] sorted = SortByWordCount(message);
-            List<Sentence> responses = InternalBuild(sorted, true);
+            // Sort so that the rarer words get to be used as seed.
+            string[] sortedWords = SortByWordCount(message);
+            List<Sentence> responses = InternalBuild(sortedWords, true);
 
-            // If we got response sentences, return the most 'rare'.
             if (responses.Count > 0)
             {
-                Sentence resp = Select(responses);
+                Sentence resp = Select(responses, sortedWords);
                 // Add to history/memory, so that we don't go repeating ourselves.
                 lock (_historyLock)
                     history.Add(resp.Content);
@@ -162,15 +161,29 @@ namespace Chainey
         }
 
 
-        Sentence Select(List<Sentence> candidates)
+        Sentence Select(List<Sentence> responses, string[] seeds)
         {
+            List<Sentence> candidates;
+            if (seeds.Length > 1)
+            {
+                candidates = responses.FindAll( sen =>
+                                               sen.Content.Contains(seeds[1], StringComparison.OrdinalIgnoreCase) );
+                if (candidates.Count == 0)
+                    candidates = responses;
+                // Debug
+                else
+                    Console.WriteLine("---\n2ND SEED FOUND");
+            }
+            else
+                candidates = responses;
+
             // Sort sentences on rarity.
             candidates.Sort( (a, b) => a.Rarity.CompareTo(b.Rarity) );
             // Rarest sentence.
             var response = candidates[candidates.Count - 1];
 
             // Debug
-            Console.WriteLine("---\nDebug -- Responses: {0} - High: {1}, Low: {2}",
+            Console.WriteLine("Debug -- Responses: {0} - High: {1}, Low: {2}",
                               candidates.Count, response.Rarity, candidates[0].Rarity);
 
             return response;
