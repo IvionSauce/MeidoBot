@@ -403,9 +403,9 @@ namespace Chainey
             switch (dir)
             {
             case Direction.Forward:
-                return sen.LatestForwardChain();
+                return sen.LatestForwardChain;
             case Direction.Backward:
-                return sen.LatestBackwardChain();
+                return sen.LatestBackwardChain;
             default:
                 throw new InvalidOperationException("Unexpected Direction.");
             }

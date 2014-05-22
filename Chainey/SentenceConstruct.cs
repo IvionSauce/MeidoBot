@@ -23,6 +23,25 @@ namespace Chainey
                 return string.Join(" ", sen);
             }
         }
+
+
+        internal string LatestForwardChain
+        {
+            get
+            {
+                int start = Forwards.Count - order;            
+                return string.Join(" ", Forwards, start, order);
+            }
+        }
+
+        internal string LatestBackwardChain
+        {
+            get
+            {
+                int start = Backwards.Count - order;            
+                return string.Join(" ", Backwards, start, order);
+            }
+        }
         
         List<string> Forwards;
         List<string> Backwards;
@@ -48,31 +67,6 @@ namespace Chainey
         internal void Prepend(string word)
         {
             Backwards.Add(word);
-        }
-        
-        
-        internal string LatestForwardChain()
-        {
-            if (Forwards.Count < order)
-                return string.Empty;
-            
-            var chain = new string[order];
-            int start = Forwards.Count - order;
-            Forwards.CopyTo(start, chain, 0, order);
-            
-            return string.Join(" ", chain);
-        }
-        
-        internal string LatestBackwardChain()
-        {
-            if (Backwards.Count < order)
-                return string.Empty;
-            
-            var chain = new string[order];
-            int start = Backwards.Count - order;
-            Backwards.CopyTo(start, chain, 0, order);
-            
-            return string.Join(" ", chain);
         }
     }
 }
