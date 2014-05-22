@@ -376,10 +376,10 @@ namespace Chainey
         }
 
 
-        void CollectChains(SentenceConstruct sen, Direction dir, int maxWords, SqliteCommand cmd)
+        static void CollectChains(SentenceConstruct sen, Direction dir, int maxWords, SqliteCommand cmd)
         {
             const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            cmd.CommandText = FormatSql(searchSql, dir);
+            cmd.CommandText = searchSql;
             cmd.Prepare();
 
             while (sen.WordCount < maxWords)
@@ -391,14 +391,13 @@ namespace Chainey
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )
-                    Add(sen, dir, followUp);
+                    AddTo(sen, dir, followUp);
                 else
                     return;
             }
         }
 
-
-        string GetLatestChain(SentenceConstruct sen, Direction dir)
+        static string GetLatestChain(SentenceConstruct sen, Direction dir)
         {
             switch (dir)
             {
@@ -411,8 +410,7 @@ namespace Chainey
             }
         }
 
-
-        void Add(SentenceConstruct sen, Direction dir, string followUp)
+        static void AddTo(SentenceConstruct sen, Direction dir, string followUp)
         {
             switch (dir)
             {
