@@ -421,16 +421,16 @@ namespace Chainey
 
         static void CreateSeedSql(string seed, SqliteCommand cmd)
         {
-            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @SeedPat " +
+            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @Seed " +
                 "ORDER BY RANDOM()";
             if (cmd.CommandText != seedSql)
             {
                 cmd.CommandText = seedSql;
                 cmd.Prepare();
             }
-            var seedPattern = string.Concat(seed, "%");
+            var seedPattern = string.Concat(seed, " %");
             cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
-            // cmd.Parameters.AddWithValue("@Seed", seed);
+            cmd.Parameters.AddWithValue("@Seed", seed);
         }
     }
 }
