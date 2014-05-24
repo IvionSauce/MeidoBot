@@ -128,14 +128,12 @@ namespace Chainey
             // Add to history/memory, so that we don't go straight up repeating people.
             lock (_historyLock)
                 history.Add( string.Join(" ", message) );
-            
-            // Sort so that the rarer words get to be used as seed.
-            string[] sortedWords = SortByWordCount(message);
-            List<Sentence> responses = InternalBuild(sortedWords, true);
 
+            string[] seeds = GetSeeds(message, 2);
+            List<Sentence> responses = InternalBuild(seeds, true);
             if (responses.Count > 0)
             {
-                Sentence resp = Select(responses, sortedWords);
+                Sentence resp = Select(responses, seeds);
                 // Add to history/memory, so that we don't go repeating ourselves.
                 lock (_historyLock)
                     history.Add(resp.Content);
@@ -148,16 +146,27 @@ namespace Chainey
         }
 
 
-        string[] SortByWordCount(string[] words)
+        // Sort and return the least common words (with `count` as max). Also trim punctuation.
+        string[] GetSeeds(string[] words, int count)
         {
             var copy = new string[words.Length];
             Array.Copy(words, copy, words.Length);
 
-            var wordCounts = brain.WordCount(words);
             // Sort the copy, so that we leave the input alone.
+            var wordCounts = brain.WordCount(copy);
             Array.Sort(wordCounts.ToArray(), copy);
 
-            return copy;
+            // Limit returned seeds to be `count` or less.
+            string[] seeds;
+            if (copy.Length > count)
+                seeds = new string[count];
+            else
+                seeds = new string[copy.Length];
+
+            for (int i = 0; i < seeds.Length; i++)
+                seeds[i] = copy[i].TrimPunctuation();
+
+            return seeds;
         }
 
 
@@ -169,11 +178,7 @@ namespace Chainey
             List<Sentence> candidates;
             if (seeds.Length > 1)
             {
-                // Prepend space so as to not match irrelevant words. Do allow other characters to follow it (plural, 
-                // punctuation, conjugation).
-                var word = string.Concat(" ", seeds[1]);
-                candidates = responses.FindAll( sen =>
-                                               sen.Content.Contains(word, StringComparison.OrdinalIgnoreCase) );
+                candidates = MatchSeeds(responses, seeds);
 
                 if (candidates.Count == 0)
                     candidates = responses;
@@ -196,6 +201,26 @@ namespace Chainey
             return response;
         }
 
+        List<Sentence> MatchSeeds(List<Sentence> candidates, string[] seeds)
+        {
+            var matches = new List<Sentence>();
+            // Prepend space so as to not match irrelevant words. Do allow other characters to follow it (plural,
+            // punctuation, conjugation).
+            string seed = " " + seeds[0];
+            string extraSeed = " " + seeds[1];
+
+            foreach (var sen in candidates)
+            {
+                if (sen.Content.Contains(extraSeed, StringComparison.OrdinalIgnoreCase) &&
+                    sen.Content.Contains(seed, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches.Add(sen);
+                }
+            }
+
+            return matches;
+        }
+
 
         // -------------------------------
         // Methods for building sentences.
@@ -211,7 +236,7 @@ namespace Chainey
         }
 
 
-        public List<Sentence> Build(string[] seeds)
+        public List<Sentence> Build(IEnumerable<string> seeds)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -219,7 +244,7 @@ namespace Chainey
             return InternalBuild(seeds, false);
         }
 
-        public List<Sentence> Build(string[] seeds, bool memoryFilter)
+        public List<Sentence> Build(IEnumerable<string> seeds, bool memoryFilter)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -227,7 +252,7 @@ namespace Chainey
             return InternalBuild(seeds, memoryFilter);
         }
 
-        List<Sentence> InternalBuild(string[] seeds, bool memoryFilter)
+        List<Sentence> InternalBuild(IEnumerable<string> seeds, bool memoryFilter)
         {
             var responses = GetSentences(seeds);
             if (memoryFilter)
@@ -243,14 +268,11 @@ namespace Chainey
 
 
         // Get as much sentences from the seeds as time allows.
-        List<Sentence> GetSentences(string[] seeds)
+        List<Sentence> GetSentences(IEnumerable<string> seeds)
         {
-            if (seeds.Length == 0)
-                return new List<Sentence>();
-
             var sw = Stopwatch.StartNew();
 
-            var sentences = brain.BuildSentences( seeds[0] );
+            var sentences = brain.BuildSentences(seeds);
             // Sentence and rarity pairs, united in a Sentence struct.
             var pairs = SentenceAndRarity(sentences);
 

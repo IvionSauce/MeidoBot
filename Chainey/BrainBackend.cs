@@ -15,6 +15,6 @@ namespace Chainey
         // Fallback for when seed-building fails.
         string BuildRandomSentence();
         // Build sentences around given seed.
-        IEnumerable<string> BuildSentences(string seed);
+        IEnumerable<string> BuildSentences(IEnumerable<string> seed);
     }
 }

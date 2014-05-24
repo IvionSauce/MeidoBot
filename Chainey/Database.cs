@@ -188,11 +188,16 @@ namespace Chainey
             if (words == null)
                 throw new ArgumentNullException("words");
 
+            const string countSql = "SELECT count FROM WordCount WHERE word=@Word";
+
             using (var conn = new SqliteConnection(connStr))
             {
                 conn.Open();
                 using (var cmd = conn.CreateCommand())
                 {
+                    cmd.CommandText = countSql;
+                    cmd.Prepare();
+
                     foreach (string word in words)
                         yield return WordCount(word, cmd);
                 }
@@ -206,12 +211,6 @@ namespace Chainey
             if (string.IsNullOrEmpty(word))
                 return -1;
 
-            const string sqlCmd = "SELECT count FROM WordCount WHERE word=@Word";
-            if (cmd.CommandText != sqlCmd)
-            {
-                cmd.CommandText = sqlCmd;
-                cmd.Prepare();
-            }
             cmd.Parameters.AddWithValue("@Word", Normalize(word));
 
             // If word is not found in the WordCount table, return 0.
@@ -272,9 +271,10 @@ namespace Chainey
         // ***
 
 
-        public IEnumerable<string> BuildSentences(string seed)
+        public IEnumerable<string> BuildSentences(IEnumerable<string> seeds)
         {
-            seed.ThrowIfNullOrEmpty("seed");
+            if (seeds == null)
+                throw new ArgumentNullException("seeds");
 
             using (var conn = new SqliteConnection(connStr))
             {
@@ -282,10 +282,16 @@ namespace Chainey
                 using (SqliteCommand chainCmd = conn.CreateCommand(),
                        collectCmd = conn.CreateCommand())
                 {
-                    CreateSeedSql(seed, chainCmd);
+                    foreach (string seed in seeds)
+                    {
+                        if (string.IsNullOrEmpty(seed))
+                            continue;
 
-                    foreach (string sentence in Builder(chainCmd, collectCmd))
-                        yield return sentence;
+                        CreateSeedSql(seed, chainCmd);
+
+                        foreach (string sentence in Builder(chainCmd, collectCmd))
+                            yield return sentence;
+                    }
                 }
                 conn.Close();
             }
@@ -322,37 +328,6 @@ namespace Chainey
         }
 
 
-        /* IEnumerable<string> Search(SentenceConstruct words, SqliteCommand cmd)
-        {
-            var forward = GetPossibilities(words, Direction.Forward, cmd);
-            var backward = GetPossibilities(words, Direction.Backward, cmd);
-        }
-
-
-        // Gets possible follow-ups.
-        List<string> GetPossibilities(SentenceConstruct words, Direction dir, SqliteCommand cmd)
-        {
-            const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM()";
-            cmd.CommandText = FormatSql(searchSql, dir);
-            cmd.Prepare();
-
-            string chain = GetLatestChain(words, dir);
-            cmd.Parameters.AddWithValue("@Chain", chain);
-
-            var possibilities = new List<string>();
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    string followUp = reader.GetString(0);
-                    if (followUp != string.Empty)
-                        possibilities.Add(followUp);
-                }
-            }
-            return possibilities;
-        } */
-
-
         public string BuildRandomSentence()
         {
             const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
@@ -379,7 +354,7 @@ namespace Chainey
         static void CollectChains(SentenceConstruct sen, Direction dir, int maxWords, SqliteCommand cmd)
         {
             const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            cmd.CommandText = searchSql;
+            cmd.CommandText = FormatSql(searchSql, dir);
             cmd.Prepare();
 
             while (sen.WordCount < maxWords)
