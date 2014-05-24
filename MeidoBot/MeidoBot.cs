@@ -39,12 +39,12 @@ namespace MeidoBot
             
             // Setting some SmartIrc4Net options.
             irc.CtcpVersion = "MeidoBot v0.88.0";
-            irc.AutoJoinOnInvite = true;
-            irc.Encoding = Encoding.UTF8;
             irc.ActiveChannelSyncing = true;
+            irc.AutoJoinOnInvite = true;
             irc.AutoReconnect = true;
             irc.AutoRejoin = true;
-            
+            irc.Encoding = Encoding.UTF8;
+
             // Make sure they know my greatness.
             Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
             
