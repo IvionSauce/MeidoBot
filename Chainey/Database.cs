@@ -307,7 +307,7 @@ namespace Chainey
                     string chain = reader.GetString(0);
                     string followUp = reader.GetString(1);
 
-                    var words = new SentenceConstruct(chain, Order);
+                    var words = new SentenceConstruct(chain);
 
                     // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
                     int maxWords = MaxWords;
@@ -421,7 +421,7 @@ namespace Chainey
 
         static void CreateSeedSql(string seed, SqliteCommand cmd)
         {
-            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @Seed " +
+            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @SeedPat " +
                 "ORDER BY RANDOM()";
             if (cmd.CommandText != seedSql)
             {
@@ -430,7 +430,7 @@ namespace Chainey
             }
             var seedPattern = string.Concat(seed, "%");
             cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
-            cmd.Parameters.AddWithValue("@Seed", seed);
+            // cmd.Parameters.AddWithValue("@Seed", seed);
         }
     }
 }

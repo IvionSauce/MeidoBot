@@ -146,7 +146,7 @@ namespace Chainey
         }
 
 
-        // Sort and return the least common words (with `count` as max). Also trim punctuation.
+        // Sort and return the least common words (with `count` as max seed count). Also trim punctuation.
         string[] GetSeeds(string[] words, int count)
         {
             var copy = new string[words.Length];
