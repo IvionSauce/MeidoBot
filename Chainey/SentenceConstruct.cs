@@ -31,7 +31,7 @@ namespace Chainey
                 int start = Forwards.Count - order;
                 Forwards.CopyTo(start, chain, 0, order);
 
-                return string.Join(" ", Forwards, start, order);
+                return string.Join(" ", chain);
             }
         }
 
@@ -43,7 +43,7 @@ namespace Chainey
                 int start = Backwards.Count - order;
                 Backwards.CopyTo(start, chain, 0, order);
 
-                return string.Join(" ", Backwards, start, order);
+                return string.Join(" ", chain);
             }
         }
         
