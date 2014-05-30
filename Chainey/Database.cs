@@ -3,6 +3,7 @@ using System.Linq;
 using Mono.Data.Sqlite;
 using System.Collections.Generic;
 using IvionSoft;
+using System.Diagnostics;
 
 namespace Chainey
 {
@@ -45,7 +46,7 @@ namespace Chainey
             if (order < 1)
                 throw new ArgumentOutOfRangeException("order", "Cannot be less than or equal to 0.");
 
-            connStr = string.Concat("URI=file:", file, ";Pooling=true");
+            connStr = string.Concat("URI=file:", file, ";Pooling=true;Default Timeout=180");
             Order = order;
             MaxWords = 100;
 
@@ -99,7 +100,9 @@ namespace Chainey
             
             string[][] forwardChains = MarkovTools.TokenizeSentence(sentenceWords, Order);
             string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
-            
+
+            var sw = Stopwatch.StartNew();
+
             using (var conn = new SqliteConnection(connStr))
             {
                 conn.Open();
@@ -112,8 +115,21 @@ namespace Chainey
                     
                     InsertChains(forwardChains, Direction.Forward, insertCmd);
                     InsertChains(backwardChains, Direction.Backward, insertCmd);
-                    
-                    tr.Commit();
+
+                    try
+                    {
+                        tr.Commit();
+                    }
+                    catch (SqliteException)
+                    {
+                        Console.WriteLine("!! ERROR ADDING: " + string.Join(" ", sentenceWords));
+                        throw;
+                    }
+                    finally
+                    {
+                        sw.Stop();
+                        Console.WriteLine("-- AddSentence time: " + sw.Elapsed);
+                    }
                 }
                 conn.Close();
             }

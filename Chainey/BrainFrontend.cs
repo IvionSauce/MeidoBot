@@ -270,25 +270,22 @@ namespace Chainey
         // Get as much sentences from the seeds as time allows.
         List<Sentence> GetSentences(IEnumerable<string> seeds)
         {
-            var sw = Stopwatch.StartNew();
-
             var sentences = brain.BuildSentences(seeds);
             // Sentence and rarity pairs, united in a Sentence struct.
             var pairs = SentenceAndRarity(sentences);
 
             // Make sure we have a consistent TimeLimit during the loop execution.
-            TimeSpan limit;
-            lock (_limitLock)
-                limit = TimeLimit;
+            var limit = TimeLimit.TotalMilliseconds;
 
             var coll = new List<Sentence>();
             // Only bother checking for time if the limit is applicable.
-            if (limit > TimeSpan.Zero)
+            if (limit > 0)
             {
+                var startTicks = (uint)Environment.TickCount;
                 foreach (var pair in pairs)
                 {
                     coll.Add(pair);
-                    if (sw.Elapsed > limit)
+                    if ( ((uint)Environment.TickCount - startTicks) > limit )
                         break;
                 }
             }
@@ -296,7 +293,6 @@ namespace Chainey
             else
                 coll.AddRange(pairs);
 
-            sw.Stop();
             return coll;
         }
 

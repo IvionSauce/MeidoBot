@@ -84,10 +84,10 @@ public class IrcChainey : IMeidoHook
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             msg = msg.Slice(1, 0);
             
-            var sw = Stopwatch.StartNew();
+            //var sw = Stopwatch.StartNew();
             EmitSentence(e.Channel, msg);
-            sw.Stop();
-            Console.WriteLine("Diagnostics time: " + sw.Elapsed);
+            //sw.Stop();
+            //Console.WriteLine("Diagnostics time: " + sw.Elapsed);
 
             return;
         }
@@ -205,7 +205,10 @@ public class IrcChainey : IMeidoHook
 
     void EmitSentence(string channel, string[] respondTo)
     {
+        var sw = Stopwatch.StartNew();
         var sentence = chainey.BuildResponse(respondTo);
+        sw.Stop();
+        Console.WriteLine("-- BuildResponse time: " + sw.Elapsed);
 
         if (sentence.Content != string.Empty)
         {
