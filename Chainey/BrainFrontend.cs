@@ -173,7 +173,7 @@ namespace Chainey
         Sentence Select(List<Sentence> responses, string[] seeds)
         {
             // Debug
-            Console.WriteLine("---");
+            Console.WriteLine("\n---");
 
             List<Sentence> candidates;
             if (seeds.Length > 1)

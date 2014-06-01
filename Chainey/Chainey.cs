@@ -213,7 +213,7 @@ public class IrcChainey : IMeidoHook
         if (sentence.Content != string.Empty)
         {
             irc.SendMessage(channel, sentence.Content);
-            Console.WriteLine("\n[Chainey] [{0}] {1}", sentence.Rarity, sentence);
+            Console.WriteLine("[Chainey] [{0}] {1}", sentence.Rarity, sentence);
         }
     }
 
