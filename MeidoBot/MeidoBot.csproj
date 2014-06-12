@@ -33,11 +33,11 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="MeidoBot.cs" />
-    <Compile Include="MeidoPlugins.cs" />
     <Compile Include="IrcComm.cs" />
     <Compile Include="IrcMessage.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MeidoComm.cs" />
+    <Compile Include="PluginManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
