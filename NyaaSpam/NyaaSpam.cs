@@ -10,6 +10,7 @@ using System.ComponentModel.Composition;
 public class NyaaSpam : IMeidoHook
 {
     readonly IIrcComm irc;
+    readonly IMeidoComm meido;
 
     readonly NyaaPatterns nyaa;
     readonly NyaaFeedReader feedReader;
@@ -22,7 +23,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.63"; }
+        get { return "0.64"; }
     }
 
     public Dictionary<string,string> Help
@@ -51,8 +52,10 @@ public class NyaaSpam : IMeidoHook
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
+        meido = meidoComm;
+
         nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) );
-        string nyaaFile = meidoComm.ConfDir + "/_nyaapatterns.xml";
+        string nyaaFile = meido.ConfDir + "/_nyaapatterns.xml";
         try
         {
             nyaa.Deserialize(nyaaFile);
@@ -60,7 +63,7 @@ public class NyaaSpam : IMeidoHook
         catch (FileNotFoundException)
         {}
 
-        var conf = new Config(meidoComm.ConfDir + "/NyaaSpam.xml");
+        var conf = new Config(meido.ConfDir + "/NyaaSpam.xml");
         feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
         feedReader.Start();
 
@@ -72,7 +75,7 @@ public class NyaaSpam : IMeidoHook
 
     public void Handler(IIrcMessage e)
     {
-        if (e.Trigger == "nyaa")
+        if (e.Trigger == "nyaa" && meido.AuthLevel(e.Nick) > 0)
         {
             if (e.MessageArray.Length == 1)
             {
