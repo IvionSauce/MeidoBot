@@ -148,20 +148,75 @@ namespace Chainey
         }
 
 
-        static void InsertChains(string[][] chains, Direction dir, SqliteCommand insertCmd)
+        static void InsertChains(string[][] chains, Direction dir, SqliteCommand cmd)
         {
-            const string cmd = "INSERT OR IGNORE INTO {0} VALUES(@Chain, @FollowUp)";
-            insertCmd.CommandText = FormatSql(cmd, dir);
-            insertCmd.Prepare();
+            const string insertSql = "INSERT OR IGNORE INTO {0} VALUES(@Chain, @FollowUp)";
+            cmd.CommandText = FormatSql(insertSql, dir);
+            cmd.Prepare();
 
             foreach (string[] chain in chains)
             {
                 var insertChain = string.Join(" ", chain, 0, chain.Length - 1);
                 var insertFollow = chain[chain.Length - 1] ?? string.Empty;
 
-                insertCmd.Parameters.AddWithValue("@Chain", insertChain);
-                insertCmd.Parameters.AddWithValue("@FollowUp", insertFollow);
-                insertCmd.ExecuteNonQuery();
+                cmd.Parameters.AddWithValue("@Chain", insertChain);
+                cmd.Parameters.AddWithValue("@FollowUp", insertFollow);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
+        // ***
+        // -------------------------------
+        // Methods for removing sentences.
+        // -------------------------------
+        // ***
+
+        public void RemoveSentence(string[] sentenceWords)
+        {
+            if (sentenceWords == null)
+                throw new ArgumentNullException("sentenceWords");
+            // Return early if there's nothing to do.
+            else if (sentenceWords.Length < Order)
+                return;
+
+            string[] reversed = ReverseCopy(sentenceWords);
+            
+            string[][] forwardChains = MarkovTools.TokenizeSentence(sentenceWords, Order);
+            string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                using (var tr = conn.BeginTransaction())
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.Transaction = tr;
+
+                    DeleteChains(forwardChains, Direction.Forward, cmd);
+                    DeleteChains(backwardChains, Direction.Backward, cmd);
+
+                    tr.Commit();
+                }
+                conn.Close();
+            }
+        }
+
+
+        static void DeleteChains(string[][] chains, Direction dir, SqliteCommand cmd)
+        {
+            const string deleteSql = "DELETE FROM {0} WHERE chain=@Chain AND followup=@FollowUp";
+            cmd.CommandText = FormatSql(deleteSql, dir);
+            cmd.Prepare();
+            
+            foreach (string[] chain in chains)
+            {
+                var deleteChain = string.Join(" ", chain, 0, chain.Length - 1);
+                var deleteFollow = chain[chain.Length - 1] ?? string.Empty;
+                
+                cmd.Parameters.AddWithValue("@Chain", deleteChain);
+                cmd.Parameters.AddWithValue("@FollowUp", deleteFollow);
+                cmd.ExecuteNonQuery();
             }
         }
 

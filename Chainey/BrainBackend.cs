@@ -7,6 +7,8 @@ namespace Chainey
     {
         // Add a sentence to the brain.
         void AddSentence(string[] sentence);
+        // Remove a sentence.
+        void RemoveSentence(string[] sentence);
 
         // Used to determine which words to use as seeds first (when building a response).
         // Also used to calculate the rarity of a sentence.

@@ -99,6 +99,31 @@ namespace Chainey
         }
 
 
+        // ----------------------------------------------
+        // Methods for deleting sentences from the brain.
+        // ----------------------------------------------
+
+        public void Remove(string sentence)
+        {
+            if (sentence == null)
+                throw new ArgumentNullException("sentence");
+
+            var split = sentence.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            brain.RemoveSentence(split);
+        }
+
+        public void Remove(string[] sentence)
+        {
+            if (sentence == null)
+                throw new ArgumentNullException("sentence");
+
+            if (Filter)
+                brain.RemoveSentence( MarkovTools.Filter(sentence) );
+            else
+                brain.RemoveSentence(sentence);
+        }
+
+
         // -----------------------------
         // Methods for building replies.
         // -----------------------------

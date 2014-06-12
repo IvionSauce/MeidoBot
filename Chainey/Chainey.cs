@@ -12,6 +12,7 @@ using System.ComponentModel.Composition;
 public class IrcChainey : IMeidoHook
 {
     readonly IIrcComm irc;
+    readonly IMeidoComm meido;
 
     readonly BrainFrontend chainey;
     readonly Random rnd = new Random();
@@ -56,8 +57,10 @@ public class IrcChainey : IMeidoHook
     }
     
     [ImportingConstructor]
-    public IrcChainey(IIrcComm ircComm)
+    public IrcChainey(IIrcComm ircComm, IMeidoComm meidoComm)
     {
+        meido = meidoComm;
+
         chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
 
@@ -83,12 +86,17 @@ public class IrcChainey : IMeidoHook
 
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             msg = msg.Slice(1, 0);
-            
-            //var sw = Stopwatch.StartNew();
-            EmitSentence(e.Channel, msg);
-            //sw.Stop();
-            //Console.WriteLine("Diagnostics time: " + sw.Elapsed);
 
+            EmitSentence(e.Channel, msg);
+            return;
+        case "remove":
+
+            if (meido.AuthLevel(e.Nick) >= 9)
+            {
+                var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
+                chainey.Remove(toRemove);
+                e.Reply("Removed sentence.");
+            }
             return;
         }
     }
