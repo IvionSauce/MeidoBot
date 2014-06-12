@@ -68,29 +68,32 @@ public class IrcChainey : IMeidoHook
 
         irc = ircComm;
         irc.AddChannelMessageHandler(Handle);
+        irc.AddTriggerHandler(HandleTrigger);
     }
 
     public void Handle(IIrcMessage e)
     {
-        switch (e.Trigger)
+        if (e.Trigger == null)
         {
-        case null:
-
             lock (_locker)
             {
                 MessageQueue.Enqueue(e);
                 Monitor.Pulse(_locker);
             }
-            return;
-        case "markov":
+        }
+    }
 
+    public void HandleTrigger(IIrcMessage e)
+    {
+        switch (e.Trigger)
+        {
+        case "markov":
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             msg = msg.Slice(1, 0);
-
+            
             EmitSentence(e.Channel, msg);
             return;
         case "remove":
-
             if (meido.AuthLevel(e.Nick) >= 9)
             {
                 var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
