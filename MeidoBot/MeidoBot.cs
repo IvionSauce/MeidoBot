@@ -7,17 +7,6 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    class MeidoComm : IMeidoComm
-    {
-        public string ConfDir { get; private set; }
-
-        public MeidoComm()
-        {
-            ConfDir = "conf";
-        }
-    }
-
-
     class Meido : IDisposable
     {
         IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
@@ -104,8 +93,13 @@ namespace MeidoBot
         {
             var msg = new IrcMessage(e.Data, plugins.Prefix);
             
-            if (msg.Trigger != null && ircComm.TriggerHandlers != null)
-                ircComm.TriggerHandlers(msg);
+            if (msg.Trigger != null)
+            {
+                SpecialTriggers(msg);
+
+                if (ircComm.TriggerHandlers != null)
+                    ircComm.TriggerHandlers(msg);
+            }
 
             if (msg.Channel != null)
                 ChannelMessage(msg);
@@ -121,43 +115,43 @@ namespace MeidoBot
         }
 
 
-        // Pass on the message and associated info to the plugins.
         void ChannelMessage(IrcMessage msg)
         {
-            if (msg.Trigger == "h" || msg.Trigger == "help")
-            {
-                string helpMessage = Help(msg.MessageArray);
-                msg.Reply(helpMessage);
-            }
-            else if (ircComm.ChannelMessageHandlers != null)
+            if (ircComm.ChannelMessageHandlers != null)
                 ircComm.ChannelMessageHandlers(msg);
         }
 
-
         void QueryMessage(IrcMessage msg)
         {
-            // Some makeshift stuff, will need to code an authentication system.
-            if (msg.Trigger == "disconnect" && msg.Nick == "Ivion")
+            if (ircComm.QueryMessageHandlers != null)
+                ircComm.QueryMessageHandlers(msg);
+        }
+
+
+        void SpecialTriggers(IIrcMessage msg)
+        {
+            if (msg.Trigger == "h" || msg.Trigger == "help")
+                msg.Reply( Help(msg.MessageArray) );
+
+            else if (msg.Trigger == "auth")
+                msg.Reply( Auth(msg.Nick, msg.MessageArray) );
+
+            if (msg.Trigger == "disconnect" && meidoComm.AuthLevel(msg.Nick) == 10)
             {
                 // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
                 // been given no new messages will arrive.
                 irc.Disconnect();
                 plugins.StopPlugins();
             }
-
+            
             else if (msg.Trigger == "part" &&
                      msg.MessageArray.Length == 2 &&
-                     msg.Nick == "Ivion")
-            {
+                     meidoComm.AuthLevel(msg.Nick) == 10)
                 irc.RfcPart(msg.MessageArray[1]);
-            }
-
-            else if (ircComm.QueryMessageHandlers != null)
-                ircComm.QueryMessageHandlers(msg);
         }
 
 
-        // Help trigger
+        // Help trigger.
         string Help(string[] message)
         {
             if (message.Length == 1)
@@ -176,6 +170,19 @@ namespace MeidoBot
                 else
                     return "No help available.";
             }
+        }
+
+
+        // Auth trigger.
+        string Auth(string nick, string[] message)
+        {
+            if (message.Length > 1)
+            {
+                if (meidoComm.Auth(nick, message[1]))
+                    return "You've successfully authenticated.";
+            }
+
+            return "Your current Authentication Level is " + meidoComm.AuthLevel(nick);
         }
 
 
