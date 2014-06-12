@@ -39,6 +39,10 @@ namespace MeidoCommon
     public interface IMeidoComm
     {
         string ConfDir { get; }
+        string DataDir { get; }
+
+        bool Auth(string nick, string pass);
+        int AuthLevel(string nick);
     }
 
 
