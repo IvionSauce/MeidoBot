@@ -34,6 +34,8 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="Mono.Data.Sqlite" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -42,5 +44,6 @@
     <Compile Include="History.cs" />
     <Compile Include="GenericStorage.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="ThreadLocalSqlite.cs" />
   </ItemGroup>
 </Project>
