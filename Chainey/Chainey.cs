@@ -20,7 +20,6 @@ public class IrcChainey : IMeidoHook
     readonly Config conf = new Config();
 
     // Housekeeping for producer-consumer queue.
-    Thread[] consumers;
     readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
     readonly object _locker = new object();
     
@@ -46,7 +45,7 @@ public class IrcChainey : IMeidoHook
 
     public void Stop()
     {
-        for (int i = 0; i < consumers.Length; i++)
+        for (int i = 0; i < conf.Threads; i++)
         {
             lock (_locker)
             {
@@ -64,7 +63,8 @@ public class IrcChainey : IMeidoHook
         chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
 
-        StartConsumers(conf.Threads);
+        for (int i = 0; i < conf.Threads; i++)
+            new Thread(Consume).Start();
 
         irc = ircComm;
         irc.AddChannelMessageHandler(Handle);
@@ -91,7 +91,7 @@ public class IrcChainey : IMeidoHook
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             msg = msg.Slice(1, 0);
             
-            EmitSentence(e.Channel, msg);
+            EmitSentence(e.ReturnTo, msg);
             return;
         case "remove":
             if (meido.AuthLevel(e.Nick) >= 9)
@@ -104,16 +104,6 @@ public class IrcChainey : IMeidoHook
         }
     }
 
-
-    void StartConsumers(int count)
-    {
-        consumers = new Thread[count];
-        for (int i = 0; i < count; i++)
-        {
-            consumers[i] = new Thread(Consume);
-            consumers[i].Start();
-        }
-    }
 
     void Consume()
     {
@@ -214,7 +204,7 @@ public class IrcChainey : IMeidoHook
             chainey.Add(sentence);
     }
 
-    void EmitSentence(string channel, string[] respondTo)
+    void EmitSentence(string target, string[] respondTo)
     {
         var sw = Stopwatch.StartNew();
         var sentence = chainey.BuildResponse(respondTo);
@@ -223,7 +213,7 @@ public class IrcChainey : IMeidoHook
 
         if (sentence.Content != string.Empty)
         {
-            irc.SendMessage(channel, sentence.Content);
+            irc.SendMessage(target, sentence.Content);
             Console.WriteLine("[Chainey] [{0}] {1}", sentence.Rarity, sentence);
         }
     }

@@ -31,7 +31,7 @@ namespace Chainey
             }
         }
 
-        readonly string connStr;
+        readonly ThreadLocalSqlite localSqlite;
 
         private enum Direction
         {
@@ -46,11 +46,11 @@ namespace Chainey
             if (order < 1)
                 throw new ArgumentOutOfRangeException("order", "Cannot be less than or equal to 0.");
 
-            connStr = string.Concat("URI=file:", file, ";Pooling=true;Default Timeout=180");
+            localSqlite = new ThreadLocalSqlite(file);
             Order = order;
             MaxWords = 100;
 
-            using (var connection = new SqliteConnection(connStr))
+            using (var connection = new SqliteConnection("URI=file:" + file))
             {
                 connection.Open();
 
@@ -103,35 +103,31 @@ namespace Chainey
 
             var sw = Stopwatch.StartNew();
 
-            using (var conn = new SqliteConnection(connStr))
+            var conn = localSqlite.GetDb();
+            using (SqliteTransaction tr = conn.BeginTransaction())
+            using (SqliteCommand insertCmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (SqliteTransaction tr = conn.BeginTransaction())
-                using (SqliteCommand insertCmd = conn.CreateCommand())
-                {
-                    insertCmd.Transaction = tr;
-                    
-                    UpdateWordCount(sentenceWords, insertCmd);
-                    
-                    InsertChains(forwardChains, Direction.Forward, insertCmd);
-                    InsertChains(backwardChains, Direction.Backward, insertCmd);
+                insertCmd.Transaction = tr;
+                
+                UpdateWordCount(sentenceWords, insertCmd);
+                
+                InsertChains(forwardChains, Direction.Forward, insertCmd);
+                InsertChains(backwardChains, Direction.Backward, insertCmd);
 
-                    try
-                    {
-                        tr.Commit();
-                    }
-                    catch (SqliteException)
-                    {
-                        Console.WriteLine("!! ERROR ADDING: " + string.Join(" ", sentenceWords));
-                        throw;
-                    }
-                    finally
-                    {
-                        sw.Stop();
-                        Console.WriteLine("-- AddSentence time: " + sw.Elapsed);
-                    }
+                try
+                {
+                    tr.Commit();
                 }
-                conn.Close();
+                catch (SqliteException)
+                {
+                    Console.WriteLine("!! ERROR ADDING: " + string.Join(" ", sentenceWords));
+                    throw;
+                }
+                finally
+                {
+                    sw.Stop();
+                    Console.WriteLine("-- AddSentence time: " + sw.Elapsed);
+                }
             }
         }
 
@@ -185,20 +181,16 @@ namespace Chainey
             string[][] forwardChains = MarkovTools.TokenizeSentence(sentenceWords, Order);
             string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
 
-            using (var conn = new SqliteConnection(connStr))
+            var conn = localSqlite.GetDb();
+            using (var tr = conn.BeginTransaction())
+            using (var cmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (var tr = conn.BeginTransaction())
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.Transaction = tr;
+                cmd.Transaction = tr;
 
-                    DeleteChains(forwardChains, Direction.Forward, cmd);
-                    DeleteChains(backwardChains, Direction.Backward, cmd);
+                DeleteChains(forwardChains, Direction.Forward, cmd);
+                DeleteChains(backwardChains, Direction.Backward, cmd);
 
-                    tr.Commit();
-                }
-                conn.Close();
+                tr.Commit();
             }
         }
 
@@ -261,18 +253,14 @@ namespace Chainey
 
             const string countSql = "SELECT count FROM WordCount WHERE word=@Word";
 
-            using (var conn = new SqliteConnection(connStr))
+            var conn = localSqlite.GetDb();
+            using (var cmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = countSql;
-                    cmd.Prepare();
+                cmd.CommandText = countSql;
+                cmd.Prepare();
 
-                    foreach (string word in words)
-                        yield return WordCount(word, cmd);
-                }
-                conn.Close();
+                foreach (string word in words)
+                    yield return WordCount(word, cmd);
             }
         }
 
@@ -347,24 +335,20 @@ namespace Chainey
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
 
-            using (var conn = new SqliteConnection(connStr))
+            var conn = localSqlite.GetDb();
+            using (SqliteCommand chainCmd = conn.CreateCommand(),
+                   collectCmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (SqliteCommand chainCmd = conn.CreateCommand(),
-                       collectCmd = conn.CreateCommand())
+                foreach (string seed in seeds)
                 {
-                    foreach (string seed in seeds)
-                    {
-                        if (string.IsNullOrEmpty(seed))
-                            continue;
+                    if (string.IsNullOrEmpty(seed))
+                        continue;
 
-                        CreateSeedSql(seed, chainCmd);
+                    CreateSeedSql(seed, chainCmd);
 
-                        foreach (string sentence in Builder(chainCmd, collectCmd))
-                            yield return sentence;
-                    }
+                    foreach (string sentence in Builder(chainCmd, collectCmd))
+                        yield return sentence;
                 }
-                conn.Close();
             }
         }
 
@@ -404,16 +388,12 @@ namespace Chainey
             const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
 
             string[] result;
-            using (var conn = new SqliteConnection(connStr))
+            var conn = localSqlite.GetDb();
+            using (SqliteCommand chainCmd = conn.CreateCommand(),
+                   collectCmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (SqliteCommand chainCmd = conn.CreateCommand(),
-                       collectCmd = conn.CreateCommand())
-                {
-                    chainCmd.CommandText = randomChainSql;
-                    result = Builder(chainCmd, collectCmd).ToArray();
-                }
-                conn.Close();
+                chainCmd.CommandText = randomChainSql;
+                result = Builder(chainCmd, collectCmd).ToArray();
             }
             if (result.Length == 1)
                 return result[0];
