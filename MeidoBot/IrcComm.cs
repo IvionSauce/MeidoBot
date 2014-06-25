@@ -93,9 +93,15 @@ namespace MeidoBot
         {
             return irc.GetChannels();
         }
+
         public bool IsMe(string nick)
         {
             return irc.IsMe(nick);
+        }
+
+        public bool IsJoined(string channel, string nick)
+        {
+            return irc.IsJoined(channel, nick);
         }
     }
 }

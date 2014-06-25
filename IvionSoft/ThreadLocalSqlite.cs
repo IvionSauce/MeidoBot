@@ -1,4 +1,5 @@
 using System;
+using System.Timers;
 using System.Threading;
 using Mono.Data.Sqlite;
 
@@ -9,7 +10,6 @@ namespace IvionSoft
     {
         public TimeSpan ConnectionTimeout { get; set; }
 
-        string connStr;
         ThreadLocal<LocalSqlite> local;
 
 
@@ -17,11 +17,11 @@ namespace IvionSoft
         {
             location.ThrowIfNullOrWhiteSpace("location");
 
+            var connStr = string.Concat("URI=file:", location);
             local = new ThreadLocal<LocalSqlite>
                 ( () => new LocalSqlite(connStr, ConnectionTimeout) );
 
-            connStr = string.Concat("URI=file:", location, ";Journal Mode=WAL");
-            ConnectionTimeout = TimeSpan.FromMinutes(60);
+            ConnectionTimeout = TimeSpan.FromMinutes(10);
         }
 
 
@@ -33,7 +33,6 @@ namespace IvionSoft
 
         public void Dispose()
         {
-            local.Value.Dispose();
             local.Dispose();
         }
     }
@@ -41,12 +40,12 @@ namespace IvionSoft
 
     internal class LocalSqlite : IDisposable
     {
-        string connStr;
-        uint timeout;
+        readonly string connStr;
+        readonly uint timeout;
+
+        readonly System.Timers.Timer cleaner = new System.Timers.Timer();
 
         object _locker = new object();
-
-        Timer cleaner;
 
         SqliteConnection conn;
         uint accessTime;
@@ -56,13 +55,17 @@ namespace IvionSoft
             {
                 lock (_locker)
                 {
+                    accessTime = (uint)Environment.TickCount;
+
                     if (conn == null)
                     {
                         conn = new SqliteConnection(connStr);
                         conn.Open();
+
+                        cleaner.Interval = timeout;
+                        cleaner.Start();
                     }
 
-                    accessTime = (uint)Environment.TickCount;
                     return conn;
                 }
             }
@@ -74,21 +77,42 @@ namespace IvionSoft
             this.connStr = connStr;
             timeout = (uint)connTimeout.TotalMilliseconds;
 
-            var checkInterval = timeout / 2;
-            cleaner = new Timer(Cleaner, null, checkInterval, checkInterval);
+            cleaner.AutoReset = false;
+            cleaner.Elapsed += new ElapsedEventHandler(Cleaner);
         }
 
 
-        void Cleaner(object state)
+        void Cleaner(object sender, ElapsedEventArgs e)
         {
             lock (_locker)
             {
-                if ( ((uint)Environment.TickCount - accessTime) > timeout )
+                if (conn == null)
+                {
+                    Console.WriteLine("!!! Unexpected null-connection in LocalSqlite.Cleaner.");
+                    return;
+                }
+
+                var timeSinceLastAccess = (uint)Environment.TickCount - accessTime;
+
+                if (timeSinceLastAccess >= timeout)
                 {
                     conn.Dispose();
                     conn = null;
                 }
-            }
+                else
+                {
+                    // If the database hasn't been accessed for half the timeout or longer, schedule the next Cleaner
+                    // for the projected time remaining.
+                    if (timeSinceLastAccess >= timeout / 2)
+                        cleaner.Interval = timeout - timeSinceLastAccess;
+
+                    // Else keep the standard interval.
+                    else if (cleaner.Interval != timeout)
+                        cleaner.Interval = timeout;
+
+                    cleaner.Start();
+                }
+            } // lock
         }
 
 

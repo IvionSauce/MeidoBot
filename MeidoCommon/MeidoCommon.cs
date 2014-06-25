@@ -69,5 +69,6 @@ namespace MeidoCommon
 
         string[] GetChannels();
         bool IsMe(string nick);
+        bool IsJoined(string channel, string nick);
     }
 }
