@@ -24,7 +24,7 @@ namespace Chainey
                 var chain = new string[order];
 
                 var node = sentence.Last;
-                for (int i = 0; i < order; i++)
+                for (int i = order - 1; i >= 0; i--)
                 {
                     chain[i] = node.Value;
                     node = node.Previous;
