@@ -69,33 +69,33 @@ namespace Chainey
         // Methods for adding sentences to the brain.
         // ------------------------------------------
 
-        public void Add(string sentence)
+        public void Add(string sentence, string source)
         {
             if (sentence == null)
                 throw new ArgumentNullException("sentence");
 
             var split = sentence.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-            InternalAdd(split);
+            InternalAdd(split, source);
         }
 
-        public void Add(string[] sentence)
+        public void Add(string[] sentence, string source)
         {
             if (sentence == null)
                 throw new ArgumentNullException("sentence");
 
             if (Filter)
-                InternalAdd( MarkovTools.Filter(sentence) );
+                InternalAdd(MarkovTools.Filter(sentence), source);
             else
-                InternalAdd(sentence);
+                InternalAdd(sentence, source);
         }
 
-        void InternalAdd(string[] sentence)
+        void InternalAdd(string[] sentence, string source)
         {
             // Add to history/memory, we don't want to parrot things we've just learned, like a 3yo.
             lock (_historyLock)
                 history.Add( string.Join(" ", sentence) );
 
-            brain.AddSentence(sentence);
+            brain.AddSentence(sentence, source);
         }
 
 

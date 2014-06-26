@@ -58,14 +58,31 @@ namespace Chainey
                 {
                     // ----- Populate the database with tables, if necessary -----
                     cmd.CommandText = "CREATE TABLE IF NOT EXISTS WordCount(" +
-                        "word TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 1, UNIQUE(word))";
+                        "word TEXT PRIMARY KEY," +
+                        "count INTEGER NOT NULL DEFAULT 1) WITHOUT ROWID";
                     cmd.ExecuteNonQuery();
 
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Forward(" +
-                        "chain TEXT NOT NULL, followup TEXT NOT NULL DEFAULT '', UNIQUE(chain, followup))";
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Chains(" +
+                        "id INTEGER PRIMARY KEY," +
+                        "backward TEXT NOT NULL DEFAULT ''," +
+                        "chain TEXT NOT NULL," +
+                        "forward TEXT NOT NULL DEFAULT ''," +
+                        "UNIQUE(chain, backward, forward))";
                     cmd.ExecuteNonQuery();
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Backward(" +
-                        "chain TEXT NOT NULL, followup TEXT NOT NULL DEFAULT '', UNIQUE(chain, followup))";
+
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Sources(" +
+                        "id INTEGER PRIMARY KEY," +
+                        "source TEXT NOT NULL," +
+                        "UNIQUE(source))";
+                    cmd.ExecuteNonQuery();
+
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS SrcMap(" +
+                        "sId INTEGER," +
+                        "cId INTEGER," +
+                        "FOREIGN KEY(sId) REFERENCES Sources(id)," +
+                        "FOREIGN KEY(cId) REFERENCES Chains(id) ON DELETE CASCADE," +
+                        "UNIQUE(sId, cId)," +
+                        "UNIQUE(cId, sId))";
                     cmd.ExecuteNonQuery();
                 }
 
@@ -88,7 +105,7 @@ namespace Chainey
         /// <exception cref="ArgumentNullException">Thrown if sentenceWords is null.</exception>
         /// <exception cref="ArgumentException">Thrown if sentenceWords contains null or empty entries.</exception>
         /// <param name="sentenceWords">Sentence (array of words).</param>
-        public void AddSentence(string[] sentenceWords)
+        public void AddSentence(string[] sentenceWords, string source)
         {
             if (sentenceWords == null)
                 throw new ArgumentNullException("sentenceWords");
@@ -96,23 +113,19 @@ namespace Chainey
             else if (sentenceWords.Length < Order)
                 return;
             
-            string[] reversed = ReverseCopy(sentenceWords);
-            
-            string[][] forwardChains = MarkovTools.TokenizeSentence(sentenceWords, Order);
-            string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
+            string[][] chains = MarkovTools.TokenizeSentence(sentenceWords, Order);
 
             var sw = Stopwatch.StartNew();
 
             var conn = localSqlite.GetDb();
             using (SqliteTransaction tr = conn.BeginTransaction())
-            using (SqliteCommand insertCmd = conn.CreateCommand())
+            using (SqliteCommand insertCmd = conn.CreateCommand(),
+                   updateCmd = conn.CreateCommand())
             {
                 insertCmd.Transaction = tr;
                 
                 UpdateWordCount(sentenceWords, insertCmd);
-                
-                InsertChains(forwardChains, Direction.Forward, insertCmd);
-                InsertChains(backwardChains, Direction.Backward, insertCmd);
+                InsertChains(chains, source, insertCmd, updateCmd);
 
                 try
                 {
@@ -131,34 +144,45 @@ namespace Chainey
             }
         }
 
-        
-        static string[] ReverseCopy(string[] arr)
+
+        static void InsertChains(string[][] chains, string source, SqliteCommand cmd, SqliteCommand updateCmd)
         {
-            var reversed = new string[arr.Length];
-
-            int j = arr.Length - 1;
-            for (int i = 0; i < arr.Length; i++, j--)
-                reversed[i] = arr[j];
-
-            return reversed;
-        }
-
-
-        static void InsertChains(string[][] chains, Direction dir, SqliteCommand cmd)
-        {
-            const string insertSql = "INSERT OR IGNORE INTO {0} VALUES(@Chain, @FollowUp)";
-            cmd.CommandText = FormatSql(insertSql, dir);
+            const string insertSql = "INSERT OR IGNORE INTO Chains VALUES(null, @Backward, @Chain, @Forward)";
+            cmd.CommandText = insertSql;
             cmd.Prepare();
 
+            var backward = string.Empty;
             foreach (string[] chain in chains)
             {
                 var insertChain = string.Join(" ", chain, 0, chain.Length - 1);
-                var insertFollow = chain[chain.Length - 1] ?? string.Empty;
+                var forward = chain[chain.Length - 1] ?? string.Empty;
 
+                cmd.Parameters.AddWithValue("@Backward", backward);
                 cmd.Parameters.AddWithValue("@Chain", insertChain);
-                cmd.Parameters.AddWithValue("@FollowUp", insertFollow);
+                cmd.Parameters.AddWithValue("@Forward", forward);
                 cmd.ExecuteNonQuery();
+
+                UpdateSources(source, insertChain, updateCmd);
+
+                backward = chain[0];
             }
+        }
+
+        static void UpdateSources(string source, string chain, SqliteCommand cmd)
+        {
+            if (string.IsNullOrEmpty(source))
+                return;
+
+            cmd.CommandText = "INSERT OR IGNORE INTO Sources VALUES(null, @Source)";
+            cmd.Parameters.AddWithValue("@Source", source);
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = "INSERT OR IGNORE INTO SrcMap VALUES(" +
+                "(SELECT id FROM Sources WHERE source=@Source)," +
+                "(SELECT id FROM Chains WHERE chain=@Chain))";
+            cmd.Parameters.AddWithValue("@Source", source);
+            cmd.Parameters.AddWithValue("@Chain", chain);
+            cmd.ExecuteNonQuery();
         }
 
 
@@ -175,40 +199,44 @@ namespace Chainey
             // Return early if there's nothing to do.
             else if (sentenceWords.Length < Order)
                 return;
-
-            string[] reversed = ReverseCopy(sentenceWords);
             
-            string[][] forwardChains = MarkovTools.TokenizeSentence(sentenceWords, Order);
-            string[][] backwardChains = MarkovTools.TokenizeSentence(reversed, Order);
+            string[][] chains = MarkovTools.TokenizeSentence(sentenceWords, Order);
 
             var conn = localSqlite.GetDb();
-            using (var tr = conn.BeginTransaction())
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tr;
+                cmd.CommandText = "PRAGMA foreign_keys = ON";
+                cmd.ExecuteNonQuery();
 
-                DeleteChains(forwardChains, Direction.Forward, cmd);
-                DeleteChains(backwardChains, Direction.Backward, cmd);
-
-                tr.Commit();
+                using (var tr = conn.BeginTransaction())
+                {
+                    cmd.Transaction = tr;
+                    DeleteChains(chains, cmd);
+                    tr.Commit();
+                }
             }
         }
 
 
-        static void DeleteChains(string[][] chains, Direction dir, SqliteCommand cmd)
+        static void DeleteChains(string[][] chains, SqliteCommand cmd)
         {
-            const string deleteSql = "DELETE FROM {0} WHERE chain=@Chain AND followup=@FollowUp";
-            cmd.CommandText = FormatSql(deleteSql, dir);
+            const string deleteSql = "DELETE FROM Chains WHERE chain=@Chain " +
+                "AND backward=@Backward AND forward=@Forward";
+            cmd.CommandText = deleteSql;
             cmd.Prepare();
-            
+
+            var backward = string.Empty;
             foreach (string[] chain in chains)
             {
                 var deleteChain = string.Join(" ", chain, 0, chain.Length - 1);
-                var deleteFollow = chain[chain.Length - 1] ?? string.Empty;
+                var forward = chain[chain.Length - 1] ?? string.Empty;
                 
                 cmd.Parameters.AddWithValue("@Chain", deleteChain);
-                cmd.Parameters.AddWithValue("@FollowUp", deleteFollow);
+                cmd.Parameters.AddWithValue("@Backward", backward);
+                cmd.Parameters.AddWithValue("@Forward", forward);
                 cmd.ExecuteNonQuery();
+
+                backward = chain[0];
             }
         }
 
@@ -359,21 +387,26 @@ namespace Chainey
             {
                 while (reader.Read())
                 {
-                    string chain = reader.GetString(0);
-                    string followUp = reader.GetString(1);
+                    string backward = reader.GetString(0);
+                    string chain = reader.GetString(1);
+                    string forward = reader.GetString(2);
 
                     var words = new SentenceConstruct(chain);
 
                     // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
                     int maxWords = MaxWords;
 
-                    // Backward search.
-                    CollectChains(words, Direction.Backward, maxWords, collectCmd);
+                    if (backward != string.Empty)
+                    {
+                        // Backward search.
+                        words.Prepend(backward);
+                        CollectChains(words, Direction.Backward, maxWords, collectCmd);
+                    }
 
-                    if (followUp != string.Empty)
+                    if (forward != string.Empty)
                     {
                         // Forward search.
-                        words.Append(followUp);
+                        words.Append(forward);
                         CollectChains(words, Direction.Forward, maxWords, collectCmd);
                     }
 
@@ -385,7 +418,7 @@ namespace Chainey
 
         public string BuildRandomSentence()
         {
-            const string randomChainSql = "SELECT * FROM Forward ORDER BY RANDOM() LIMIT 1";
+            const string randomChainSql = "SELECT backward, chain, forward FROM Chains ORDER BY RANDOM() LIMIT 1";
 
             string[] result;
             var conn = localSqlite.GetDb();
@@ -404,8 +437,15 @@ namespace Chainey
 
         static void CollectChains(SentenceConstruct sen, Direction dir, int maxWords, SqliteCommand cmd)
         {
-            const string searchSql = "SELECT followup FROM {0} WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            cmd.CommandText = FormatSql(searchSql, dir);
+            switch(dir)
+            {
+            case Direction.Forward:
+                cmd.CommandText = "SELECT forward FROM Chains WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
+                break;
+            case Direction.Backward:
+                cmd.CommandText = "SELECT backward FROM Chains WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
+                break;
+            }
             cmd.Prepare();
 
             while (sen.WordCount < maxWords)
@@ -451,37 +491,25 @@ namespace Chainey
 
 
         // ***
-        // ----------------------------------------
-        // Methods for constructing SQL statements.
-        // ----------------------------------------
+        // -------------
+        // Misc. methods
+        // -------------
         // ***
-
-        static string FormatSql(string sql, Direction dir)
-        {
-            switch (dir)
-            {
-            case Direction.Forward:
-                return string.Format(sql, "Forward");
-            case Direction.Backward:
-                return string.Format(sql, "Backward");
-            default:
-                throw new InvalidOperationException("Unexpected Direction.");
-            }
-        }
 
 
         static void CreateSeedSql(string seed, SqliteCommand cmd)
         {
-            const string seedSql = "SELECT * FROM Forward WHERE chain LIKE @SeedPat OR followup LIKE @Seed " +
-                "ORDER BY RANDOM()";
+            const string seedSql = "SELECT backward, chain, forward FROM Chains " +
+                "WHERE chain LIKE @SeedPat OR forward LIKE @SeedPat ORDER BY RANDOM()";
             if (cmd.CommandText != seedSql)
             {
                 cmd.CommandText = seedSql;
                 cmd.Prepare();
             }
-            var seedPattern = string.Concat(seed, " %");
+            var seedPattern = string.Concat(seed, "%");
             cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
-            cmd.Parameters.AddWithValue("@Seed", seed);
+            //cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
         }
+
     }
 }

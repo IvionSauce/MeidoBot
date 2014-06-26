@@ -6,7 +6,7 @@ namespace Chainey
     public interface IBrainBackend
     {
         // Add a sentence to the brain.
-        void AddSentence(string[] sentence);
+        void AddSentence(string[] sentence, string source);
         // Remove a sentence.
         void RemoveSentence(string[] sentence);
 

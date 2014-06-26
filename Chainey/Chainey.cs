@@ -31,7 +31,7 @@ public class IrcChainey : IMeidoHook
     }
     public string Version
     {
-        get { return "0.72"; }
+        get { return "9999"; } // ENDLESS NINE
     }
     
     public Dictionary<string,string> Help
@@ -41,6 +41,8 @@ public class IrcChainey : IMeidoHook
             return new Dictionary<string, string>();
         }
     }
+
+    const string nickPlaceholder = "||NICK||";
 
 
     public void Stop()
@@ -91,7 +93,7 @@ public class IrcChainey : IMeidoHook
             var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             msg = msg.Slice(1, 0);
             
-            EmitSentence(e.ReturnTo, msg);
+            EmitSentence(e.ReturnTo, msg, e.Nick);
             return;
         case "remove":
             if (meido.AuthLevel(e.Nick) >= 9)
@@ -152,7 +154,7 @@ public class IrcChainey : IMeidoHook
         }
         
         else
-            HandleUnaddressed(e.Channel, msg);
+            HandleUnaddressed(e.Channel, e.Nick, msg);
     }
 
 
@@ -160,21 +162,21 @@ public class IrcChainey : IMeidoHook
     {        
         if ( !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
         {
-            EmitSentence(channel, message);
-            AbsorbSentence(message);
+            EmitSentence(channel, message, nick);
+            AbsorbSentence(channel, nick, message);
         }
         else
             irc.SendMessage(channel, "Foul play detected! Stop trying to teach me stupid things, {0}", nick);
     }
 
-    void HandleUnaddressed(string channel, string[] message)
+    void HandleUnaddressed(string channel, string nick, string[] message)
     {
         if ( RandomRespond(channel) )
-            EmitSentence(channel, message);
+            EmitSentence(channel, message, nick);
 
         if ( Learning(channel) && !MarkovTools.FoulPlay(message, conf.MaxConsecutive, conf.MaxTotal) )
         {
-            AbsorbSentence(message);
+            AbsorbSentence(channel, nick, message);
         }
     }
 
@@ -198,13 +200,48 @@ public class IrcChainey : IMeidoHook
     }
 
 
-    void AbsorbSentence(string[] sentence)
+    void AbsorbSentence(string channel, string nick, string[] sentence)
     {
-        if (sentence.Length > 0)
-            chainey.Add(sentence);
+        if (Absorb(sentence))
+        {
+            int nickCount = 0;
+            for (int i = 0; i < sentence.Length; i++)
+            {
+                // Each word is a possible nick.
+                string possibleNick = sentence[i].TrimPunctuation();
+
+                // If the word is actually a nick, replace it with the placeholder.
+                if ( irc.IsJoined(channel, possibleNick) )
+                {
+                    sentence[i] = sentence[i].Replace(possibleNick, nickPlaceholder);
+                    nickCount++;
+                }
+                // Abort if someone is trying sabotage.
+                else if (possibleNick == nickPlaceholder)
+                    return;
+            }
+
+            // If a sentence contains more than 2 mentions of a nick, don't add it. It's probably spam anyway.
+            if (nickCount < 3)
+                chainey.Add(sentence, nick);
+        }
     }
 
-    void EmitSentence(string target, string[] respondTo)
+    // Don't absorb a sentence if its length is 0 or when someone is quoting someone verbatim.
+    bool Absorb(string[] sentence)
+    {
+        if (sentence.Length > 0)
+        {
+            if (!sentence[0].StartsWith("<", StringComparison.OrdinalIgnoreCase) &&
+                !sentence[0].StartsWith("[", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void EmitSentence(string target, string[] respondTo, string fromNick)
     {
         var sw = Stopwatch.StartNew();
         var sentence = chainey.BuildResponse(respondTo);
@@ -213,7 +250,9 @@ public class IrcChainey : IMeidoHook
 
         if (sentence.Content != string.Empty)
         {
-            irc.SendMessage(target, sentence.Content);
+            string senReplaceNicks = sentence.Content.Replace(nickPlaceholder, fromNick);
+
+            irc.SendMessage(target, senReplaceNicks);
             Console.WriteLine("[Chainey] [{0}] {1}", sentence.Rarity, sentence);
         }
     }
