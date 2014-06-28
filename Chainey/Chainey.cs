@@ -90,10 +90,7 @@ public class IrcChainey : IMeidoHook
         switch (e.Trigger)
         {
         case "markov":
-            var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-            msg = msg.Slice(1, 0);
-            
-            EmitSentence(e.ReturnTo, msg, e.Nick);
+            Markov(e);
             return;
         case "remove":
             if (meido.AuthLevel(e.Nick) >= 9)
@@ -155,6 +152,39 @@ public class IrcChainey : IMeidoHook
         
         else
             HandleUnaddressed(e.Channel, e.Nick, msg);
+    }
+
+
+    void Markov(IIrcMessage e)
+    {
+        var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+        string source;
+        // markov --nick <nick> [seeds]
+        if (msg.Length > 2 && msg[1] == "--nick")
+        {
+            source = msg[2].ToUpperInvariant();
+
+            List<Sentence> sentences;
+            // When we have seeds.
+            if (msg.Length > 3)
+            {
+                msg = msg.Slice(3, 0);
+                sentences = chainey.Build(msg, source, false);
+            }
+            // When we don't have seeds.
+            else
+                sentences = chainey.BuildRandom(1, source);
+
+            if (sentences.Count > 0)
+                SendSentence(e.ReturnTo, sentences[0], e.Nick);
+        }
+        // markov [seeds]
+        else
+        {
+            msg = msg.Slice(1, 0);
+            EmitSentence(e.ReturnTo, msg, e.Nick);
+        }
     }
 
 
@@ -223,12 +253,12 @@ public class IrcChainey : IMeidoHook
 
             // If a sentence contains more than 2 mentions of a nick, don't add it. It's probably spam anyway.
             if (nickCount < 3)
-                chainey.Add(sentence, nick);
+                chainey.Add(sentence, nick.ToUpperInvariant());
         }
     }
 
     // Don't absorb a sentence if its length is 0 or when someone is quoting someone verbatim.
-    bool Absorb(string[] sentence)
+    static bool Absorb(string[] sentence)
     {
         if (sentence.Length > 0)
         {
@@ -248,13 +278,18 @@ public class IrcChainey : IMeidoHook
         sw.Stop();
         Console.WriteLine("-- BuildResponse time: " + sw.Elapsed);
 
+        SendSentence(target, sentence, fromNick);
+    }
+
+
+    void SendSentence(string target, Sentence sentence, string fromNick)
+    {
         if (sentence.Content != string.Empty)
         {
             string senReplaceNicks = sentence.Content.Replace(nickPlaceholder, fromNick);
-
+            
             irc.SendMessage(target, senReplaceNicks);
             Console.WriteLine("[Chainey] [{0}] {1}", sentence.Rarity, sentence);
         }
     }
-
 }

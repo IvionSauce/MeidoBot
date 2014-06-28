@@ -145,7 +145,13 @@ namespace Chainey
             if (Filter)
                 return InternalResponse( MarkovTools.Filter(message) );
             else
-                return InternalResponse(message);
+            {
+                // Make a copy, since the array will be modified.
+                var copy = new string[message.Length];
+                Array.Copy(message, copy, message.Length);
+
+                return InternalResponse(copy);
+            }
         }
 
         Sentence InternalResponse(string[] message)
@@ -155,7 +161,8 @@ namespace Chainey
                 history.Add( string.Join(" ", message) );
 
             string[] seeds = GetSeeds(message, 2);
-            List<Sentence> responses = InternalBuild(seeds, true);
+            List<Sentence> responses = InternalBuild(seeds, null, true);
+
             if (responses.Count > 0)
             {
                 Sentence resp = Select(responses, seeds);
@@ -167,29 +174,32 @@ namespace Chainey
             }
             // Otherwise return a random sentence.
             else
-                return BuildRandom();
+            {
+                var sentences = BuildRandom(1, null);
+                if (sentences.Count == 1)
+                    return sentences[0];
+                // If we can't even get a random sentence, return "empty" Sentence.
+                else
+                    return new Sentence(string.Empty, double.NegativeInfinity);
+            }
         }
 
 
         // Sort and return the least common words (with `count` as max seed count). Also trim punctuation.
         string[] GetSeeds(string[] words, int count)
         {
-            var copy = new string[words.Length];
-            Array.Copy(words, copy, words.Length);
-
-            // Sort the copy, so that we leave the input alone.
-            var wordCounts = brain.WordCount(copy);
-            Array.Sort(wordCounts.ToArray(), copy);
+            var wordCounts = brain.WordCount(words);
+            Array.Sort(wordCounts.ToArray(), words);
 
             // Limit returned seeds to be `count` or less.
             string[] seeds;
-            if (copy.Length > count)
+            if (words.Length > count)
                 seeds = new string[count];
             else
-                seeds = new string[copy.Length];
+                seeds = new string[words.Length];
 
             for (int i = 0; i < seeds.Length; i++)
-                seeds[i] = copy[i].TrimPunctuation();
+                seeds[i] = words[i].TrimPunctuation();
 
             return seeds;
         }
@@ -252,34 +262,44 @@ namespace Chainey
         // -------------------------------
 
 
-        public Sentence BuildRandom()
+        public List<Sentence> BuildRandom(int count, string source)
         {
-            // Fall back to an empty string if it fails to build a random sentence.
-            string sen = brain.BuildRandomSentence() ?? string.Empty;
-            double rarity = SentenceRarity(sen);
-            return new Sentence(sen, rarity);
+            if (count < 1)
+                throw new ArgumentOutOfRangeException("count", "Cannot be less than or equal to 0.");
+
+            var coll = brain.BuildRandomSentences(source).Take(count).ToArray();
+
+            var sentences = new List<Sentence>(coll.Length);
+            for (int i = 0; i < coll.Length; i++)
+            {
+                sentences.Add( new Sentence( coll[i], SentenceRarity(coll[i]) ) );
+            }
+
+            return sentences;
         }
 
 
-        public List<Sentence> Build(IEnumerable<string> seeds)
+        public List<Sentence> Build(IEnumerable<string> seeds, string source)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
 
-            return InternalBuild(seeds, false);
+            return InternalBuild(seeds, source, false);
         }
 
-        public List<Sentence> Build(IEnumerable<string> seeds, bool memoryFilter)
+        public List<Sentence> Build(IEnumerable<string> seeds, string source, bool memoryFilter)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
 
-            return InternalBuild(seeds, memoryFilter);
+            return InternalBuild(seeds, source, memoryFilter);
         }
 
-        List<Sentence> InternalBuild(IEnumerable<string> seeds, bool memoryFilter)
+        List<Sentence> InternalBuild(IEnumerable<string> seeds, string source, bool memoryFilter)
         {
-            var responses = GetSentences(seeds);
+            var sentences = brain.BuildSentences(seeds, source);
+            var responses = GetSentences(sentences);
+
             if (memoryFilter)
             {
                 // Remove sentences still in the history/memory. We don't want to repeat what's been recently said to us
@@ -293,9 +313,8 @@ namespace Chainey
 
 
         // Get as much sentences from the seeds as time allows.
-        List<Sentence> GetSentences(IEnumerable<string> seeds)
+        List<Sentence> GetSentences(IEnumerable<string> sentences)
         {
-            var sentences = brain.BuildSentences(seeds);
             // Sentence and rarity pairs, united in a Sentence struct.
             var pairs = SentenceAndRarity(sentences);
 
@@ -345,7 +364,7 @@ namespace Chainey
         // the rarity will be `Infinity`.
         // Will return `-Infinity` if the sentence has no words.
         // If sorted order will be: NaN, -Infinity, [...], Infinity
-        double CalculateRarity(IEnumerable<long> counts)
+        static double CalculateRarity(IEnumerable<long> counts)
         {
             int len = 0;
             // Sum word counts in ulong for extra headroom.
