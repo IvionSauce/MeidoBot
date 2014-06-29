@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class MyClass : IMeidoHook
 {
-    IIrcComm irc;
+    readonly IIrcComm irc;
 
     public string Prefix { get; set; }
 
@@ -25,7 +25,7 @@ public class MyClass : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {".trigger", ".trigger does x"}
+                {"trigger", "trigger does x"}
             };
         }
     }

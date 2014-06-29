@@ -126,13 +126,10 @@ namespace IvionSoft
         }
 
 
-        public static IEnumerable<T> Multiply<T>(this IEnumerable<T> items, int count)
+        public static T ChooseRndItem<T>(this Random rnd, IList<T> items)
         {
-            foreach (T item in items)
-            {
-                for (int i = 0; i < count; i++)
-                    yield return item;
-            }
+            int rndIndex = rnd.Next(items.Count);
+            return items[rndIndex];
         }
 
     }
