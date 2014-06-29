@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}</ProjectGuid>
+    <ProjectGuid>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>UrlTitling</RootNamespace>
-    <AssemblyName>UrlTitling</AssemblyName>
+    <RootNamespace>IvionWebSoft</RootNamespace>
+    <AssemblyName>IvionWebSoft</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -30,33 +30,30 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Web" />
+    <Reference Include="HtmlAgilityPack">
+      <HintPath>HtmlAgilityPack.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="UrlTitling.cs" />
-    <Compile Include="WebToIrc.cs" />
-    <Compile Include="Config.cs" />
-    <Compile Include="ControlList.cs" />
-    <Compile Include="ChanHandler.cs" />
-    <Compile Include="BooruHandler.cs" />
-    <Compile Include="Threading.cs" />
+    <Compile Include="BooruTools.cs" />
+    <Compile Include="ChanTools.cs" />
+    <Compile Include="HtmlHelp.cs" />
+    <Compile Include="WebResources.cs" />
+    <Compile Include="WebTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
       <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
       <Name>IvionSoft</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
-      <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
-      <Name>MeidoCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\IvionWebSoft\IvionWebSoft.csproj">
-      <Project>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</Project>
-      <Name>IvionWebSoft</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
