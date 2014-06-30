@@ -49,6 +49,7 @@
     <Compile Include="HtmlHelp.cs" />
     <Compile Include="WebResources.cs" />
     <Compile Include="WebTools.cs" />
+    <Compile Include="GoogleTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

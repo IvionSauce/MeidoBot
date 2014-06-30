@@ -8,7 +8,7 @@ using IvionSoft;
 using Newtonsoft.Json;
 
 
-namespace WebHelp
+namespace IvionWebSoft
 {
     /// <summary>
     /// Generic tools for use with Booru's.

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using IvionSoft;
 
 
-namespace WebHelp
+namespace IvionWebSoft
 {
     [Serializable()]
     public class UrlNotHtmlException : Exception

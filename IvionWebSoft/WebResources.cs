@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WebHelp
+namespace IvionWebSoft
 {
     public class WebString : WebResource
     {

@@ -10,7 +10,7 @@ using System.Web;
 using Newtonsoft.Json;
 
 
-namespace WebHelp
+namespace IvionWebSoft
 {
     /// <summary>
     /// Collection of tools dealing with 4chan and/or Foolz.us.

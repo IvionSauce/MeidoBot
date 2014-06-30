@@ -10,7 +10,7 @@ using System.Web;
 using HtmlAgilityPack;
 
 
-namespace WebHelp
+namespace IvionWebSoft
 {
     /// <summary>
     /// Generic web tools.
