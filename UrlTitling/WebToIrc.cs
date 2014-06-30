@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 // My personal help for dealing with the pesky world of HTTP/HTML and the idiots that misuse it.
-using WebHelp;
+using IvionWebSoft;
 
 namespace WebIrc
 {
