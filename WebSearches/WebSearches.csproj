@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>WebSearches</RootNamespace>
+    <AssemblyName>WebSearches</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="WebSearches.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
+      <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
+      <Name>MeidoCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IvionWebSoft\IvionWebSoft.csproj">
+      <Project>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</Project>
+      <Name>IvionWebSoft</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
