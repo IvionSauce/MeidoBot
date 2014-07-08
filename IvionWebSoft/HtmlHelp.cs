@@ -9,18 +9,6 @@ using IvionSoft;
 
 namespace IvionWebSoft
 {
-    [Serializable()]
-    public class UrlNotHtmlException : Exception
-    {
-        public UrlNotHtmlException() : base() {}
-        public UrlNotHtmlException(string message) : base(message) {}
-        public UrlNotHtmlException(string message, Exception inner) : base(message, inner) {}
-
-        protected UrlNotHtmlException (System.Runtime.Serialization.SerializationInfo info,
-                                       System.Runtime.Serialization.StreamingContext context) {}
-    }
-
-
     /// <summary>
     /// (X)HTML encoding helper. A class to help you get the content of a webpage as a string, decoded correctly.
     /// It will take both the character set reported by the HTTP headers as well as the one (if defined) in the (X)HTML

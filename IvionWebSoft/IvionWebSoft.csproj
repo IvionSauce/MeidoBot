@@ -50,6 +50,8 @@
     <Compile Include="WebResources.cs" />
     <Compile Include="WebTools.cs" />
     <Compile Include="GoogleTools.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="WeatherUnderground.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
