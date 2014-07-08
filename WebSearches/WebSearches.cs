@@ -29,7 +29,7 @@ public class WebSearches : IMeidoHook
             return new Dictionary<string, string>()
             {
                 {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms."},
-                {"w", "w <location> - Reports weather conditions at location."}
+                {"w", "w <location> - Reports weather conditions at location. (Powered by WeatherUnderground)"}
             };
         }
     }
@@ -114,7 +114,7 @@ public class WebSearches : IMeidoHook
                 }
 
                 var report = string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
-                                           "Precipitation {5} mm ({6} in) :: Wind {7} {8}",
+                                           "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
                                            cond.WeatherLocation, cond.Description,
                                            cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
                                            cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
