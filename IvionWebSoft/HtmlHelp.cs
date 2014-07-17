@@ -59,7 +59,8 @@ namespace IvionWebSoft
         string prelimHtmlString;
 
         // If key exists, return the value that properly designates the intended charset.
-        static readonly Dictionary<string, string> charsetReplace = new Dictionary<string, string>()
+        static readonly Dictionary<string, string> charsetReplace =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             // Japanese
             {"x-jis", "shift_jis"},
@@ -272,10 +273,9 @@ namespace IvionWebSoft
         {
             // Encoding according to HTTP Headers.
             // Fall back to ISO-8859-1 in case of encoding not being supported.
-            string fixedCharset = FixCharset(HeadersCharset);
             try
             {
-                EncHeaders = Encoding.GetEncoding(fixedCharset);
+                EncHeaders = Encoding.GetEncoding( FixCharset(HeadersCharset) );
             }
             catch(ArgumentException)
             {
@@ -286,81 +286,72 @@ namespace IvionWebSoft
         }
 
 
-        // If charset exists in charsetReplace dict, return proper charset. Else return the string in lowercase.
+        // If charset exists in charsetReplace dict, return proper charset. Else return as-is.
         static string FixCharset(string charset)
         {
-            string charsetLow = charset.ToLower();
             string fixedCharset;
-            if (charsetReplace.TryGetValue(charsetLow, out fixedCharset))
+            if (charsetReplace.TryGetValue(charset, out fixedCharset))
                 return fixedCharset;
             else
-                return charsetLow;
+                return charset;
         }
 
 
         // Return an absolute URL from a relative Meta Refresh URL. If already absolute, return as-is.
-        static Uri FixRefreshUrl(string refreshUrl, Uri refUrl)
+        static Uri FixRefreshUrl(string refreshUrl, Uri referer)
         {
             if (refreshUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 refreshUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 return new Uri(refreshUrl);
             else
-                return new Uri(refUrl, refreshUrl);
+                return new Uri(referer, refreshUrl);
         }
 
 
         string GetHtmlAsString()
         {
-            if (HtmlData != null)
+            // Encoding according to HTML.
+            EncHtml = DetectEncodingHtml(prelimHtmlString);
+            
+            // If they are in agreement, return already forged string.
+            // Or if the HTML doesn't have a charset declaration, return already forged string.
+            if (EncHtml == EncHeaders || EncHtml == null)
             {
-                // Encoding according to HTML.
-                EncHtml = DetectEncodingHtml(prelimHtmlString);
-                
-                // If they are in agreement, return already forged string.
-                // Or if the HTML doesn't have a charset declaration, return already forged string.
-                if (EncHtml == EncHeaders || EncHtml == null)
-                {
-                    UsedEncoding = EncHeaders;
-                    return prelimHtmlString;
-                }
-                // SPECIAL: If at first the headers say it's UTF-8, but the HTML declares itself to be ISO-8859-1,
-                // prefer UTF-8. UTF-8 is probably the correct choice and even when it isn't, most ISO-8859-1 codepoints
-                // code for the same character as the UTF-8 codepoints (as far as they overlap).
-                else if (EncHeaders == Encoding.UTF8 && EncHtml == Encoding.GetEncoding("ISO-8859-1"))
-                {
-                    UsedEncoding = EncHeaders;
-                    return prelimHtmlString;
-                }
-                // If they are not in agreement and the HTML has a charset declaration, prefer that one.
-                else
-                {
-                    UsedEncoding = EncHtml;
-                    return EncHtml.GetString(HtmlData);
-                }
+                UsedEncoding = EncHeaders;
+                return prelimHtmlString;
             }
+            // SPECIAL: If at first the headers say it's UTF-8, but the HTML declares itself to be ISO-8859-1,
+            // prefer UTF-8. UTF-8 is probably the correct choice and even when it isn't, most ISO-8859-1 codepoints
+            // code for the same character as the UTF-8 codepoints (as far as they overlap).
+            else if (EncHeaders == Encoding.UTF8 && EncHtml == Encoding.GetEncoding("ISO-8859-1"))
+            {
+                UsedEncoding = EncHeaders;
+                return prelimHtmlString;
+            }
+            // If they are not in agreement and the HTML has a charset declaration, prefer that one.
             else
-                throw new InvalidOperationException("HtmlData is null. Load failed or GetHtmlString was called" +
-                    "prematurely.");
+            {
+                UsedEncoding = EncHtml;
+                return EncHtml.GetString(HtmlData);
+            }
         }
 
 
         Encoding DetectEncodingHtml(string htmlString)
         {
             // First try to get the charset from Meta tag, then try the XML/XHTML approach.
-            string htmlCharset = HtmlTagExtract.GetMetaCharset(htmlString);
-            if (htmlCharset == null)
+            HtmlCharset = HtmlTagExtract.GetMetaCharset(htmlString);
+            if (HtmlCharset == null)
             {
-                htmlCharset = HtmlTagExtract.GetXmlCharset(htmlString);
+                HtmlCharset = HtmlTagExtract.GetXmlCharset(htmlString);
                 // If both were unsuccesful, return null.
-                if (htmlCharset == null)
+                if (HtmlCharset == null)
                     return null;
             }
-            HtmlCharset = htmlCharset;
 
-            string fixedCharset = FixCharset(htmlCharset);
             try
             {
-                Encoding htmlEncoding = Encoding.GetEncoding(fixedCharset);
+                Encoding htmlEncoding = Encoding.GetEncoding( FixCharset(HtmlCharset) );
                 return htmlEncoding;
             }
             catch (ArgumentException)
