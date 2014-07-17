@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 // My personal help for dealing with the pesky world of HTTP/HTML and the idiots that misuse it.
 using IvionWebSoft;
 
+
 namespace WebIrc
 {
     public class WebToIrc
@@ -68,7 +69,7 @@ namespace WebIrc
             string htmlTitle = WebTools.GetTitle(htmlContent);
             if (htmlTitle == null)
             {
-                Console.WriteLine(url + " -- No <title> found");
+                Console.WriteLine("No <title> found: " + url);
                 return null;
             }
             // -----------------------------------------
@@ -76,8 +77,7 @@ namespace WebIrc
 
 
             // Youtube handling.
-            if (url.Contains("youtube.com/watch?", StringComparison.OrdinalIgnoreCase) ||
-                url.StartsWith("http://youtu.be/", StringComparison.OrdinalIgnoreCase))
+            if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
             {
                 // If duration can be found, change the html info to include that. Else return normal info.
                 int ytTime = WebTools.GetYoutubeTime(htmlContent);
@@ -122,6 +122,7 @@ namespace WebIrc
         {
             var webStr = htmlEncHelper.GetWebString(url, Cookies);
 
+            // Mono/.NET can be very strict concerning cookies.
             if (!webStr.Success && webStr.Exception.InnerException is CookieException)
             {
                 Console.WriteLine("--- CookieException caught! Trying without cookies.");

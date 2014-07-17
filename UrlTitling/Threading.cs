@@ -147,18 +147,13 @@ class ChannelThread
 
     void ProcessMessage(MessageItem item)
     {
-        bool printedDetection = false;
-        foreach ( string url in ExtractUrls(item.Message) )
+        if (!DisabledNicks.Contains(item.Nick))
         {
-            if (!printedDetection)
-            {
-                var message = string.Join(" ", item.Message);
-                Console.WriteLine("\nURL(s) detected - {0}/{1} {2}", Channel, item.Nick, message);
-                printedDetection = true;
-            }
-            
-            ProcessUrl(item.Nick, url);
+            foreach ( string url in ExtractUrls(item.Message) )         
+                ProcessUrl(item.Nick, url);
         }
+        else
+            Console.WriteLine("Titling disabled for {0}.", item.Nick);
     }
     
     
@@ -176,27 +171,22 @@ class ChannelThread
     
     
     void ProcessUrl(string nick, string url)
-    {        
-        if (!DisabledNicks.Contains(nick))
+    {
+        bool? inWhite = whitelist.IsInList(url, Channel, nick);
+        // If whitelist not applicable.
+        if (inWhite == null)
         {
-            bool? inWhite = whitelist.IsInList(url, Channel, nick);
-            // If whitelist not applicable.
-            if (inWhite == null)
-            {
-                if ( blacklist.IsInList(url, Channel, nick) )
-                    Console.WriteLine("Blacklisted: " + url);
-                else
-                    OutputUrl(url);
-            }
-            // If in whitelist, go directly to output and skip blacklist.
-            else if (inWhite == true)
-                OutputUrl(url);
-            // If the whitelist was applicable, but the URL wasn't found in it.
+            if ( blacklist.IsInList(url, Channel, nick) )
+                Console.WriteLine("Blacklisted: " + url);
             else
-                Console.WriteLine("Not whitelisted: " + url);
+                OutputUrl(url);
         }
+        // If in whitelist, go directly to output and skip blacklist.
+        else if (inWhite == true)
+            OutputUrl(url);
+        // If the whitelist was applicable, but the URL wasn't found in it.
         else
-            Console.WriteLine("Titling disabled for {0}.", nick);
+            Console.WriteLine("Not whitelisted: " + url);
     }
     
     

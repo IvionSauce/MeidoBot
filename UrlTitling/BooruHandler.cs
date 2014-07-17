@@ -151,7 +151,7 @@ namespace WebIrc
         
         static string FormatDanboInfo(string characters, string copyrights, string artists)
         {
-            string danbo = "";
+            string danbo = null;
             
             // If we have characters and copyrights, use them both. If we just have either characters or copyrights
             // use the one we have.
@@ -170,7 +170,7 @@ namespace WebIrc
             {
                 // Dependent on whether we have the previous 2 (characters and copyrights) prepend the artist bit with
                 // a space.
-                if (danbo == "")
+                if (danbo == null)
                     danbo = string.Concat("drawn by ", artists);
                 else
                     danbo = string.Concat(danbo, " drawn by ", artists);
