@@ -114,14 +114,37 @@ namespace IvionWebSoft
     /// </summary>
     public class UrlTitleComparer
     {
+        HashSet<char> _charIgnore;
         /// <summary>
         /// Set which characters the comparer should ignore.
         /// </summary>
-        public HashSet<char> CharIgnore { get; set; }
+        public HashSet<char> CharIgnore
+        {
+            get { return _charIgnore; }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException("value", "CharIgnore cannot be null.");
+                else
+                    _charIgnore = value;
+            }
+        }
+
+        HashSet<string> _stringIgnore;
         /// <summary>
         /// Set which strings/words the comparer should ignore.
         /// </summary>
-        public HashSet<string> StringIgnore { get; set; }
+        public HashSet<string> StringIgnore
+        {
+            get { return _stringIgnore; }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException("value", "StringIgnore cannot be null.");
+                else
+                    _stringIgnore = value;
+            }
+        }
 
         const int maxCharCode = 127;
 
@@ -169,7 +192,7 @@ namespace IvionWebSoft
                     cleanedTitle.Append(c);
             }
             string[] words = cleanedTitle.ToString()
-                .Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                .Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
             int totalWords = words.Length;
             int foundWords = 0;
