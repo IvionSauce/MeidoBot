@@ -392,7 +392,7 @@ namespace IvionWebSoft
             // HTML4 style.
             // Try to match <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             new Regex(
-                @"(?i)(?<=<meta http-equiv=[""']Content-Type[""'] +content=[""']text/html; ?charset=)" +
+                @"(?i)(?<=<meta http-equiv=[""']?Content-Type[""']? +content=[""']text/html; ?charset=)" +
                 @"[\w-]+(?=[""'] */?>)"),
 
             // HTML5 style.
@@ -404,7 +404,7 @@ namespace IvionWebSoft
             // Try to match <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
             new Regex(
                 @"(?i)(?<=<meta content=[""']text/html; ?charset=)" +
-                @"[\w-]+(?=[""'] +http-equiv=[""']Content-Type[""'] */?>)")
+                @"[\w-]+(?=[""'] +http-equiv=[""']?Content-Type[""']? */?>)")
 
         };
 
@@ -412,13 +412,13 @@ namespace IvionWebSoft
         {
             // Try to match <meta http-equiv="Refresh" content="0;URL=http://www.e2046.com/product/18034">
             new Regex(
-                @"(?i)(?<=<meta http-equiv=[""']Refresh[""'] +content=""0; ?URL=)" +
+                @"(?i)(?<=<meta http-equiv=[""']?Refresh[""']? +content=""0; ?URL=)" +
                 @"[^<>""']+(?=[""'] */?>)"),
 
             // Same as above, but with http-equiv and content switched around.
             new Regex(
                 @"(?i)(?<=<meta content=""0; ?URL=)" +
-                @"[^<>""']+(?=[""'] +http-equiv=[""']Refresh[""'] */?>)")
+                @"[^<>""']+(?=[""'] +http-equiv=[""']?Refresh[""']? */?>)")
         };
 
 
