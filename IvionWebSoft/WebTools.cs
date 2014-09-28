@@ -17,10 +17,10 @@ namespace IvionWebSoft
     /// </summary>
     public static class WebTools
     {
-        // groups leading/trailing whitespace and intertextual newlines and carriage returns.
+        // Leading/trailing whitespace and intertextual newlines and carriage returns.
         static readonly Regex titleRegexp = new Regex(@"^\s+|\s+$|[\n\r]+");
         // Try to match "length_seconds": \d+[,}]
-        static readonly Regex ytRegexp = new Regex(@"(?<=""length_seconds"":\s)\d+(?=[,}])");
+        static readonly Regex ytRegexp = new Regex(@"(?<=""length_seconds"":\s"")\d+(?=""[,}])");
 
 
         /// <summary>

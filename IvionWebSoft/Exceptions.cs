@@ -1,9 +1,10 @@
 using System;
+using System.Net;
 
 namespace IvionWebSoft
 {
     [Serializable()]
-    public class UrlNotHtmlException : Exception
+    public class UrlNotHtmlException : WebException
     {
         public UrlNotHtmlException() : base() {}
         public UrlNotHtmlException(string message) : base(message) {}
@@ -15,13 +16,25 @@ namespace IvionWebSoft
 
 
     [Serializable()]
-    public class JsonException : Exception
+    public class JsonErrorException : Exception
     {
-        public JsonException() : base() {}
-        public JsonException(string message) : base(message) {}
-        public JsonException(string message, Exception inner) : base(message, inner) {}
+        public JsonErrorException() : base() {}
+        public JsonErrorException(string message) : base(message) {}
+        public JsonErrorException(string message, Exception inner) : base(message, inner) {}
         
-        protected JsonException (System.Runtime.Serialization.SerializationInfo info,
+        protected JsonErrorException (System.Runtime.Serialization.SerializationInfo info,
                                  System.Runtime.Serialization.StreamingContext context) {}
+    }
+
+
+    [Serializable()]
+    public class JsonParseException : Exception
+    {
+        public JsonParseException() : base() {}
+        public JsonParseException(string message) : base(message) {}
+        public JsonParseException(string message, Exception inner) : base(message, inner) {}
+        
+        protected JsonParseException (System.Runtime.Serialization.SerializationInfo info,
+                                      System.Runtime.Serialization.StreamingContext context) {}
     }
 }

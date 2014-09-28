@@ -59,11 +59,18 @@ namespace IvionWebSoft
                 return new WeatherConditions(queryResult);
 
             var json = JObject.Parse(queryResult.Document);
-
+            var observation = json["current_observation"];
+            var results = json["response"]["results"];
             var error = json["response"]["error"];
-            if (error == null)
+
+            // For some queries it returns a very barebones JSON string, with no observation or error.
+            if (observation == null && results == null && error == null)
             {
-                var observation = json["current_observation"];
+                var ex = new JsonParseException("Server returned neither result or error.");
+                return new WeatherConditions(queryResult, ex);
+            }
+            else if (error == null)
+            {
                 // Only one result.
                 if (observation != null)
                 {
@@ -72,9 +79,7 @@ namespace IvionWebSoft
                 // Multiple results, return the first result.
                 else
                 {
-                    var results = json["response"]["results"];
                     var zmw = (string)results[0]["zmw"];
-                    
                     return InternalGet( "zmw:" + zmw );
                 }
             }
@@ -82,7 +87,7 @@ namespace IvionWebSoft
             else
             {
                 var errorMsg = (string)error["description"];
-                var ex = new JsonException(errorMsg);
+                var ex = new JsonErrorException(errorMsg);
                 return new WeatherConditions(queryResult, ex);
             }
         }
