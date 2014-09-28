@@ -51,6 +51,11 @@ class NyaaFeedReader
             Console.WriteLine("--- WebException in ReadFeed: " + ex.Message);
             return;
         }
+        catch (XmlException ex)
+        {
+            Console.WriteLine("--- XmlException in ReadFeed: " + ex.Message);
+            return;
+        }
         
         bool latestItem = true;
         // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. But it _does_ get
