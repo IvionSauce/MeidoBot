@@ -7,16 +7,12 @@ namespace IvionWebSoft
         public string Document { get; private set; }
         
         
-        public WebString(Uri uri, string doc) :
-        this(uri, true, null, doc) {}
-        
-        public WebString(Uri uri, Exception ex) :
-        this(uri, false, ex, null) {}
-        
-        public WebString(Uri uri, bool success, Exception ex, string doc) : base(uri, success, ex)
+        public WebString(Uri uri, string doc) : base(uri)
         {
             Document = doc;
         }
+        
+        public WebString(Uri uri, Exception ex) : base(uri, ex) {}
     }
 
 
@@ -27,10 +23,25 @@ namespace IvionWebSoft
         public Exception Exception { get; private set; }
 
 
-        public WebResource(Uri uri, bool success, Exception ex)
+        public WebResource(Uri uri)
         {
+            if (uri == null)
+                throw new ArgumentNullException("uri");
+
             Location = uri;
-            Success = success;
+            Success = true;
+            Exception = null;
+        }
+
+        public WebResource(Exception ex) : this(null, ex) {}
+
+        public WebResource(Uri uri, Exception ex)
+        {
+            if (ex == null)
+                throw new ArgumentNullException("ex");
+
+            Location = uri;
+            Success = false;
             Exception = ex;
         }
 

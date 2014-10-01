@@ -353,7 +353,7 @@ namespace IvionWebSoft
         
         public ChanPost(WebResource resource) : base(resource) {}
 
-        public ChanPost(Exception ex) : base(null, false, ex) {}
+        public ChanPost(Exception ex) : base(ex) {}
         
         public ChanPost(WebResource resource,
                         string board, string boardName,

@@ -242,7 +242,7 @@ namespace IvionWebSoft
         
         public BooruPost(WebResource resource) : base(resource) {}
 
-        public BooruPost(Exception ex) : base(null, false, ex) {}
+        public BooruPost(Exception ex) : base(ex) {}
 
         // Smaller subset for less feature-rich booru's (Gelbooru).
         public BooruPost(WebResource resource,

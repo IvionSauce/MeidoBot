@@ -117,7 +117,7 @@ namespace IvionWebSoft
 
         public WeatherConditions(WebResource resource) : base(resource) {}
 
-        public WeatherConditions(WebResource resource, Exception ex) : base(resource.Location, false, ex) {}
+        public WeatherConditions(WebResource resource, Exception ex) : base(resource.Location, ex) {}
 
         public WeatherConditions(WebResource resource, JToken observation) : base(resource)
         {
