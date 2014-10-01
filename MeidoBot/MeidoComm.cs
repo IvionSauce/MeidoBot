@@ -9,6 +9,8 @@ namespace MeidoBot
         public string ConfDir { get; private set; }
         public string DataDir { get; private set; }
 
+        LogFactory logFac;
+
 
         readonly Dictionary<string, UserAuth> userAuths =
             new Dictionary<string, UserAuth>(StringComparer.OrdinalIgnoreCase)
@@ -19,10 +21,18 @@ namespace MeidoBot
         };
 
 
-        public MeidoComm()
+        public MeidoComm(LogFactory factory)
         {
+            logFac = factory;
+
             ConfDir = "conf";
             DataDir = "data";
+        }
+
+
+        public ILog CreateLogger(IMeidoHook plugin)
+        {
+            return logFac.CreateLogger(plugin.Name);
         }
 
 

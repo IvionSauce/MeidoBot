@@ -53,8 +53,7 @@ namespace MeidoBot
             // var confDir = (string)config.Element("conf-directory") ?? AppDomain.CurrentDomain.BaseDirectory;
             
             // Finally active the Meido.
-            var meido = new Meido(nick, prefix);
-            meido.Connect(server, port, channels);
+            new Meido(server, port, nick, channels, prefix);
         }
         
         

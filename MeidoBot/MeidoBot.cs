@@ -11,20 +11,23 @@ namespace MeidoBot
     {
         IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
         PluginManager plugins = new PluginManager();
+        LogFactory logFac;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
         // Also used to call the relevant method(s) on receiving messages.
         IrcComm ircComm;
+        // MeidoBot Communication object, used for functions that concern both the bot-framework and the plugins
+        // running in it.
+        MeidoComm meidoComm;
 
         string nick;
         string[] channels;
 
-        MeidoComm meidoComm;
 
-
-        public Meido(string nick, string prefix)
+        public Meido(string server, int port, string nick, string[] channels, string prefix)
         {
             this.nick = nick;
+            this.channels = channels;
             
             // Setting some SmartIrc4Net options.
             irc.CtcpVersion = "MeidoBot v0.88.4";
@@ -36,14 +39,19 @@ namespace MeidoBot
 
             // Make sure they know my greatness.
             Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
-            
+
+            // Setup proper conditions for plugins and load them.
             plugins.Prefix = prefix;
+            logFac = new LogFactory(server);
             LoadPlugins();
             
             // Add our methods (defined above) to handle IRC events.
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnChannelMessage += new IrcEventHandler(OnMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnMessage);
+
+            // Actually connect to the server.
+            Connect(server, port);
         }
 
 
@@ -51,7 +59,7 @@ namespace MeidoBot
         {
             // Initialize the IrcComm with our IrcClient instance.
             ircComm = new IrcComm(irc);
-            meidoComm = new MeidoComm();
+            meidoComm = new MeidoComm(logFac);
 
             // Load plugins and announce we're doing so.
             Console.WriteLine("Loading plugins...");
@@ -63,10 +71,8 @@ namespace MeidoBot
         }
         
 
-        public void Connect(string server, int port, string[] channels)
+        void Connect(string server, int port)
         {
-            this.channels = channels;
-
             Console.WriteLine("\nTrying to connect to {0}:{1} ...", server, port);
             try
             {
