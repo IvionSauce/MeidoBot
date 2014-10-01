@@ -19,6 +19,17 @@ namespace MeidoCommon
     }
 
 
+    public interface ILog
+    {
+        void Message(string message);
+        void Message(string message, params object[] args);
+        void Verbose(string message);
+        void Verbose(string message, params object[] args);
+        void Error(string errorMsg);
+        void Error(string errorMsg, params object[] args);
+    }
+
+
     public interface IIrcMessage
     {
         string Message { get; }
@@ -41,6 +52,7 @@ namespace MeidoCommon
         string ConfDir { get; }
         string DataDir { get; }
 
+        ILog CreateLogger(IMeidoHook plugin);
         bool Auth(string nick, string pass);
         int AuthLevel(string nick);
     }

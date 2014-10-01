@@ -10,6 +10,7 @@ using System.ComponentModel.Composition;
 public class MiscUtils : IMeidoHook
 {
     readonly IIrcComm irc;
+    readonly ILog log;
 
     public string Prefix { get; set; }
 
@@ -40,9 +41,10 @@ public class MiscUtils : IMeidoHook
     {}
 
     [ImportingConstructor]
-    public MiscUtils(IIrcComm ircComm)
+    public MiscUtils(IIrcComm ircComm, IMeidoComm meido)
     {
         irc = ircComm;
+        log = meido.CreateLogger(this);
         irc.AddTriggerHandler(HandleTrigger);
     }
 
@@ -54,8 +56,9 @@ public class MiscUtils : IMeidoHook
             string fromChannel = e.Channel ?? "PM";
             string toChannel = Say(e.MessageArray, e.Channel);
             if (toChannel != null)
-                Console.WriteLine("\n--- Say: {0}/{1} -> {2}", fromChannel, e.Nick, toChannel);
-
+            {
+                log.Message("Say: {0}/{1} -> {2}", fromChannel, e.Nick, toChannel);
+            }
             return;
         case "timer":
             Timer(e);

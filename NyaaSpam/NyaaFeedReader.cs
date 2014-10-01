@@ -15,13 +15,15 @@ class NyaaFeedReader
     Timer tmr;
     
     readonly IIrcComm irc;
+    readonly ILog log;
     
     DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
     
     
-    public NyaaFeedReader(IIrcComm irc, Config conf, NyaaPatterns patterns)
+    public NyaaFeedReader(IIrcComm irc, ILog log, Config conf, NyaaPatterns patterns)
     {
         this.irc = irc;
+        this.log = log;
         
         Interval = TimeSpan.FromMinutes(conf.Interval);
         SkipCategories = conf.SkipCategories;
@@ -48,12 +50,12 @@ class NyaaFeedReader
         }
         catch (System.Net.WebException ex)
         {
-            Console.WriteLine("--- WebException in ReadFeed: " + ex.Message);
+            log.Error("WebException in ReadFeed: " + ex.Message);
             return;
         }
         catch (XmlException ex)
         {
-            Console.WriteLine("--- XmlException in ReadFeed: " + ex.Message);
+            log.Error("XmlException in ReadFeed: " + ex.Message);
             return;
         }
         

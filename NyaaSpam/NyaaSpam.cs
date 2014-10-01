@@ -63,8 +63,9 @@ public class NyaaSpam : IMeidoHook
         catch (FileNotFoundException)
         {}
 
+        var log = meido.CreateLogger(this);
         var conf = new Config(meido.ConfDir + "/NyaaSpam.xml");
-        feedReader = new NyaaFeedReader(ircComm, conf, nyaa);
+        feedReader = new NyaaFeedReader(ircComm, log, conf, nyaa);
         feedReader.Start();
 
         irc = ircComm;
