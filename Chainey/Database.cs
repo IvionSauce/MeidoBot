@@ -144,12 +144,12 @@ namespace Chainey
                 catch (SqliteException)
                 {
                     Console.WriteLine("!! ERROR ADDING: " + string.Join(" ", sentenceWords));
+                    Console.WriteLine("!! AddSentence time: " + sw.Elapsed);
                     throw;
                 }
                 finally
                 {
                     sw.Stop();
-                    Console.WriteLine("-- AddSentence time: " + sw.Elapsed);
                 }
             }
         }
