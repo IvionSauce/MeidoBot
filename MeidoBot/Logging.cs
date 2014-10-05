@@ -36,9 +36,6 @@ namespace MeidoBot
         readonly string msgPrefix;
         readonly Verbosity verbosity;
 
-        object _locker = new object();
-        string latestPrefix;
-
 
         internal Logger(string server, string pluginName, Verbosity verb)
         {
@@ -107,6 +104,22 @@ namespace MeidoBot
             OutputLog(errorMsg, Verbosity.Errors);
         }
 
+        public void Error(Exception ex)
+        {
+            Error("An exception occurred:", ex);
+        }
+
+        public void Error(string errorMsg, Exception ex)
+        {
+            string msg;
+            if (verbosity == Verbosity.Verbose)
+                msg = string.Concat(errorMsg, "\n", ex.ToString());
+            else
+                msg = string.Concat(errorMsg, " ", ex.Message);
+
+            OutputLog(msg, Verbosity.Errors);
+        }
+
 
         void OutputLog(string message, Verbosity verb)
         {
@@ -118,10 +131,12 @@ namespace MeidoBot
 
         void OutputLog(IList<string> messages, Verbosity verb)
         {
-            var logMsg = FormatLogEntry(DateTime.Now, verb);
-            logMsg = logMsg + string.Join("\n ", messages);
-
-            Console.WriteLine(logMsg);
+            var pre = FormatLogEntry(DateTime.Now, verb);
+            foreach(string msg in messages)
+            {
+                var logMsg = pre + msg;
+                Console.WriteLine(logMsg);
+            }
         }
 
 
@@ -134,27 +149,17 @@ namespace MeidoBot
             {
             case Verbosity.Normal:
             case Verbosity.Verbose:
-                prefix = string.Format("\n{0} {1} [ThreadId: {2}]\n ",
+                prefix = string.Format("{0} {1}[{2}] ",
                                        time, msgPrefix, Thread.CurrentThread.ManagedThreadId);
                 break;
             case Verbosity.Errors:
-                prefix = string.Format("\n!! {0} {1} [ThreadId: {2}]\n ",
+                prefix = string.Format("!! {0} {1}[{2}] ",
                                        time, msgPrefix, Thread.CurrentThread.ManagedThreadId);
                 break;
             default:
                 throw new InvalidOperationException("Unexpected Verbosity.");
             }
-
-            lock (_locker)
-            {
-                if (prefix.Equals(latestPrefix, StringComparison.Ordinal))
-                    return " ";
-                else
-                {
-                    latestPrefix = prefix;
-                    return prefix;
-                }
-            }
+            return prefix;
         }
     }
 

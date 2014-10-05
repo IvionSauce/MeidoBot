@@ -23,10 +23,16 @@ namespace MeidoCommon
     {
         void Message(string message);
         void Message(string message, params object[] args);
+        void Message(IList<string> messages);
+
         void Verbose(string message);
         void Verbose(string message, params object[] args);
+        void Verbose(IList<string> messages);
+
         void Error(string errorMsg);
         void Error(string errorMsg, params object[] args);
+        void Error(Exception ex);
+        void Error(string errorMsg, Exception ex);
     }
 
 

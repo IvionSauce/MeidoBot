@@ -12,6 +12,8 @@ namespace MeidoBot
     {
         static void Main(string[] args)
         {
+            const string abort = "!! Aborting.";
+
             if (args.Length != 1)
             {
                 Console.WriteLine("MeidoBot.exe <config.xml>");
@@ -22,7 +24,7 @@ namespace MeidoBot
             // Null means failure, abort.
             if (config == null)
             {
-                Console.WriteLine("!! Aborting.");
+                Console.WriteLine(abort);
                 return;
             }
             
@@ -32,14 +34,14 @@ namespace MeidoBot
             if (string.IsNullOrWhiteSpace(nick) || string.IsNullOrWhiteSpace(server))
             {
                 Console.WriteLine("!! You will need to set both a nickname and a server to connect to.");
-                Console.WriteLine("!! Aborting.");
+                Console.WriteLine(abort);
                 return;
             }
             var prefix = ParsePrefix(config);
             if (prefix == null)
             {
                 Console.WriteLine("!! Trigger prefix can't contain whitespace.");
-                Console.WriteLine("!! Aborting.");
+                Console.WriteLine(abort);
                 return;
             }
             

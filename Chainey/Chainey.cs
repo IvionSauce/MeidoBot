@@ -127,6 +127,8 @@ public class IrcChainey : IMeidoHook
     void ThreadedHandler(IIrcMessage e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        if (msg.Length == 0)
+            return;
 
         string first = msg[0];
         string last = msg[msg.Length - 1];

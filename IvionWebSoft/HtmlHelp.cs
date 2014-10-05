@@ -225,6 +225,7 @@ namespace IvionWebSoft
             req.KeepAlive = true;
             // Some sites will only respond (correctly) if they get fooled.
             req.UserAgent = "Mozilla/5.0 HTMLHelper/1.0";
+            req.Accept = "*/*";
             // Some sites want to put cookies in my jar, these usually involve Meta Refresh.
             req.CookieContainer = cookies;
 
