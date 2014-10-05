@@ -45,11 +45,12 @@ public class UrlTitler : IMeidoHook
     public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         var conf = new Config(meidoComm.ConfDir + "/UrlTitling.xml");
+        var log = meidoComm.CreateLogger(this);
 
         WebToIrc.Cookies.Add(conf.CookieColl);
 
         // Sharing stuff with all the ChannelThreads.
-        manager = new ChannelThreadManager(ircComm, conf);
+        manager = new ChannelThreadManager(ircComm, log, conf);
         // Setup black- and whitelist.
         SetupBWLists(conf);
 

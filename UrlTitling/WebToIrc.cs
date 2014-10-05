@@ -11,9 +11,14 @@ using IvionWebSoft;
 
 namespace WebIrc
 {
+    /// <summary>
+    /// Takes an URL and returns an IRC-printable title.
+    /// This class is NOT threadsafe.
+    /// </summary>
     public class WebToIrc
     {
         public double Threshold { get; set; }
+        public bool ParseMedia { get; set; }
 
         public ChanHandler Chan { get; private set; }
         public DanboHandler Danbo { get; private set; }
@@ -34,44 +39,58 @@ namespace WebIrc
         }
         public WebToIrc()
         {
+            ParseMedia = true;
+
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
         }
 
 
-        public string GetWebInfo(string url)
+        public RequestResult GetWebInfo(string url)
         {
+            var request = new RequestObject(url);
+
             // Danbooru handling.
             if (url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
             {
-                return Danbo.PostToIrc(url);
+                return Danbo.PostToIrc(request);
             }
             // Gelbooru handling.
             else if (url.Contains("gelbooru.com/index.php?page=post&s=view&id=", StringComparison.OrdinalIgnoreCase))
             {
-                return Gelbo.PostToIrc(url);
+                return Gelbo.PostToIrc(request);
             }
             // Foolz and 4chan handling.
             else if (ChanTools.IsAddressSupported(url))
             {
-                return Chan.ThreadTopicToIrc(url);
+                return Chan.ThreadTopicToIrc(request);
             }
 
 
             // ----- Above: Don't Need HTML and/or Title -----
             // -----------------------------------------------
-            string htmlContent = GetHtmlContent(url);
+            string htmlContent = GetHtmlContent(request);
             if (htmlContent == null)
-                // Something went wrong in GetHtmlString, which should've already printed the error.
-                return null;
+            {
+                // Binary/media handling.
+                if (ParseMedia && request.Resource.Exception is UrlNotHtmlException)
+                {
+                    return BinaryHandler.MediaToIrc(request);
+                }
+
+                request.AddMessage("Not (X)HTML: " + request.Url);
+                return request.CreateResult(false);
+            }
 
             string htmlTitle = WebTools.GetTitle(htmlContent);
-            if (htmlTitle == null)
+            if (string.IsNullOrWhiteSpace(htmlTitle))
             {
-                Console.WriteLine("No <title> found: " + url);
-                return null;
+                request.AddMessage("No <title> found, or title element was empty/whitespace.");
+                return request.CreateResult(false);
             }
+
+            request.ConstructedTitle = string.Format("[ {0} ]", htmlTitle);
             // -----------------------------------------
             // ----- Below: Need HTML and/or Title -----
 
@@ -79,70 +98,68 @@ namespace WebIrc
             // Youtube handling.
             if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
             {
-                // If duration can be found, change the html info to include that. Else return normal info.
+                // If duration can be found, change the html info to include that.
                 int ytTime = WebTools.GetYoutubeTime(htmlContent);
                 if (ytTime > 0)
                 {
                     int ytMinutes = ytTime / 60;
                     int ytSeconds = ytTime % 60;
-                    return string.Format("[ {0} ] [{1}:{2:00}]", htmlTitle, ytMinutes, ytSeconds);
+                    request.ConstructedTitle = string.Format("[ {0} ] [{1}:{2:00}]",
+                                                             htmlTitle, ytMinutes, ytSeconds);
                 }
-                else
-                    return string.Format("[ {0} ]", htmlTitle);
+                return request.CreateResult(true);
             }
             // Other URLs.
             else
-                return GenericHandler(url, htmlTitle);
+                return GenericHandler(request, htmlTitle);
         }
 
 
-        string GenericHandler(string url, string htmlTitle)
+        RequestResult GenericHandler(RequestObject req, string htmlTitle)
         {
-            var formatted = string.Format("[ {0} ]", htmlTitle);
             // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
             // higher. The similarity would always be equal to or less than 1.
             if (Threshold >= 1)
-                return formatted;
+                return req.CreateResult(true);
             // If Threshold is set to 0 that would still mean that titles that had 0 similarity with their URLs would
             // get printed. Set to a negative value to never print any title.
             else if (Threshold < 0)
-                return null;
+                return req.CreateResult(false);
 
-            double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(url, htmlTitle);
-            Console.WriteLine("URL-Title Similarity: " + urlTitleSimilarity);
+            double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(req.Url, htmlTitle);
+            req.AddMessage("URL-Title Similarity: " + urlTitleSimilarity);
 
             if (urlTitleSimilarity <= Threshold)
-                return formatted;
+                return req.CreateResult(true);
             else
-                return null;
+                return req.CreateResult(false);
         }
 
 
-        string GetHtmlContent(string url)
+        string GetHtmlContent(RequestObject req)
         {
-            var webStr = htmlEncHelper.GetWebString(url, Cookies);
+            var webStr = htmlEncHelper.GetWebString(req.Url, Cookies);
 
             // Mono/.NET can be very strict concerning cookies.
             if (!webStr.Success && webStr.Exception.InnerException is CookieException)
             {
-                Console.WriteLine("--- CookieException caught! Trying without cookies.");
-                webStr = htmlEncHelper.GetWebString(url);
+                webStr = htmlEncHelper.GetWebString(req.Url);
+                req.AddMessage("CookieException was caught! Page requested without cookies.");
             }
+
+            req.Resource = webStr;
 
             if (webStr.Success)
             {
-                Console.WriteLine("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
-                                  htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
-                                  htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
+                var encInfo = string.Format("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
+                                            htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
+                                            htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
+                req.AddMessage(encInfo);
+
                 return webStr.Document;
             }
-
-            else if (webStr.Exception is UrlNotHtmlException)
-                Console.WriteLine("Not (X)HTML: " + url);
             else
-                webStr.ReportError(url);
-
-            return null;
+                return null;
         }
 
 
@@ -162,21 +179,6 @@ namespace WebIrc
         public static bool Contains(this string source, string value, StringComparison comp)
         {
             return source.IndexOf(value, comp) >= 0;
-        }
-
-
-        public static void ReportError(this WebResource resource, string url)
-        {
-            if (resource.Exception == null || resource.Exception.Message == null)
-                Console.WriteLine("!!! Unknown error, contact software author.");
-            else
-            {
-                const string errorMsg = "--- Error getting {0} ({1})";
-                if (resource.Location == null)
-                    Console.WriteLine(errorMsg, url, resource.Exception.Message);
-                else
-                    Console.WriteLine(errorMsg, resource.Location, resource.Exception.Message);
-            }
         }
     }
 }

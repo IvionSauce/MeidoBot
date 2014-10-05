@@ -11,14 +11,17 @@ class ChannelThreadManager
     public Whitelist Whitelist { get; private set; }
     
     readonly IIrcComm irc;
+    readonly ILog log;
     readonly Config conf;
+
     readonly Dictionary<string, ChannelThread> channelThreads =
         new Dictionary<string, ChannelThread>(StringComparer.OrdinalIgnoreCase);
     
     
-    public ChannelThreadManager(IIrcComm irc, Config conf)
+    public ChannelThreadManager(IIrcComm irc, ILog log, Config conf)
     {
         this.irc = irc;
+        this.log = log;
         this.conf = conf;
         
         Blacklist = new Blacklist();
@@ -81,7 +84,7 @@ class ChannelThreadManager
         else
         {
             var wIrc = conf.ConstructWebToIrc(channel);
-            thread = new ChannelThread(irc, Blacklist, Whitelist, wIrc, channel);
+            thread = new ChannelThread(irc, log, Blacklist, Whitelist, wIrc, channel);
             
             channelThreads.Add(channel, thread);
             return thread;
@@ -92,26 +95,34 @@ class ChannelThreadManager
 
 class ChannelThread
 {
-    // Unique to each thread, channel-specific properties.
-    public string Channel { get; private set; }
+    public readonly string Channel;
+
     public Queue<MessageItem> MessageQueue { get; private set; }
     public HashSet<string> DisabledNicks { get; private set; }
     
     public object _channelLock { get; private set; }
     
     readonly IIrcComm irc;
+    readonly ILog log;
     readonly Blacklist blacklist;
     readonly Whitelist whitelist;
     
     readonly WebToIrc webToIrc;
     
     
-    public ChannelThread(IIrcComm irc, Blacklist black, Whitelist white, WebToIrc wIrc, string channel)
+    public ChannelThread(IIrcComm irc,
+                         ILog log,
+                         Blacklist black,
+                         Whitelist white,
+                         WebToIrc wIrc,
+                         string channel)
     {
         this.irc = irc;
+        this.log = log;
+
         blacklist = black;
         whitelist = white;
-        
+
         webToIrc = wIrc;
         
         Channel = channel;
@@ -153,7 +164,7 @@ class ChannelThread
                 ProcessUrl(item.Nick, url);
         }
         else
-            Console.WriteLine("Titling disabled for {0}.", item.Nick);
+            log.Message("Titling disabled for {0}.", item.Nick);
     }
     
     
@@ -163,7 +174,8 @@ class ChannelThread
         {
             if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {                
+            {
+                log.Verbose("URL detected in {0}: {1}", Channel, s);
                 yield return s;
             }
         }
@@ -177,7 +189,7 @@ class ChannelThread
         if (inWhite == null)
         {
             if ( blacklist.IsInList(url, Channel, nick) )
-                Console.WriteLine("Blacklisted: " + url);
+                log.Message("Blacklisted: {0}", url);
             else
                 OutputUrl(url);
         }
@@ -186,17 +198,25 @@ class ChannelThread
             OutputUrl(url);
         // If the whitelist was applicable, but the URL wasn't found in it.
         else
-            Console.WriteLine("Not whitelisted: " + url);
+            log.Message("Not whitelisted: {0}", url);
     }
     
     
     void OutputUrl(string url)
     {
-        string htmlInfo = webToIrc.GetWebInfo(url);
-        if (htmlInfo != null)
+        var result = webToIrc.GetWebInfo(url);
+
+        if (result.Success)
         {
-            irc.SendMessage(Channel, htmlInfo);
-            Console.WriteLine(url + "  --  " + htmlInfo);
+            if (result.PrintTitle)
+                irc.SendMessage(Channel, result.Title);
+
+            log.Message("{0} -- {1}", result.Requested, result.Title);
+            log.Message(result.Messages);
+        }
+        else
+        {
+            log.Message( result.ReportWebError() );
         }
     }
 }

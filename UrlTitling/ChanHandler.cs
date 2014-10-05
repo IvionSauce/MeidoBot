@@ -10,9 +10,10 @@ namespace WebIrc
         public int TopicMaxChars { get; set; }
         public string ContinuationSymbol { get; set; }
         
-        public string ThreadTopicToIrc(string url)
+        public RequestResult ThreadTopicToIrc(RequestObject req)
         {
-            ChanPost opPost = ChanTools.GetThreadOP(url);
+            ChanPost opPost = ChanTools.GetThreadOP(req.Url);
+            req.Resource = opPost;
             
             if (opPost.Success)
             {
@@ -28,15 +29,19 @@ namespace WebIrc
                 }
                 
                 if (string.IsNullOrWhiteSpace(topic))
-                    return null;
+                {
+                    req.AddMessage("First post contained neither subject or comment.");
+                    return req.CreateResult(false);
+                }
                 else
-                    return string.Format("[ /{0}/ - {1} ] [ {2} ]", opPost.Board, opPost.BoardName, topic);
+                {
+                    req.ConstructedTitle = string.Format("[ /{0}/ - {1} ] [ {2} ]",
+                                                         opPost.Board, opPost.BoardName, topic);
+                    return req.CreateResult(true);
+                }
             }
             else
-            {
-                opPost.ReportError(url);
-                return null;
-            }
+                return req.CreateResult(false);
         }
 
 

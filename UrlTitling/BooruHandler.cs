@@ -89,9 +89,10 @@ namespace WebIrc
         const string resetCode = "\u000F";
         
         
-        public string PostToIrc(string url)
+        public RequestResult PostToIrc(RequestObject req)
         {
-            BooruPost postInfo = DanboTools.GetPostInfo(url);
+            BooruPost postInfo = DanboTools.GetPostInfo(req.Url);
+            req.Resource = postInfo;
             
             if (postInfo.Success)
             {
@@ -103,7 +104,8 @@ namespace WebIrc
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    return FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
+                    req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
+                    return req.CreateResult(true);;
                 }
                 
                 DanboTools.CleanupCharacterTags(postInfo.CharacterTags, postInfo.CopyrightTags);
@@ -115,13 +117,12 @@ namespace WebIrc
                 var artists = TagArrayToString(postInfo.ArtistTags, ArtistCode);
                 
                 string danbo = FormatDanboInfo(characters, copyrights, artists);
-                return FormatMessage(postInfo.Rated, warning, danbo);
+                req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, danbo);
+
+                return req.CreateResult(true);
             }
             else
-            {
-                postInfo.ReportError(url);
-                return null;
-            }
+                return req.CreateResult(false);
         }
 
 
@@ -183,23 +184,22 @@ namespace WebIrc
 
     public class GelboHandler : BooruHandler
     {
-        public string PostToIrc(string url)
+        public RequestResult PostToIrc(RequestObject req)
         {
-            BooruPost postInfo = GelboTools.GetPostInfo(url);
+            BooruPost postInfo = GelboTools.GetPostInfo(req.Url);
+            req.Resource = postInfo;
 
             if (postInfo.Success)
             {
                 string warning = ConstructWarning(postInfo.AllTags);
                 if (!string.IsNullOrEmpty(warning))
-                    return FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
-                else
-                    return null;
+                {
+                    req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
+                    return req.CreateResult(true);
+                }
             }
-            else
-            {
-                postInfo.ReportError(url);
-                return null;
-            }
+            return req.CreateResult(false);
         }
     }
+
 }
