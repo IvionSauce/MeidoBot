@@ -9,6 +9,7 @@ using WebIrc;
 class WebToIrcConfig
 {
     public double? Threshold { get; set; }
+    public bool? ParseMedia { get; set; }
 
     public int? MaxTags { get; set; }
     public string DanboContSym { get; set; }
@@ -48,6 +49,10 @@ class Config : XmlConfig
         // Threshold
         webIrc.Threshold =
             specific.Threshold ?? global.Threshold ?? 1.0d;
+
+        // Parse media/binary files.
+        webIrc.ParseMedia =
+            specific.ParseMedia ?? global.ParseMedia ?? false;
 
         // --- Danbooru ---
         // ----------------
@@ -128,10 +133,16 @@ class Config : XmlConfig
     {
         WebIrcSettings = new Dictionary<string, WebToIrcConfig>(StringComparer.OrdinalIgnoreCase);
 
-        foreach(XElement thresh in Config.Elements("threshold"))
+        foreach (XElement thresh in Config.Elements("threshold"))
         {
             var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(thresh) );
             settings.Threshold = (double?)thresh;
+        }
+
+        foreach (XElement parse in Config.Elements("parse-media"))
+        {
+            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(parse) );
+            settings.ParseMedia = (bool?)parse;
         }
 
         foreach (XElement danbo in Config.Elements("danbooru"))

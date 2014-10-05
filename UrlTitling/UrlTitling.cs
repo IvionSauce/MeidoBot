@@ -16,11 +16,11 @@ public class UrlTitler : IMeidoHook
 
     public string Name
     {
-        get { return "URL Titling Service"; }
+        get { return "URL Titling"; }
     }
     public string Version
     {
-        get { return "1.0"; }
+        get { return "1.1"; }
     }
 
     public Dictionary<string,string> Help
@@ -111,11 +111,27 @@ public class UrlTitler : IMeidoHook
 
     public void HandleTrigger(IIrcMessage e)
     {
-        if (e.Trigger == "reload_bw")
+        switch (e.Trigger)
         {
+        case "pic":
+            if (e.MessageArray.Length > 1)
+            {
+                var req = new RequestObject( string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1) );
+                var result = BinaryHandler.MediaToIrc(req);
+
+                if (result.PrintTitle)
+                    e.Reply(result.Title);
+                else if (!result.Success)
+                    e.Reply(result.Exception.Message);
+                else if (result.Messages.Count > 0)
+                    e.Reply(result.Messages[0]);
+            }
+            return;
+        case "reload_bw":
             manager.Blacklist.ReloadFile();
             manager.Whitelist.ReloadFile();
             e.Reply("Black- and whitelist have been reloaded.");
+            return;
         }
     }
 }

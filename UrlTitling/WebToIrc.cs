@@ -39,8 +39,6 @@ namespace WebIrc
         }
         public WebToIrc()
         {
-            ParseMedia = true;
-
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();

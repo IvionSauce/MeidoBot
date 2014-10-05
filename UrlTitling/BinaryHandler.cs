@@ -8,7 +8,7 @@ using MinimalistParsers;
 
 namespace WebIrc
 {
-    internal static class BinaryHandler
+    public static class BinaryHandler
     {
         public static RequestResult MediaToIrc(RequestObject req)
         {
