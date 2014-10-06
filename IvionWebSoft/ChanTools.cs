@@ -20,11 +20,11 @@ namespace IvionWebSoft
         public enum Source
         {
             Fourchan,
-            Foolz
+            ArchiveMoe
         }
         
         static readonly Regex chanUrlRegexp = new Regex(@"(?i)boards\.4chan\.org/([a-z0-9]+)/thread/(\d+)");
-        static readonly Regex foolzUrlRegexp = new Regex(@"(?i)archive\.foolz\.us/([a-z0-9]+)/thread/(\d+)");
+        static readonly Regex archiveUrlRegexp = new Regex(@"(?i)archive\.moe\/([a-z0-9]+)/thread/(\d+)");
         
         // <span class="quote">Quote</span>
         // <a href="bla">Bla</a>
@@ -142,8 +142,8 @@ namespace IvionWebSoft
         {
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return Source.Fourchan;
-            else if (url.Contains("archive.foolz.us/", StringComparison.OrdinalIgnoreCase))
-                return Source.Foolz;
+            else if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase))
+                return Source.ArchiveMoe;
             else
                 return null;
         }
@@ -159,8 +159,8 @@ namespace IvionWebSoft
             case Source.Fourchan:
                 groups = chanUrlRegexp.Match(url).Groups;
                 break;
-            case Source.Foolz:
-                groups = foolzUrlRegexp.Match(url).Groups;
+            case Source.ArchiveMoe:
+                groups = archiveUrlRegexp.Match(url).Groups;
                 break;
             default:
                 throw new InvalidEnumArgumentException();
@@ -257,8 +257,8 @@ namespace IvionWebSoft
             case Source.Fourchan:
                 jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, thread);
                 break;
-            case Source.Foolz:
-                jsonReq = string.Format("http://archive.foolz.us/_/api/chan/post/?board={0}&num={1}", board, thread);
+            case Source.ArchiveMoe:
+                jsonReq = string.Format("http://archive.moe/_/api/chan/post/?board={0}&num={1}", board, thread);
                 break;
             default:
                 throw new InvalidEnumArgumentException();
