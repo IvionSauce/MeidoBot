@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading;
 using WebIrc;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -113,19 +114,8 @@ public class UrlTitler : IMeidoHook
     {
         switch (e.Trigger)
         {
-        case "pic":
-            if (e.MessageArray.Length > 1)
-            {
-                var req = new RequestObject( string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1) );
-                var result = BinaryHandler.MediaToIrc(req);
-
-                if (result.PrintTitle)
-                    e.Reply(result.Title);
-                else if (!result.Success)
-                    e.Reply(result.Exception.Message);
-                else if (result.Messages.Count > 0)
-                    e.Reply(result.Messages[0]);
-            }
+        case "bin":
+            ThreadPool.QueueUserWorkItem( (data) => BinaryPrint(e) );
             return;
         case "reload_bw":
             manager.Blacklist.ReloadFile();
@@ -134,4 +124,23 @@ public class UrlTitler : IMeidoHook
             return;
         }
     }
+
+    void BinaryPrint(IIrcMessage e)
+    {
+        if (e.MessageArray.Length > 1)
+        {
+            var reqStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+            if (Uri.IsWellFormedUriString(reqStr, UriKind.Absolute))
+            {
+                var req = new RequestObject(new Uri(reqStr));
+                var result = BinaryHandler.BinaryToIrc(req);
+
+                if (result.PrintTitle)
+                    e.Reply(result.Title);
+                else
+                    e.Reply(result.Exception.Message);
+            }
+        }
+    }
+
 }

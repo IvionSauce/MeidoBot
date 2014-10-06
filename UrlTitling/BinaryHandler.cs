@@ -10,12 +10,17 @@ namespace WebIrc
 {
     public static class BinaryHandler
     {
-        public static RequestResult MediaToIrc(RequestObject req)
+        const int FetchSize = 65536;
+
+
+        public static RequestResult BinaryToIrc(RequestObject req)
         {
-            var info = GetInfo(req.Url);
-            if (info == null)
-                return req.CreateResult(false);
+            BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize);
+            var info = GetInfo(peek);
             req.Resource = info;
+
+            if (!info.Success)
+                return req.CreateResult(false);
 
             string type;
             switch (info.Type)
@@ -27,22 +32,24 @@ namespace WebIrc
                 type = "PNG";
                 break;
             default:
+                type = peek.ContentType;
                 req.AddMessage("Binary format not supported.");
-                return req.CreateResult(false);
+                break;
             }
 
-            if (info.Dimensions.Width > 0 && info.Dimensions.Height > 0)
+            req.ConstructedTitle = FormatBinaryInfo(type, info.Dimensions, peek.ContentLength);
+            return req.CreateResult(true);
+        }
+
+        static string FormatBinaryInfo(string content, Dimensions dimensions, long size)
+        {
+            var sizeStr = FormatSize(size);
+            if (dimensions.Width > 0 && dimensions.Height > 0)
             {
-                req.ConstructedTitle = string.Format("[ {0}: {1}x{2} ] {3}", type,
-                                                     info.Dimensions.Width, info.Dimensions.Height,
-                                                     FormatSize(info.Size));
-                return req.CreateResult(true);
+                return string.Format("[ {0}: {1}x{2} ] {3}", content, dimensions.Width, dimensions.Height, sizeStr);
             }
             else
-            {
-                req.AddMessage( string.Format("Failed to parse {0} dimensions.", type) );
-                return req.CreateResult(false);
-            }
+                return string.Format("[ {0} ] {1}", content, sizeStr);
         }
 
         // Size is in bytes.
@@ -62,64 +69,15 @@ namespace WebIrc
         }
 
 
-        public static ImageInfo GetInfo(string url)
+        static ImageInfo GetInfo(BinaryPeek peek)
         {
-            try
+            if (peek.Success)
             {
-                var uri = new Uri(url);
-                return InternalGet(uri);
+                ImageProperties props = Dispatch.GetImageInfo(peek.Peek);
+                return new ImageInfo(peek.Location, props, peek.ContentLength);
             }
-            catch (Exception ex)
-            {
-                if (ex is WebException || ex is UriFormatException)
-                    return new ImageInfo(ex);
-                // Debug
-                else
-                {
-                    Console.WriteLine(ex.ToString());
-                    return null;
-                }
-            }
-        }
-
-        static ImageInfo InternalGet(Uri url)
-        {
-            const int FetchSize = 65536;
-            
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-            req.Timeout = 30000;
-            req.Accept = "*/*";
-
-            long contentSize;
-            using (var ms = new MemoryStream())
-            {
-                using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
-                {
-                    contentSize = response.ContentLength;
-                    ReadFragment(response.GetResponseStream(), ms, FetchSize);
-                }
-
-                ImageProperties props = Dispatch.GetImageInfo(ms);
-                return new ImageInfo(url, props, contentSize);
-            }
-        }
-
-        // Read a fragment of the stream into a memorystream.
-        static void ReadFragment(Stream stream, MemoryStream ms, int fragmentSize)
-        {            
-            var buffer = new byte[fragmentSize];
-            
-            while (true)
-            {
-                int read = stream.Read(buffer, 0, buffer.Length);
-                if (ms.Length >= fragmentSize || read <= 0)
-                {
-                    ms.Flush();
-                    ms.Position = 0;
-                    return;
-                }
-                ms.Write(buffer, 0, read);
-            }
+            else
+                return new ImageInfo(peek);
         }
     }
 
@@ -131,9 +89,7 @@ namespace WebIrc
         public long Size { get; private set; }
 
 
-        public ImageInfo(Exception ex) : base(ex) {}
-
-        public ImageInfo(Uri uri, Exception ex) : base(uri, ex) {}
+        public ImageInfo(WebResource resource) : base(resource) {}
 
         public ImageInfo(Uri uri, ImageProperties props) : this(uri, props, 0) {}
 
@@ -144,4 +100,5 @@ namespace WebIrc
             Size = size;
         }
     }
+
 }

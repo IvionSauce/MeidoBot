@@ -47,7 +47,14 @@ namespace WebIrc
 
         public RequestResult GetWebInfo(string url)
         {
-            var request = new RequestObject(url);
+            if (url == null)
+                throw new ArgumentNullException("url");
+
+            // If we get passed a misformed Uri immediately return with a failure.
+            UriFormatException formatEx;
+            RequestObject request = Request(url, out formatEx);
+            if (request == null)
+                return RequestObject.Failure(formatEx);
 
             // Danbooru handling.
             if (url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
@@ -74,10 +81,9 @@ namespace WebIrc
                 // Binary/media handling.
                 if (ParseMedia && request.Resource.Exception is UrlNotHtmlException)
                 {
-                    return BinaryHandler.MediaToIrc(request);
+                    return BinaryHandler.BinaryToIrc(request);
                 }
 
-                request.AddMessage("Not (X)HTML: " + request.Url);
                 return request.CreateResult(false);
             }
 
@@ -113,6 +119,24 @@ namespace WebIrc
         }
 
 
+        // Not really happy about this, but this is the cleanest way I can think of for now.
+        static RequestObject Request(string url, out UriFormatException formatEx)
+        {
+            Uri uri;
+            try
+            {
+                uri = new Uri(url);
+            }
+            catch (UriFormatException ex)
+            {
+                formatEx = ex;
+                return null;
+            }
+            formatEx = null;
+            return new RequestObject(uri);
+        }
+
+
         RequestResult GenericHandler(RequestObject req, string htmlTitle)
         {
             // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
@@ -136,12 +160,12 @@ namespace WebIrc
 
         string GetHtmlContent(RequestObject req)
         {
-            var webStr = htmlEncHelper.GetWebString(req.Url, Cookies);
+            var webStr = htmlEncHelper.GetWebString(req.Uri, Cookies);
 
             // Mono/.NET can be very strict concerning cookies.
             if (!webStr.Success && webStr.Exception.InnerException is CookieException)
             {
-                webStr = htmlEncHelper.GetWebString(req.Url);
+                webStr = htmlEncHelper.GetWebString(req.Uri);
                 req.AddMessage("CookieException was caught! Page requested without cookies.");
             }
 

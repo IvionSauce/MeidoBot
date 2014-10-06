@@ -65,7 +65,9 @@ namespace WebIrc
 
     public class RequestObject
     {
+        public readonly Uri Uri;
         public readonly string Url;
+
         public WebResource Resource { get; set; }
 
         string _title = string.Empty;
@@ -84,16 +86,13 @@ namespace WebIrc
         List<string> messages = new List<string>();
 
 
-        public RequestObject(string url)
+        public RequestObject(Uri uri)
         {
-            if (url == null)
-                throw new ArgumentNullException("url");
+            if (uri == null)
+                throw new ArgumentNullException("uri");
 
-            var req = url.Trim();
-            if (req == string.Empty)
-                throw new ArgumentException("Cannot be empty or whitespace.", "url");
-
-            Url = req;
+            Uri = uri;
+            Url = uri.ToString();
         }
 
 
@@ -121,13 +120,14 @@ namespace WebIrc
                                      messages);
         }
 
-        /*public RequestResult Failure(Exception ex)
+
+        public static RequestResult Failure(Exception ex)
         {
-            return new RequestResult(Url, null,
+            return new RequestResult(string.Empty, null,
                                      false, ex,
-                                     ConstructedTitle, false,
-                                     messages);
-        }*/
+                                     string.Empty, false,
+                                     new string[0]);
+        }
     }
 
 }
