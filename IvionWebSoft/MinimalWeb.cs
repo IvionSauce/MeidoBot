@@ -11,11 +11,17 @@ namespace IvionWebSoft
         {
             var req = SetupRequest(uri);
 
-            MemoryStream stream;
-            using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+            try
             {
-                stream = ReadFragment(response.GetResponseStream(), peekSize);
-                return new BinaryPeek(uri, response.ContentType, response.ContentLength, stream);
+                using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+                {
+                    var stream = ReadFragment(response.GetResponseStream(), peekSize);
+                    return new BinaryPeek(uri, response.ContentType, response.ContentLength, stream);
+                }
+            }
+            catch (WebException ex)
+            {
+                return new BinaryPeek(uri, ex);
             }
         }
 
@@ -53,20 +59,25 @@ namespace IvionWebSoft
     }
 
 
-    public class BinaryPeek : WebResource
+    public class BinaryPeek : WebResource, IDisposable
     {
         public string ContentType { get; private set; }
         public long ContentLength { get; private set; }
         public MemoryStream Peek { get; private set; }
         
 
-        public BinaryPeek(Exception ex) : base(ex) {}
+        public BinaryPeek(Uri uri, Exception ex) : base(uri, ex) {}
 
         public BinaryPeek(Uri uri, string type, long length, MemoryStream peek) : base(uri)
         {
             ContentType = type;
             ContentLength = length;
             Peek = peek;
+        }
+
+        public void Dispose()
+        {
+            Peek.Dispose();
         }
     }
 }

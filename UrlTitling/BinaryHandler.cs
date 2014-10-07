@@ -15,29 +15,31 @@ namespace WebIrc
 
         public static RequestResult BinaryToIrc(RequestObject req)
         {
-            BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize);
-            var info = GetInfo(peek);
-            req.Resource = info;
-
-            if (!info.Success)
-                return req.CreateResult(false);
-
-            string type;
-            switch (info.Type)
+            using (BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize))
             {
-            case ImageType.Jpeg:
-                type = "JPEG";
-                break;
-            case ImageType.Png:
-                type = "PNG";
-                break;
-            default:
-                type = peek.ContentType;
-                req.AddMessage("Binary format not supported.");
-                break;
+                var info = GetInfo(peek);
+                req.Resource = info;
+                if (!info.Success)
+                    return req.CreateResult(false);
+                
+                string type;
+                switch (info.Type)
+                {
+                case ImageType.Jpeg:
+                    type = "JPEG";
+                    break;
+                case ImageType.Png:
+                    type = "PNG";
+                    break;
+                default:
+                    type = peek.ContentType;
+                    req.AddMessage("Binary format not supported.");
+                    break;
+                }
+                
+                req.ConstructedTitle = FormatBinaryInfo(type, info.Dimensions, peek.ContentLength);
             }
 
-            req.ConstructedTitle = FormatBinaryInfo(type, info.Dimensions, peek.ContentLength);
             return req.CreateResult(true);
         }
 
