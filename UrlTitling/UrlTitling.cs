@@ -127,14 +127,14 @@ public class UrlTitler : IMeidoHook
 
     void BinaryPrint(IIrcMessage e)
     {
-        if (e.MessageArray.Length > 1)
+        for (int i = 1; i < e.MessageArray.Length; i++)
         {
-            var reqStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-            if (Uri.IsWellFormedUriString(reqStr, UriKind.Absolute))
+            var msg = e.MessageArray[i];
+            if (Uri.IsWellFormedUriString(msg, UriKind.Absolute))
             {
-                var req = new RequestObject(new Uri(reqStr));
+                var req = new RequestObject(new Uri(msg));
                 var result = BinaryHandler.BinaryToIrc(req);
-
+                
                 if (result.PrintTitle)
                     e.Reply(result.Title);
                 else
