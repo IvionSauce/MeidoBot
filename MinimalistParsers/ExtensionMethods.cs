@@ -44,9 +44,13 @@ namespace MinimalistParsers
         }
         
         
-        public static void ReadInto(this Stream stream, byte[] buffer)
+        public static bool ReadInto(this Stream stream, byte[] buffer)
         {
-            stream.Read(buffer, 0, buffer.Length);
+            int read = stream.Read(buffer, 0, buffer.Length);
+            if (read == buffer.Length)
+                return true;
+            else
+                return false;
         }
     }
 }
