@@ -30,6 +30,7 @@ namespace IvionWebSoft
         {
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(uri);
             req.Timeout = 30000;
+            req.UserAgent = "Mozilla/5.0 BinaryPeek/1.0";
             req.Accept = "*/*";
             // No AddRange, since that affects the ContentLength reported by the webserver.
 
@@ -77,7 +78,8 @@ namespace IvionWebSoft
 
         public void Dispose()
         {
-            Peek.Dispose();
+            if (Peek != null)
+                Peek.Dispose();
         }
     }
 }

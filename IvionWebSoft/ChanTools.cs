@@ -142,7 +142,9 @@ namespace IvionWebSoft
         {
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return Source.Fourchan;
-            else if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase))
+            // Guard against URL's pointing to an image.
+            else if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase) &&
+                     !url.Contains("/image/", StringComparison.OrdinalIgnoreCase))
                 return Source.ArchiveMoe;
             else
                 return null;
