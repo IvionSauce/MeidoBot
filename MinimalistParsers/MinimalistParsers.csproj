@@ -37,6 +37,7 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Types.cs" />
     <Compile Include="Dispatch.cs" />
+    <Compile Include="Ebml.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Core" />
