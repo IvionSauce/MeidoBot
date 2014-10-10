@@ -20,7 +20,7 @@ namespace MinimalistParsers
             Signature = new ReadOnlyCollection<byte>(sig);
         }
 
-        public static ImageProperties GetProperties(Stream stream)
+        public static MediaProperties GetProperties(Stream stream)
         {
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
@@ -40,12 +40,12 @@ namespace MinimalistParsers
                     var height = stream.ReadUint(4);
                     var dim = new Dimensions(width, height);
 
-                    return new ImageProperties(ImageType.Png, dim);
+                    return new MediaProperties(MediaType.Png, dim);
                 }
-                return new ImageProperties(ImageType.Png);
+                return new MediaProperties(MediaType.Png);
             }
 
-            return new ImageProperties();
+            return new MediaProperties();
         }
     }
 }

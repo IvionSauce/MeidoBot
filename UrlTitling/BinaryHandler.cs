@@ -25,11 +25,17 @@ namespace WebIrc
                 string type;
                 switch (info.Type)
                 {
-                case ImageType.Jpeg:
+                case MediaType.Jpeg:
                     type = "JPEG";
                     break;
-                case ImageType.Png:
+                case MediaType.Png:
                     type = "PNG";
+                    break;
+                case MediaType.Matroska:
+                    type = "Matroska";
+                    break;
+                case MediaType.Webm:
+                    type = "WebM";
                     break;
                 default:
                     type = peek.ContentType;
@@ -37,21 +43,28 @@ namespace WebIrc
                     break;
                 }
                 
-                req.ConstructedTitle = FormatBinaryInfo(type, info.Dimensions, peek.ContentLength);
+                req.ConstructedTitle = FormatBinaryInfo(type, info);
             }
 
             return req.CreateResult(true);
         }
 
-        static string FormatBinaryInfo(string content, Dimensions dimensions, long size)
+        static string FormatBinaryInfo(string content, MediaInfo info)
         {
-            var sizeStr = FormatSize(size);
-            if (dimensions.Width > 0 && dimensions.Height > 0)
+            var sizeStr = FormatSize(info.Size);
+            var timeStr = FormatTime(info.Duration);
+
+            string binaryInfo;
+            if (info.Dimensions.Width > 0 && info.Dimensions.Height > 0)
             {
-                return string.Format("[ {0}: {1}x{2} ] {3}", content, dimensions.Width, dimensions.Height, sizeStr);
+                binaryInfo = string.Format("[ {0}: {1}x{2} ]{3} {4}",
+                                           content, info.Dimensions.Width, info.Dimensions.Height,
+                                           timeStr, sizeStr);
             }
             else
-                return string.Format("[ {0} ] {1}", content, sizeStr);
+                binaryInfo = string.Format("[ {0} ] {1}", content, sizeStr);
+
+            return binaryInfo;
         }
 
         // Size is in bytes.
@@ -70,35 +83,49 @@ namespace WebIrc
                 return sizeInK.ToString("#.#") + "kB";
         }
 
+        static string FormatTime(TimeSpan duration)
+        {
+            if (duration.TotalSeconds <= 0)
+                return string.Empty;
 
-        static ImageInfo GetInfo(BinaryPeek peek)
+            var total = (int)Math.Round(duration.TotalSeconds);
+            var minutes = total / 60;
+            var seconds = total % 60;
+
+            return string.Format(" [{0}:{1:00}]", minutes, seconds);
+        }
+
+
+        static MediaInfo GetInfo(BinaryPeek peek)
         {
             if (peek.Success)
             {
-                ImageProperties props = Dispatch.GetImageInfo(peek.Peek);
-                return new ImageInfo(peek.Location, props, peek.ContentLength);
+                MediaProperties props = Dispatch.GetMediaInfo(peek.Peek);
+                return new MediaInfo(peek.Location, props, peek.ContentLength);
             }
             else
-                return new ImageInfo(peek);
+                return new MediaInfo(peek);
         }
     }
 
 
-    public class ImageInfo : WebResource
+    public class MediaInfo : WebResource
     {
-        public ImageType Type { get; private set; }
+        public MediaType Type { get; private set; }
         public Dimensions Dimensions { get; private set; }
+        public TimeSpan Duration { get; private set; }
         public long Size { get; private set; }
 
 
-        public ImageInfo(WebResource resource) : base(resource) {}
+        public MediaInfo(WebResource resource) : base(resource) {}
 
-        public ImageInfo(Uri uri, ImageProperties props) : this(uri, props, 0) {}
+        public MediaInfo(Uri uri, MediaProperties props) : this(uri, props, 0) {}
 
-        public ImageInfo(Uri uri, ImageProperties props, long size) : base(uri)
+        public MediaInfo(Uri uri, MediaProperties props, long size) : base(uri)
         {
             Type = props.Type;
             Dimensions = props.Dimensions;
+            Duration = props.Duration;
             Size = size;
         }
     }

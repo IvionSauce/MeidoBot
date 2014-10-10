@@ -17,7 +17,7 @@ namespace MinimalistParsers
     {
         static readonly byte[] jpgId = new byte[] {0xff, 0xd8};
 
-        public static ImageProperties GetProperties(Stream stream)
+        public static MediaProperties GetProperties(Stream stream)
         {
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
@@ -63,7 +63,7 @@ namespace MinimalistParsers
                             var width = stream.ReadUint(2);
                             var dim = new Dimensions(width, height);
 
-                            return new ImageProperties(ImageType.Jpeg, dim);
+                            return new MediaProperties(MediaType.Jpeg, dim);
                         }
 
                         // Our `position` is at the marker and the `segmentLength` does not include the marker, just
@@ -71,10 +71,10 @@ namespace MinimalistParsers
                         segmentStart += segmentLength + 2;
                     } // while
                 } // if
-                return new ImageProperties(ImageType.Jpeg);
+                return new MediaProperties(MediaType.Jpeg);
             } // if
 
-            return new ImageProperties();
+            return new MediaProperties();
         }
 
         static bool IsSof(byte[] marker)

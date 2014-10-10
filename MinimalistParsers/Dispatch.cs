@@ -6,37 +6,38 @@ namespace MinimalistParsers
 {
     public static class Dispatch
     {
-        static Func<Stream, ImageProperties>[] imgDispatch;
+        static Func<Stream, MediaProperties>[] mediaDispatch;
 
 
         static Dispatch()
         {
-            imgDispatch = new Func<Stream, ImageProperties>[]
+            mediaDispatch = new Func<Stream, MediaProperties>[]
             {
                 Png.GetProperties,
-                Jpeg.GetProperties
+                Jpeg.GetProperties,
+                Ebml.Parse
             };
         }
 
 
-        public static ImageProperties GetImageInfo(Stream stream)
+        public static MediaProperties GetMediaInfo(Stream stream)
         {
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
 
-            foreach (var f in imgDispatch)
+            foreach (var f in mediaDispatch)
             {
                 stream.Position = 0;
-                ImageProperties props = f(stream);
+                MediaProperties props = f(stream);
 
                 if (PropSucces(props))
                     return props;
             }
 
-            return new ImageProperties();
+            return new MediaProperties();
         }
 
-        static bool PropSucces(ImageProperties props)
+        static bool PropSucces(MediaProperties props)
         {
             if (props.Dimensions.Width > 0 && props.Dimensions.Height > 0)
                 return true;
