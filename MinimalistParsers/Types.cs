@@ -17,6 +17,7 @@ namespace MinimalistParsers
         public readonly MediaType Type;
         public readonly Dimensions Dimensions;
         public readonly TimeSpan Duration;
+        public readonly bool HasAudio;
 
 
         public MediaProperties()
@@ -38,6 +39,12 @@ namespace MinimalistParsers
         {
             Duration = duration;
         }
+
+        public MediaProperties(MediaType type, Dimensions dimensions, TimeSpan duration, bool hasAudio) :
+            this(type, dimensions, duration)
+        {
+            HasAudio = hasAudio;
+        }
     }
 
 
@@ -47,19 +54,11 @@ namespace MinimalistParsers
         public readonly ulong Height;
 
 
-        public Dimensions(uint width, uint height)
-        {
-            Width = width;
-            Height = height;
-        }
-
         public Dimensions(ulong width, ulong height)
         {
             Width = width;
             Height = height;
         }
-
-        public Dimensions(int width, int height) : this((long)width, (long)height) {}
 
         public Dimensions(long width, long height)
         {

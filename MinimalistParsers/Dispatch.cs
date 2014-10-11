@@ -39,10 +39,10 @@ namespace MinimalistParsers
 
         static bool PropSucces(MediaProperties props)
         {
-            if (props.Dimensions.Width > 0 && props.Dimensions.Height > 0)
-                return true;
-            else
+            if (props.Type == MediaType.NotSupported)
                 return false;
+            else
+                return true;
         }
     }
 }
