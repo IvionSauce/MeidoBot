@@ -31,6 +31,9 @@ namespace WebIrc
                 case MediaType.Png:
                     type = "PNG";
                     break;
+                case MediaType.Gif:
+                    type = "GIF";
+                    break;
                 case MediaType.Matroska:
                     type = "Matroska";
                     break;
@@ -53,6 +56,8 @@ namespace WebIrc
         {
             var sizeStr = FormatSize(info.Size);
             var timeStr = FormatTime(info.Duration);
+            if (timeStr != string.Empty && info.HasAudio)
+                timeStr += " ♫";
 
             string binaryInfo;
             if (info.Dimensions.Width > 0 && info.Dimensions.Height > 0)
@@ -114,6 +119,7 @@ namespace WebIrc
         public MediaType Type { get; private set; }
         public Dimensions Dimensions { get; private set; }
         public TimeSpan Duration { get; private set; }
+        public bool HasAudio { get; private set; }
         public long Size { get; private set; }
 
 
@@ -126,6 +132,7 @@ namespace WebIrc
             Type = props.Type;
             Dimensions = props.Dimensions;
             Duration = props.Duration;
+            HasAudio = props.HasAudio;
             Size = size;
         }
     }
