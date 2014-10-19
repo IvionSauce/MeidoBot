@@ -15,6 +15,8 @@ namespace MinimalistParsers
 
         public static MediaProperties Parse(Stream stream)
         {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
 

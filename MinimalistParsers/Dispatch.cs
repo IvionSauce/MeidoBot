@@ -13,7 +13,7 @@ namespace MinimalistParsers
         {
             mediaDispatch = new Func<Stream, MediaProperties>[]
             {
-                Png.GetProperties,
+                Png.Parse,
                 Gif.Parse,
                 Jpeg.Parse,
                 Ebml.Parse
@@ -23,6 +23,8 @@ namespace MinimalistParsers
 
         public static MediaProperties GetMediaInfo(Stream stream)
         {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
 
