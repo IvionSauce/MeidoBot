@@ -7,6 +7,7 @@ namespace MinimalistParsers
         NotSupported,
         Jpeg,
         Png,
+        Gif,
         Matroska,
         Webm
     };

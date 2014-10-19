@@ -14,7 +14,8 @@ namespace MinimalistParsers
             mediaDispatch = new Func<Stream, MediaProperties>[]
             {
                 Png.GetProperties,
-                Jpeg.GetProperties,
+                Gif.Parse,
+                Jpeg.Parse,
                 Ebml.Parse
             };
         }

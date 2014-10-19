@@ -38,6 +38,8 @@
     <Compile Include="Types.cs" />
     <Compile Include="Dispatch.cs" />
     <Compile Include="Ebml.cs" />
+    <Compile Include="Gif.cs" />
+    <Compile Include="StreamChunk.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Core" />

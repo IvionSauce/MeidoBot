@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 
 // Many thanks to spender on StackOverflow http://stackoverflow.com/questions/4092624/ for giving me my first taste of
@@ -15,66 +14,65 @@ namespace MinimalistParsers
 {
     public static class Jpeg
     {
-        static readonly byte[] jpgId = new byte[] {0xff, 0xd8};
+        static readonly byte[] jpgId = new byte[] {0xff, 0xd8, 0xff};
 
-        public static MediaProperties GetProperties(Stream stream)
+
+        public static MediaProperties Parse(Stream stream)
         {
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
 
-            long segmentStart;
-            uint segmentLength;
             // General layout: [marker|2] [length|2] [data|`length-2`]
             // The marker always starts with 0xff and follows with a segment identifier.
             var marker = new byte[2];
+            uint segmentLength;
 
-            stream.ReadInto(marker);
-            if (marker.SequenceEqual(jpgId))
+            if (IsJpeg(stream))
             {
-                stream.ReadInto(marker);
-                segmentStart = stream.Position;
-
-                // Once we've checked for the magic number (0xff 0xd8 0xff) assume we're dealing with a JPEG.
-                if (marker[0] == 0xff)
+                // Search for the Start of Frame marker.
+                while (stream.Position < stream.Length)
                 {
+                    stream.ReadInto(marker);
                     segmentLength = stream.ReadUint(2);
 
-                    // TODO: Extra checks to ascertain it's a JPEG.
-                    // 0xe0 ~ JFIF
-                    if (marker[1] == 0xe0)
-                    {}
-                    // 0xe1 ~ Exif
-                    else if (marker[1] == 0xe1)
-                    {}
-
-                    segmentStart += segmentLength;
-                    while (segmentStart < stream.Length)
+                    if (IsSof(marker) && segmentLength >= 7)
                     {
-                        stream.Position = segmentStart;
-                        stream.ReadInto(marker);
-                        segmentLength = stream.ReadUint(2);
+                        // Skip over the Sample Precision field.
+                        stream.Position += 1;
+                        
+                        var height = stream.ReadUint(2);
+                        var width = stream.ReadUint(2);
+                        var dim = new Dimensions(width, height);
+                        
+                        return new MediaProperties(MediaType.Jpeg, dim);
+                    }
 
-                        if (IsSof(marker) && segmentLength >= 7)
-                        {
-                            // Skip over the Sample Precision field.
-                            stream.Position += 1;
-
-                            var height = stream.ReadUint(2);
-                            var width = stream.ReadUint(2);
-                            var dim = new Dimensions(width, height);
-
-                            return new MediaProperties(MediaType.Jpeg, dim);
-                        }
-
-                        // Our `position` is at the marker and the `segmentLength` does not include the marker, just
-                        // the length of the length field and the data field.
-                        segmentStart += segmentLength + 2;
-                    } // while
-                } // if
+                    stream.Position += segmentLength - 2;
+                } // while
                 return new MediaProperties(MediaType.Jpeg);
             } // if
-
             return new MediaProperties();
+        }
+
+
+        static bool IsJpeg(Stream stream)
+        {
+            if (stream.ReadAndCompare(jpgId))
+            {
+                // The first segment in a Jpeg will be an APPn segment.
+                // Except when it's not...
+                int segmentId = stream.ReadByte();
+                // 0xe0 ~ JFIF (APP0)
+                // 0xe1 ~ Exif (APP1)
+                // 0xdb ~ Quantization Tables (DQT)
+                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xdb)
+                {
+                    var segmentLength = stream.ReadUint(2);
+                    stream.Position += segmentLength - 2;
+                    return true;
+                }
+            }
+            return false;
         }
 
         static bool IsSof(byte[] marker)

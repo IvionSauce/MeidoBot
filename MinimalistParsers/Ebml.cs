@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 
 
 namespace MinimalistParsers
@@ -20,20 +21,23 @@ namespace MinimalistParsers
          * L3 Video         E0              0x60
          * L4 PixelWidth    B0              0x30
          * L4 PixelHeight   BA              0x3A
+         * L3 Audio         E1              0x61
          * 
          * L1 Info          15-49-A9-66     0x0549A966
          * L2 TimecodeScale 2A-D7-B1        0x0AD7B1
          * L2 Duration      44-89           0x0489
          */
         static readonly byte[] ebmlId = {0x1a, 0x45, 0xdf, 0xa3};
-
         const long Doctype = 0x282;
+
         const long SegmentId = 0x08538067;
-        
-        static readonly long[] videoTrack = {SegmentId, 0x0654AE6B, 0x2E, 0x60};
+        const long TracksId = 0x0654AE6B;
+        const long TrackEntryId = 0x2E;
+
+        static readonly long[] videoAndAudio = {0x60, 0x61};
         static readonly long[] dims = {0x30, 0x3A};
         
-        static readonly long[] info = {SegmentId, 0x0549A966};
+        const long InfoId = 0x0549A966;
         static readonly long[] duration = {0x0AD7B1, 0x0489};
         
         
@@ -44,7 +48,7 @@ namespace MinimalistParsers
 
             if ( stream.ReadAndCompare(ebmlId) )
             {
-                var len = ReadVarInt(stream);
+                long len = ReadVarInt(stream);
                 long ebmlBlockEnd = stream.Position + len;
                 
                 var bDoc = Get(stream, Doctype, ebmlBlockEnd) ?? new byte[0];
@@ -62,67 +66,150 @@ namespace MinimalistParsers
                 }
 
                 stream.Position = ebmlBlockEnd;
-                
-                var time = GetDuration(stream);
-                var dims = GetDimensions(stream);
-                return new MediaProperties(type, dims, time);
+
+                // Both Info and Tracks are contained in the Segment.
+                if ( Match(stream, SegmentId, out len) )
+                {
+                    var time = GetDuration(stream);
+                    var trackinfo = GetTrackInfo(stream);
+                    return new MediaProperties(type, trackinfo.Item1, time, trackinfo.Item2);
+                }
+
+                return new MediaProperties(type);
             }
             return new MediaProperties();
         }
         
-        public static TimeSpan GetDuration(Stream stream)
+        static TimeSpan GetDuration(Stream stream)
         {
             // Timescale*Duration gives us the time in nanoseconds, divide by this to get milliseconds.
             const int milliSecScale = 1000000;
-            
-            var bDur = TraverseGet(stream, info, duration);
-            if (bDur[0] == null || bDur[1] == null)
-                return TimeSpan.Zero;
-            
-            var scale = bDur[0].ToUlong();
-            var ticks = bDur[1].ToDouble();
-            
-            // Duration/ticks is already in milliseconds.
-            if (scale == milliSecScale)
-                return TimeSpan.FromMilliseconds(ticks);
-            else
-            {
-                double millisecs = (scale * ticks) / milliSecScale;
-                return TimeSpan.FromMilliseconds(millisecs);
-            }
-        }
-        
-        public static Dimensions GetDimensions(Stream stream)
-        {
-            var bDims = TraverseGet(stream, videoTrack, dims);
-            if (bDims[0] == null || bDims[1] == null)
-                return new Dimensions();
-            
-            var width = bDims[0].ToUlong();
-            var height = bDims[1].ToUlong();
-            return new Dimensions(width, height);
-        }
-        
-        
-        static byte[][] TraverseGet(Stream stream, long[] idsDepth, long[] getIds)
-        {
-            var startPos = stream.Position;
-            
-            byte[][] values;
+
             long len;
-            if ( DepthMatch(stream, idsDepth, out len) )
+            if ( Match(stream, InfoId, out len) )
+            {
+                var bDur = Get(stream, duration, stream.Position + len);
+                if (bDur[0] != null && bDur[1] != null)
+                {
+                    var scale = bDur[0].ToUlong();
+                    var ticks = bDur[1].ToDouble();
+                    
+                    // Duration/ticks is already in milliseconds.
+                    if (scale == milliSecScale)
+                        return TimeSpan.FromMilliseconds(ticks);
+                    else
+                    {
+                        double millisecs = (scale * ticks) / milliSecScale;
+                        return TimeSpan.FromMilliseconds(millisecs);
+                    }
+                }
+            }
+            return TimeSpan.Zero;
+        }
+
+
+        static Tuple<Dimensions, bool> GetTrackInfo(Stream stream)
+        {
+            long len;
+            if ( Match(stream, TracksId, out len) )
             {
                 long upperLimit = stream.Position + len;
-                values = Get(stream, getIds, upperLimit);
-            }
-            else
-                values = new byte[getIds.Length][];
-            
-            stream.Position = startPos;
-            return values;
+                var trackEntries = BreadthMatch(stream, TrackEntryId, upperLimit);
+
+                bool hasAudio = false;
+                Dimensions dimensions = new Dimensions();
+                foreach (var match in trackEntries)
+                {
+                    stream.Position = match.Start;
+                    upperLimit = match.Stop;
+
+                    var tracks = MultiMatch(stream, videoAndAudio, upperLimit);
+                    // Video
+                    if ( tracks[0] != null )
+                    {
+                        stream.Position = tracks[0].Start;
+                        var bDims = Get(stream, dims, tracks[0].Stop);
+
+                        if (bDims[0] != null && bDims[1] != null)
+                            dimensions = new Dimensions(bDims[0].ToUlong(), bDims[1].ToUlong());
+                    }
+                    // Audio
+                    if ( tracks[1] != null )
+                        hasAudio = true;
+
+                } // foreach
+                return new Tuple<Dimensions, bool>(dimensions, hasAudio);
+            } // if
+            return null;
+        }
+
+
+        static byte[] Get(Stream stream, long id, long readTo)
+        {
+            var results = Get(stream, new long[] {id}, readTo);
+            return results[0];
         }
         
+        static byte[][] Get(Stream stream, long[] ids, long readTo)
+        {
+            var matches = MultiMatch(stream, ids, readTo);
+            var results = new byte[ids.Length][];
+            for (int i = 0; i < matches.Length; i++)
+            {
+                var match = matches[i];
+                if (match != null)
+                {
+                    stream.Position = match.Start;
+                    var value = new byte[match.Length];
+                    stream.ReadInto(value);
+
+                    results[i] = value;
+                }
+            }
+            return results;
+        }
+
+
+        static StreamChunk[] MultiMatch(Stream stream, long[] idMatches, long readTo)
+        {
+            var matches = new StreamChunk[idMatches.Length];
+            int matchCount = 0;
+
+            while (stream.Position < readTo)
+            {
+                long id = ReadVarId(stream);
+                long len = ReadVarInt(stream);
+                if (len < 0)
+                    break;
+
+                int matchIndex = Array.IndexOf(idMatches, id);
+                if (matchIndex >= 0)
+                {
+                    matches[matchIndex] = new StreamChunk(stream.Position, len);
+                    matchCount++;
+                    if (matchCount == idMatches.Length)
+                        break;
+                }
+                stream.Position += len;
+            }
+            return matches;
+        }
+
+
+        static List<StreamChunk> BreadthMatch(Stream stream, long idMatch, long readTo)
+        {
+            var matches = new List<StreamChunk>();
+            long len;
+            while ( Match(stream, idMatch, readTo, out len) )
+            {
+                matches.Add( new StreamChunk(stream.Position, len) );
+                stream.Position += len;
+            }
+            
+            return matches;
+        }
         
+
         static bool DepthMatch(Stream stream, long[] idMatches, out long len)
         {
             len = 0;
@@ -139,39 +226,13 @@ namespace MinimalistParsers
             }
             return true;
         }
-        
-        
-        static byte[] Get(Stream stream, long id, long readTo)
-        {
-            var results = Get(stream, new long[] {id}, readTo);
-            return results[0];
-        }
-        
-        static byte[][] Get(Stream stream, long[] ids, long readTo)
-        {
-            var values = new byte[ids.Length][];
-            var start = stream.Position;
-            
-            for (int i = 0; i < ids.Length; i++)
-            {
-                stream.Position = start;
-                long len;
-                if ( Match(stream, ids[i], readTo, out len) )
-                {
-                    var data = new byte[len];
-                    stream.ReadInto(data);
-                    values[i] = data;
-                }
-            }
-            return values;
-        }
-        
-        
+
+
         static bool Match(Stream stream, long idMatch, out long len)
         {
             return Match(stream, idMatch, stream.Length, out len);
         }
-        
+
         static bool Match(Stream stream, long idMatch, long readTo, out long len)
         {
             len = 0;
@@ -183,10 +244,11 @@ namespace MinimalistParsers
                 if (id == idMatch)
                     return true;
                 else if (len < 0)
-                    return false;
+                    break;
                 else
                     stream.Position += len;
             }
+
             return false;
         }
         
@@ -198,7 +260,7 @@ namespace MinimalistParsers
             
             long varint = ReadVarInt(stream);
             if (varint <= MaxId)
-                return (long)varint;
+                return varint;
             else
                 return 0;
         }
