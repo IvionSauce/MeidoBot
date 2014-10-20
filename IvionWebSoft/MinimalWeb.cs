@@ -9,8 +9,12 @@ namespace IvionWebSoft
     {
         public static BinaryPeek Peek(Uri uri, int peekSize)
         {
-            var req = SetupRequest(uri);
+            if (uri == null)
+                throw new ArgumentNullException("uri");
+            else if (peekSize < 1)
+                throw new ArgumentOutOfRangeException("peekSize", "Cannot be less than or equal to 0.");
 
+            var req = SetupRequest(uri);
             try
             {
                 using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
@@ -48,9 +52,8 @@ namespace IvionWebSoft
             {
                 int read = stream.Read(buffer, 0, buffer.Length);
                 if (read <= 0)
-                {
                     break;
-                }
+
                 ms.Write(buffer, 0, read);
             }
             

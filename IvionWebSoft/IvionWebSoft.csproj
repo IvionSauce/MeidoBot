@@ -53,6 +53,7 @@
     <Compile Include="Exceptions.cs" />
     <Compile Include="WeatherUnderground.cs" />
     <Compile Include="MinimalWeb.cs" />
+    <Compile Include="WikipediaTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
