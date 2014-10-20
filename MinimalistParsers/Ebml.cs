@@ -3,6 +3,14 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
+// Thanks to the EBML spec http://www.matroska.org/technical/specs/index.html and the EBML RFC draft
+// http://www.matroska.org/technical/specs/rfc/index.html especially section 2 of the RFC draft, which gives a good
+// overview of the various types you can encounter when parsing EBML. The most common type is the variable size integer,
+// used for both the Element ID and the Size of elements, and is also the most unusual.
+
+// I want to give notice to the libebml parser (part of the Matroska project) whose implementation of a variable size
+// integer reader helped me immensely in understanding and implementing my own.
+// https://github.com/Matroska-Org/libebml/blob/master/src/EbmlElement.cpp the function is called ReadCodedSizeValue.
 
 namespace MinimalistParsers
 {
@@ -112,14 +120,15 @@ namespace MinimalistParsers
 
         static Tuple<Dimensions, bool> GetTrackInfo(Stream stream)
         {
+            bool hasAudio = false;
+            Dimensions dimensions = new Dimensions();
+
             long len;
             if ( Match(stream, TracksId, out len) )
             {
                 long upperLimit = stream.Position + len;
                 var trackEntries = BreadthMatch(stream, TrackEntryId, upperLimit);
 
-                bool hasAudio = false;
-                Dimensions dimensions = new Dimensions();
                 foreach (var match in trackEntries)
                 {
                     stream.Position = match.Start;
@@ -140,9 +149,9 @@ namespace MinimalistParsers
                         hasAudio = true;
 
                 } // foreach
-                return new Tuple<Dimensions, bool>(dimensions, hasAudio);
             } // if
-            return null;
+
+            return new Tuple<Dimensions, bool>(dimensions, hasAudio);
         }
 
 
@@ -162,10 +171,10 @@ namespace MinimalistParsers
                 if (match != null)
                 {
                     stream.Position = match.Start;
-                    var value = new byte[match.Length];
-                    stream.ReadInto(value);
+                    var data = new byte[match.Length];
+                    stream.ReadInto(data);
 
-                    results[i] = value;
+                    results[i] = data;
                 }
             }
             return results;
@@ -258,7 +267,7 @@ namespace MinimalistParsers
         static long ReadVarId(Stream stream)
         {
             // The maximum ID Length is 4 bytes... according to the specs the max would be 2^28-1.
-            const uint MaxId = 268435455;
+            const long MaxId = 268435455;
             
             long varint = ReadVarInt(stream);
             if (varint <= MaxId)
