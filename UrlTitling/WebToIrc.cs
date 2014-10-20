@@ -102,16 +102,12 @@ namespace WebIrc
             // Youtube handling.
             if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
             {
-                // If duration can be found, change the html info to include that.
-                int ytTime = WebTools.GetYoutubeTime(htmlContent);
-                if (ytTime > 0)
-                {
-                    int ytMinutes = ytTime / 60;
-                    int ytSeconds = ytTime % 60;
-                    request.ConstructedTitle = string.Format("[ {0} ] [{1}:{2:00}]",
-                                                             htmlTitle, ytMinutes, ytSeconds);
-                }
-                return request.CreateResult(true);
+                return MiscHandlers.YoutubeWithDuration(request, htmlContent);
+            }
+            // Wikipedia handling.
+            else if (url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
+            {
+                return MiscHandlers.WikipediaSummarize(request, htmlContent);
             }
             // Other URLs.
             else
