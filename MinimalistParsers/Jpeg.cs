@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 
 // Many thanks to spender on StackOverflow http://stackoverflow.com/questions/4092624/ for giving me my first taste of
 // how to approach a binary file programmatically, especially where the fields you want aren't in a static place.
