@@ -65,8 +65,9 @@ namespace MinimalistParsers
                 int segmentId = stream.ReadByte();
                 // 0xe0 ~ JFIF (APP0)
                 // 0xe1 ~ Exif (APP1)
+                // 0xe2 ~ ICC Profile (APP2)
                 // 0xdb ~ Quantization Tables (DQT)
-                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xdb)
+                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xe2 || segmentId == 0xdb)
                 {
                     var segmentLength = stream.ReadUint(2);
                     stream.Position += segmentLength - 2;

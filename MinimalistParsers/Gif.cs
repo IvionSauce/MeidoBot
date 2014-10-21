@@ -7,9 +7,9 @@ namespace MinimalistParsers
     {
         // GIF
         static readonly byte[] gifId = {0x47, 0x49, 0x46};
-        // 89a
+        // Version 89a
         static readonly byte[] newId = {0x38, 0x39, 0x61};
-        // 87a
+        // Version 87a
         static readonly byte[] oldId = {0x38, 0x37, 0x61};
 
 
@@ -24,9 +24,9 @@ namespace MinimalistParsers
             {
                 var bDims = new byte[4];
                 stream.ReadInto(bDims);
-                // GIF is little endian, least significant bit first.
-                var width = bDims[0] + (bDims[1] << 8);
-                var height = bDims[2] + (bDims[3] << 8);
+                // GIF is little endian, least significant byte first.
+                int width = bDims[0] + (bDims[1] << 8);
+                int height = bDims[2] + (bDims[3] << 8);
 
                 return new MediaProperties(MediaType.Gif, new Dimensions(width, height));
             }
