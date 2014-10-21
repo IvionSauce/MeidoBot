@@ -55,13 +55,14 @@ namespace WebIrc
         static string FormatBinaryInfo(string content, MediaInfo info)
         {
             var sizeStr = FormatSize(info.Size);
-            var timeStr = FormatTime(info.Duration);
-            if (timeStr != string.Empty && info.HasAudio)
-                timeStr += " ♫";
 
             string binaryInfo;
             if (info.Dimensions.Width > 0 && info.Dimensions.Height > 0)
             {
+                var timeStr = FormatTime(info.Duration);
+                if (timeStr != string.Empty && info.HasAudio)
+                    timeStr += " ♫";
+
                 binaryInfo = string.Format("[ {0}: {1}x{2} ]{3} {4}",
                                            content, info.Dimensions.Width, info.Dimensions.Height,
                                            timeStr, sizeStr);

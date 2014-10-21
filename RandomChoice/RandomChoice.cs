@@ -33,10 +33,10 @@ public class IrcRandom : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"c", "c <options> - Takes either a range of numbers (.c x-y) or a list of options seperated by" +
+                {"c", "c <options> - Takes either a range of numbers (c x-y) or a list of options seperated by" +
                      @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
 
-                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking .cd " +
+                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking cd " +
                     "will provide you with an automatic countdown (default/min: 3s, max: 10s) " +
                     "and end in a spectacular launch!"},
 
@@ -80,21 +80,22 @@ public class IrcRandom : IMeidoHook
     void Countdown(string target, string[] message)
     {
         const int maxCountdownSec = 10;
-        const int stdCountdownSec = 3;
+        const int minCountdownSec = 3;
         int tminus;
         if ( message.Length == 2 && int.TryParse(message[1], out tminus) )
         {
-            if (tminus >= stdCountdownSec && tminus <= maxCountdownSec)
+            if (tminus >= minCountdownSec && tminus <= maxCountdownSec)
                 ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(target, tminus) );
         }
         else
-            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(target, stdCountdownSec) );
+            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(target, minCountdownSec) );
     }
 
 
     void IrcCountdown(string target, int seconds)
     {
-        string launch = RandomChoice.ChooseRndItem(conf.LaunchChoices);
+        const string stdLaunch = "Liftoff!";
+        string launch = RandomChoice.ChooseRndItem(conf.LaunchChoices) ?? stdLaunch;
 
         irc.SendMessage(target, "Commencing Countdown");
         Thread.Sleep(500);
@@ -130,13 +131,18 @@ static class RandomChoice
         "Very doubtful"};
 
 
-    public static T ChooseRndItem<T>(List<T> items)
+    public static string ChooseRndItem(List<string> items)
     {
-        lock (rnd)
+        if (items.Count > 0)
         {
-            int rndIndex = rnd.Next(items.Count);
-            return items[rndIndex];
+            lock (rnd)
+            {
+                int rndIndex = rnd.Next(items.Count);
+                return items[rndIndex];
+            }
         }
+        else
+            return null;
     }
 
     public static string Shake8Ball()
@@ -153,11 +159,10 @@ static class RandomChoice
         var options = new List<string>();
         var tempOption = new List<string>();
 
-        string word;
-        // Start at index 1 because the array we got passed contains ".c" at index 0.
+        // Start at index 1 because the array we got passed contains the trigger at index 0.
         for (int i = 1; i < message.Length; i++)
         {
-            word = message[i];
+            var word = message[i];
 
             if ( word.Equals("or", StringComparison.OrdinalIgnoreCase) )
             {
@@ -170,14 +175,16 @@ static class RandomChoice
             else if ( word.EndsWith(",", StringComparison.OrdinalIgnoreCase) )
             {
                 string removedComma = word.Substring(0, word.Length - 1);
-                if (removedComma.Length != 0)
-                {
+                if (!removedComma.IsEmptyOrWhiteSpace())
                     tempOption.Add(removedComma);
+
+                if (tempOption.Count != 0)
+                {
                     options.Add( string.Join(" ", tempOption) );
                     tempOption.Clear();
                 }
             }
-            else if ( !string.IsNullOrWhiteSpace(word) )
+            else if (!word.IsEmptyOrWhiteSpace())
                 tempOption.Add(word);
         }
 
@@ -252,8 +259,10 @@ class Config : XmlConfig
         if (countdownOptions != null)
         {
             foreach (XElement option in countdownOptions.Elements())
-                if (!string.IsNullOrEmpty(option.Value))
+            {
+                if (!string.IsNullOrWhiteSpace(option.Value))
                     LaunchChoices.Add(option.Value);
+            }
         }
     }
 

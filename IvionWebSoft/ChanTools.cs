@@ -29,9 +29,11 @@ namespace IvionWebSoft
         // <span class="quote">Quote</span>
         // <a href="bla">Bla</a>
         // <wbr>
-        static readonly Regex fixPostRegexp = new Regex(@"(?i)<span ?[^<>]*>|</span>|" +
+        // Bold and italic tags
+        static readonly Regex fixPostRegexp = new Regex(@"(?i)<span[^<>]*>|</span>|" +
                                                         @"<a href=""[^<>""]*"">|</a>|" +
-                                                        @"<wbr>");
+                                                        @"<wbr>|" +
+                                                        @"<b>|</b>|<i>|</i>");
         
         static readonly Regex spoilerRegexp =  new Regex(@"(?i)(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
         
