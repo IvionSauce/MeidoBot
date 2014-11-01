@@ -141,21 +141,19 @@ namespace IvionWebSoft
             if (charTags.Length == 0 || copyrightTags.Length == 0)
                 return;
 
-            string charTag, source;
             const string sourceStart = "_(";
-            int sourceIndex, start, len;
             for (int i = 0; i < charTags.Length; i++)
             {
-                charTag = charTags[i];
-                sourceIndex = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
+                string charTag = charTags[i];
+                int sourceIndex = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
 
                 if (sourceIndex > 0)
                 {
                     // Plus 2 to skip past the "_(" part of the source.
-                    start = sourceIndex + 2;
+                    int start = sourceIndex + 2;
                     // Plus 3 for the previously skipped "_(" and to slice off the ")" at the end.
-                    len = charTag.Length - (sourceIndex + 3);
-                    source = charTag.Substring(start, len);
+                    int len = charTag.Length - (sourceIndex + 3);
+                    string source = charTag.Substring(start, len);
 
                     foreach (string srcTag in copyrightTags)
                     {

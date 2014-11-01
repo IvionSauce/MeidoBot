@@ -49,6 +49,11 @@ namespace IvionWebSoft
         }
 
 
+        public static string RemoveBoldTags(string title)
+        {
+            return ReplaceBoldTags(title, string.Empty, string.Empty);
+        }
+
         public static string ReplaceBoldTags(string title, string beginReplacement, string endReplacement)
         {
             if (title == null)

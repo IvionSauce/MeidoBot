@@ -14,7 +14,7 @@ namespace IvionWebSoft
             else if (!uri.IsAbsoluteUri)
                 throw new ArgumentException("Uri must be absolute.");
             else if (peekSize < 1)
-                throw new ArgumentOutOfRangeException("peekSize", "Cannot be less than or equal to 0.");
+                throw new ArgumentOutOfRangeException("peekSize", "Cannot be 0 or negative.");
 
             var req = SetupRequest(uri);
             try
