@@ -6,17 +6,8 @@ namespace IvionWebSoft
 {
     public class WeatherUnderground
     {
-        string wuQuery;
-        string _apikey;
-        public string ApiKey
-        {
-            get { return _apikey; }
-            set
-            {
-                _apikey = value;
-                wuQuery = string.Concat("http://api.wunderground.com/api/", value, "/conditions/q/");
-            }
-        }
+        public string ApiKey { get; private set; }
+        readonly string wuQuery;
 
 
         public WeatherUnderground(string apiKey)
@@ -25,6 +16,7 @@ namespace IvionWebSoft
                 throw new ArgumentNullException("apiKey");
 
             ApiKey = apiKey;
+            wuQuery = string.Concat("http://api.wunderground.com/api/", apiKey, "/conditions/q/");
         }
 
 
@@ -36,25 +28,12 @@ namespace IvionWebSoft
             return InternalGet(location);
         }
 
-        // Location is either US state or country.
-        public WeatherConditions GetConditions(string location, string city)
-        {
-            if (location == null)
-                throw new ArgumentNullException("location");
-            else if (city == null)
-                throw new ArgumentNullException("city");
-
-            var currentQuery = string.Concat(location, "/", city);
-            return InternalGet(currentQuery);
-        }
-
-
         WeatherConditions InternalGet(string query)
         {
             const string format = ".json";
             var currentQuery = string.Concat(wuQuery, query, format);
 
-            WebString queryResult = WebTools.SimpleGetString(currentQuery);
+            WebString queryResult = MinimalWeb.SimpleGet(currentQuery);
             if (!queryResult.Success)
                 return new WeatherConditions(queryResult);
 
