@@ -55,6 +55,7 @@
     <Compile Include="MinimalWeb.cs" />
     <Compile Include="WikipediaTools.cs" />
     <Compile Include="WikipediaArticle.cs" />
+    <Compile Include="HtmlTagExtract.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
