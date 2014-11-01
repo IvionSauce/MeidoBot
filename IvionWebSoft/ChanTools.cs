@@ -268,7 +268,7 @@ namespace IvionWebSoft
                 throw new InvalidEnumArgumentException();
             }
             
-            return WebTools.SimpleGetString(jsonReq);
+            return MinimalWeb.SimpleGet(jsonReq);
         }
         
         static string Fix4chanPost(string post)

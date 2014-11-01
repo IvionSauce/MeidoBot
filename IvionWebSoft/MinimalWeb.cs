@@ -11,16 +11,18 @@ namespace IvionWebSoft
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
+            else if (!uri.IsAbsoluteUri)
+                throw new ArgumentException("Uri must be absolute.");
             else if (peekSize < 1)
                 throw new ArgumentOutOfRangeException("peekSize", "Cannot be less than or equal to 0.");
 
             var req = SetupRequest(uri);
             try
             {
-                using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+                using (WebResponse response = req.GetResponse())
                 {
                     var stream = ReadFragment(response.GetResponseStream(), peekSize);
-                    return new BinaryPeek(uri, response.ContentType, response.ContentLength, stream);
+                    return new BinaryPeek(response.ResponseUri, response.ContentType, response.ContentLength, stream);
                 }
             }
             catch (WebException ex)
@@ -29,18 +31,21 @@ namespace IvionWebSoft
             }
         }
 
-
-        static HttpWebRequest SetupRequest(Uri uri)
+        static WebRequest SetupRequest(Uri uri)
         {
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(uri);
+            WebRequest req = WebRequest.Create(uri);
             req.Timeout = 30000;
-            req.UserAgent = "Mozilla/5.0 BinaryPeek/1.0";
-            req.Accept = "*/*";
-            // No AddRange, since that affects the ContentLength reported by the webserver.
-
+            
+            var wReq = req as HttpWebRequest;
+            if (wReq != null)
+            {
+                wReq.UserAgent = "Mozilla/5.0 MinimalWeb/1.0";
+                wReq.Accept = "*/*";
+                // No AddRange, since that affects the ContentLength reported by the webserver.
+            }
+            
             return req;
         }
-
 
         // Read a fragment of the stream into a memorystream.
         static MemoryStream ReadFragment(Stream stream, int fragmentSize)
@@ -53,12 +58,54 @@ namespace IvionWebSoft
                 int read = stream.Read(buffer, 0, buffer.Length);
                 if (read <= 0)
                     break;
-
+                
                 ms.Write(buffer, 0, read);
             }
             
             ms.Position = 0;
             return ms;
+        }
+
+
+        public static WebString SimpleGet(string url)
+        {
+            if (url == null)
+                throw new ArgumentNullException("url");
+            
+            Uri uri;
+            try
+            {
+                uri = new Uri(url);
+            }
+            catch (UriFormatException ex)
+            {
+                return new WebString(null, ex);
+            }
+            
+            return SimpleGet(uri);
+        }
+
+        public static WebString SimpleGet(Uri uri)
+        {
+            if (uri == null)
+                throw new ArgumentNullException("uri");
+            else if (!uri.IsAbsoluteUri)
+                throw new ArgumentException("Uri must be absolute.");
+
+            var wc = new WebClient();
+            try
+            {
+                var document = wc.DownloadString(uri);
+                return new WebString(uri, document);
+            }
+            catch (WebException ex)
+            {
+                return new WebString(uri, ex);
+            }
+            finally
+            {
+                wc.Dispose();
+            }
         }
     }
 

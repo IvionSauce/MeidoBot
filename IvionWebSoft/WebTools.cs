@@ -75,37 +75,6 @@ namespace IvionWebSoft
             else
                 return -1;
         }
-
-        public static WebString SimpleGetString(string url)
-        {
-            url.ThrowIfNullOrWhiteSpace("url");
-
-            Uri uri;
-            try
-            {
-                uri = new Uri(url);
-            }
-            catch (UriFormatException ex)
-            {
-                return new WebString(null, ex);
-            }
-
-            var wc = new WebClient();
-            try
-            {
-                var document = wc.DownloadString(uri);
-                return new WebString(uri, document);
-
-            }
-            catch (WebException ex)
-            {
-                return new WebString(uri, ex);
-            }
-            finally
-            {
-                wc.Dispose();
-            }
-        }
     }
 
 

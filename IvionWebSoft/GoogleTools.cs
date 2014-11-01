@@ -25,7 +25,7 @@ namespace IvionWebSoft
             const string searchUrl = "https://www.google.com/search?q={0}&ie=utf-8&oe=utf-8";
 
             var currentSearch = string.Format(searchUrl, Uri.EscapeDataString(searchTerm));
-            WebString results = WebTools.SimpleGetString(currentSearch);
+            WebString results = MinimalWeb.SimpleGet(currentSearch);
             if (!results.Success)
                 return new SearchResults(results);
 
