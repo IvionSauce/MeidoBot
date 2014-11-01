@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using IvionSoft;
 
 
 namespace IvionWebSoft
@@ -16,11 +15,20 @@ namespace IvionWebSoft
     /// </summary>
     public class HtmlEncodingHelper
     {
+        int _timeout = 30000;
         /// <summary>
-        /// Gets or sets the timout of the HTTP request.
+        /// Gets or sets the timeout of the HTTP request.
         /// </summary>
         /// <value>Timeout in milliseconds.</value>
-        public int Timeout { get; set; }
+        public int Timeout
+        {
+            get { return _timeout; }
+            set
+            {
+                if (value < 1)
+                    throw new ArgumentOutOfRangeException("value", "Timeout cannot be 0 or negative.");
+            }
+        }
 
         /// <summary>
         /// The (X)HTML data used for constructing the (X)HTML content string.
@@ -56,6 +64,7 @@ namespace IvionWebSoft
         /// </summary>
         public Encoding EncHtml { get; private set; }
 
+        Uri responseUri;
         string prelimHtmlString;
 
         // If key exists, return the value that properly designates the intended charset.
@@ -78,20 +87,13 @@ namespace IvionWebSoft
         };
 
 
-        public HtmlEncodingHelper()
-        {
-            // Time out with a default value of 30 seconds.
-            Timeout = 30000;
-        }
-
-
         /// <summary>
         /// Download target URL into a <see cref="WebString">WebString</see>.
         /// </summary>
         /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// <exception cref="NotSupportedException">Thrown if scheme isn't HTTP or HTTPS.</exception>
         /// 
         /// <param name="url">URL to download.</param>
         public WebString GetWebString(string url)
@@ -106,13 +108,14 @@ namespace IvionWebSoft
         /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// <exception cref="NotSupportedException">Thrown if scheme isn't HTTP or HTTPS.</exception>
         /// 
         /// <param name="url">URL to download.</param>
         /// <param name="cookies">Cookies</param>
         public WebString GetWebString(string url, CookieContainer cookies)
         {
-            url.ThrowIfNullOrWhiteSpace("url");
+            if (url == null)
+                throw new ArgumentNullException("url");
 
             Uri uri;
             try
@@ -148,6 +151,8 @@ namespace IvionWebSoft
         /// <returns>A <see cref="WebString">WebString</see> containing the (X)HTML document.</returns>
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is relative.</exception>
+        /// <exception cref="NotSupportedException">Thrown if scheme isn't HTTP or HTTPS.</exception>
         /// 
         /// <param name="url">URL to download.</param>
         /// <param name="cookies">Cookies</param>
@@ -155,6 +160,10 @@ namespace IvionWebSoft
         {
             if (url == null)
                 throw new ArgumentNullException("url");
+            else if (!url.IsAbsoluteUri)
+                throw new ArgumentException("Url must be absolute.");
+            else if ( !(url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps) )
+                throw new NotSupportedException("Unsupported scheme, only HTTP(S) is supported.");
 
             try
             {
@@ -163,13 +172,18 @@ namespace IvionWebSoft
             catch (Exception ex)
             {
                 if (ex is WebException || ex is UrlNotHtmlException)
-                    return new WebString(url, ex);
+                {
+                    if (responseUri != null)
+                        return new WebString(responseUri, ex);
+                    else
+                        return new WebString(url, ex);
+                }
                 else
                     throw;
             }
 
             string htmlContent = GetHtmlAsString();
-            return new WebString(url, htmlContent);
+            return new WebString(responseUri, htmlContent);
         }
 
 
@@ -177,6 +191,7 @@ namespace IvionWebSoft
         {
             HtmlCharset = prelimHtmlString = null;
             UsedEncoding = EncHtml = null;
+            responseUri = null;
             Load(url, cookies, 0);
         }
 
@@ -232,11 +247,13 @@ namespace IvionWebSoft
             using (HttpWebResponse httpResponse = (HttpWebResponse)req.GetResponse())
             {
                 HeadersCharset = httpResponse.CharacterSet;
+                responseUri = httpResponse.ResponseUri;
                 
                 // Debug
                 // Console.WriteLine("Meta Redirects: {0} / {1} / {2}", redirects, httpResponse.ContentType, url);
                 
-                if ( httpResponse.ContentType != null && httpResponse.ContentType.StartsWith("text/html") )
+                if (httpResponse.ContentType != null &&
+                    httpResponse.ContentType.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
                 {
                     byte[] data;
                     using (Stream httpStream = httpResponse.GetResponseStream())
