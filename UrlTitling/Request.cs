@@ -52,13 +52,12 @@ namespace WebIrc
         }
 
 
-        public string ReportWebError()
+        public static RequestResult Failure(string requested, Exception ex)
         {
-            const string errorMsg = "Error getting {0} ({1})";
-            if (Retrieved == null)
-                return string.Format(errorMsg, Requested, Exception.Message);
-            else
-                return string.Format(errorMsg, Retrieved, Exception.Message);
+            return new RequestResult(requested, null,
+                                     false, ex,
+                                     string.Empty, false,
+                                     new string[0]);
         }
     }
 
@@ -90,14 +89,19 @@ namespace WebIrc
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
+            else if (!uri.IsAbsoluteUri)
+                throw new ArgumentException("Uri must be absolute.");
 
             Uri = uri;
-            Url = uri.ToString();
+            Url = uri.OriginalString;
         }
 
 
         public void AddMessage(string message)
         {
+            if (message == null)
+                throw new ArgumentNullException("message");
+
             messages.Add(message);
         }
 
@@ -118,15 +122,6 @@ namespace WebIrc
                                      Resource.Location, Resource.Success, Resource.Exception,
                                      ConstructedTitle, printTitle,
                                      messages);
-        }
-
-
-        public static RequestResult Failure(Exception ex)
-        {
-            return new RequestResult(string.Empty, null,
-                                     false, ex,
-                                     string.Empty, false,
-                                     new string[0]);
         }
     }
 

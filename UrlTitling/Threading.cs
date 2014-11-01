@@ -216,8 +216,17 @@ class ChannelThread
         }
         else
         {
-            log.Message( result.ReportWebError() );
+            log.Message( ReportWebError(result) );
         }
+    }
+
+    string ReportWebError(RequestResult result)
+    {
+        const string errorMsg = "Error getting {0} ({1})";
+        if (result.Retrieved == null)
+            return string.Format(errorMsg, result.Requested, Exception.Message);
+        else
+            return string.Format(errorMsg, result.Retrieved, Exception.Message);
     }
 }
 

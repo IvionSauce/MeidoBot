@@ -20,7 +20,7 @@ namespace WebIrc
                 var anchorId = req.Url.Substring(anchorIndex + 1);
                 p = GetFirstParagraph(article, anchorId);
             }
-            // If no anchor or if we couldn't extract a paragraph for specific anchor,
+            // If no anchor or if we couldn't extract a paragraph for the specific anchor,
             // get first paragraph of the article.
             if (p == null && article.SummaryParagraphs.Length > 0)
                 p = article.SummaryParagraphs[0];

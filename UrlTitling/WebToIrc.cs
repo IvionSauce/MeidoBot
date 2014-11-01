@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-// My personal help for dealing with the pesky world of HTTP/HTML and the idiots that misuse it.
 using IvionWebSoft;
 
 
@@ -54,7 +53,7 @@ namespace WebIrc
             UriFormatException formatEx;
             RequestObject request = Request(url, out formatEx);
             if (request == null)
-                return RequestObject.Failure(formatEx);
+                return RequestResult.Failure(url, formatEx);
 
             // Danbooru handling.
             if (url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
