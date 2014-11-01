@@ -154,6 +154,48 @@ static class RandomChoice
         }
     }
 
+
+    public static string RndChoice(string[] message)
+    {
+        if (message.Length < 2)
+            return null;
+        
+        // If first and only argument is a number sequence in the form of X-Y return a random int between X and Y.
+        Match numberSeq = Regex.Match(message[1], @"^(\d+)-(\d+)$");
+        if (numberSeq.Success && message.Length == 2)
+        {
+            int begin, end;
+            try
+            {
+                begin = int.Parse(numberSeq.Groups[1].Value);
+                end = int.Parse(numberSeq.Groups[2].Value);
+                end++;
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
+            
+            if (begin > end)
+                return null;
+            else
+            {
+                lock (rnd)
+                {
+                    int rndInt = rnd.Next(begin, end);
+                    return rndInt.ToString();
+                }
+            }
+        }
+        // Else assume that it's a collection of options, so extract those options and choose a random member.
+        else
+        {
+            List<string> options = ConstructOptions(message);
+            return ChooseRndItem(options);
+        }
+    }
+
+
     static List<string> ConstructOptions(string[] message)
     {
         var options = new List<string>();
@@ -200,46 +242,6 @@ static class RandomChoice
         return options;
     }
 
-
-    public static string RndChoice(string[] message)
-    {
-        if (message.Length < 2)
-            return null;
-
-        // If first and only argument is a number sequence in the form of X-Y return a random int between X and Y.
-        Match numberSeq = Regex.Match(message[1], @"^(\d+)-(\d+)$");
-        if (numberSeq.Success && message.Length == 2)
-        {
-            int begin, end;
-            try
-            {
-                begin = int.Parse(numberSeq.Groups[1].Value);
-                end = int.Parse(numberSeq.Groups[2].Value);
-                end++;
-            }
-            catch (OverflowException)
-            {
-                return null;
-            }
-
-            if (begin > end)
-                return null;
-            else
-            {
-                lock (rnd)
-                {
-                    int rndInt = rnd.Next(begin, end);
-                    return rndInt.ToString();
-                }
-            }
-        }
-        // Else assume that it's a collection of options, so extract those options and choose a random member.
-        else
-        {
-            List<string> options = ConstructOptions(message);
-            return ChooseRndItem(options);
-        }
-    }
 }
 
 
