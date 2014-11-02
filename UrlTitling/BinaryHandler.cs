@@ -15,56 +15,56 @@ namespace WebIrc
 
         public static RequestResult BinaryToIrc(RequestObject req)
         {
+            MediaInfo media;
             using (BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize))
             {
-                var info = GetInfo(peek);
-                req.Resource = info;
-                if (!info.Success)
-                    return req.CreateResult(false);
-                
-                string type;
-                switch (info.Type)
-                {
-                case MediaType.Jpeg:
-                    type = "JPEG";
-                    break;
-                case MediaType.Png:
-                    type = "PNG";
-                    break;
-                case MediaType.Gif:
-                    type = "GIF";
-                    break;
-                case MediaType.Matroska:
-                    type = "Matroska";
-                    break;
-                case MediaType.Webm:
-                    type = "WebM";
-                    break;
-                default:
-                    type = peek.ContentType;
-                    req.AddMessage("Binary format not supported.");
-                    break;
-                }
-                
-                req.ConstructedTitle = FormatBinaryInfo(type, info);
+                media = GetInfo(peek);
             }
-
+            req.Resource = media;
+            if (!media.Success)
+                return req.CreateResult(false);
+                
+            string type;
+            switch (media.Type)
+            {
+            case MediaType.Jpeg:
+                type = "JPEG";
+                break;
+            case MediaType.Png:
+                type = "PNG";
+                break;
+            case MediaType.Gif:
+                type = "GIF";
+                break;
+            case MediaType.Matroska:
+                type = "Matroska";
+                break;
+            case MediaType.Webm:
+                type = "WebM";
+                break;
+            default:
+                type = media.ContentType;
+                req.AddMessage("Binary format not supported.");
+                break;
+            }
+            
+            req.ConstructedTitle = FormatBinaryInfo(type, media);
             return req.CreateResult(true);
         }
 
-        static string FormatBinaryInfo(string content, MediaInfo info)
+        static string FormatBinaryInfo(string content, MediaInfo media)
         {
-            var sizeStr = FormatSize(info.Size);
+            var sizeStr = FormatSize(media.ContentLength);
 
             string binaryInfo;
-            if (info.Dimensions.Width > 0 && info.Dimensions.Height > 0)
+            if (media.Dimensions.Width > 0 && media.Dimensions.Height > 0)
             {
-                var timeStr = FormatTime(info.Duration);
-                if (timeStr != string.Empty && info.HasAudio)
+                var timeStr = FormatTime(media.Duration);
+                if (timeStr != string.Empty && media.HasAudio)
                     timeStr += " ♫";
 
                 binaryInfo = string.Format("[ {0}: {1}x{2} ]{3} {4}",
-                                           content, info.Dimensions.Width, info.Dimensions.Height,
+                                           content, media.Dimensions.Width, media.Dimensions.Height,
                                            timeStr, sizeStr);
             }
             else
@@ -73,7 +73,7 @@ namespace WebIrc
             return binaryInfo;
         }
 
-        // Size is in bytes.
+        // Size is in bytes/octets.
         static string FormatSize(long size)
         {
             if (size < 1)
@@ -91,7 +91,7 @@ namespace WebIrc
 
         static string FormatTime(TimeSpan duration)
         {
-            if (duration.TotalSeconds <= 0)
+            if (duration.TotalSeconds < 1d)
                 return string.Empty;
 
             var total = (int)Math.Round(duration.TotalSeconds);
@@ -107,7 +107,7 @@ namespace WebIrc
             if (peek.Success)
             {
                 MediaProperties props = Dispatch.GetMediaInfo(peek.Peek);
-                return new MediaInfo(peek.Location, props, peek.ContentLength);
+                return new MediaInfo(peek, props);
             }
             else
                 return new MediaInfo(peek);
@@ -115,26 +115,28 @@ namespace WebIrc
     }
 
 
-    public class MediaInfo : WebResource
+    class MediaInfo : WebResource
     {
         public MediaType Type { get; private set; }
         public Dimensions Dimensions { get; private set; }
         public TimeSpan Duration { get; private set; }
         public bool HasAudio { get; private set; }
-        public long Size { get; private set; }
+
+        public string ContentType { get; private set; }
+        public long ContentLength { get; private set; }
 
 
         public MediaInfo(WebResource resource) : base(resource) {}
 
-        public MediaInfo(Uri uri, MediaProperties props) : this(uri, props, 0) {}
-
-        public MediaInfo(Uri uri, MediaProperties props, long size) : base(uri)
+        public MediaInfo(BinaryPeek peek, MediaProperties props) : base(peek.Location)
         {
             Type = props.Type;
             Dimensions = props.Dimensions;
             Duration = props.Duration;
             HasAudio = props.HasAudio;
-            Size = size;
+
+            ContentType = peek.ContentType;
+            ContentLength = peek.ContentLength;
         }
     }
 
