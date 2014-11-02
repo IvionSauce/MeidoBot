@@ -162,9 +162,9 @@ namespace IvionWebSoft
             if (url == null)
                 throw new ArgumentNullException("url");
             else if (!url.IsAbsoluteUri)
-                throw new ArgumentException("Url must be absolute.");
+                throw new ArgumentException("Url must be absolute: " + url);
             else if ( !(url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps) )
-                throw new NotSupportedException("Unsupported scheme, only HTTP(S) is supported.");
+                throw new NotSupportedException("Unsupported scheme, only HTTP(S) is supported: " + url);
 
             try
             {
