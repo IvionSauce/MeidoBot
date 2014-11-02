@@ -26,6 +26,8 @@ namespace IvionWebSoft
             {
                 if (value < 1)
                     throw new ArgumentOutOfRangeException("value", "Timeout cannot be 0 or negative.");
+
+                _timeout = value;
             }
         }
 

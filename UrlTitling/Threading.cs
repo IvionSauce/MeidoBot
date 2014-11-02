@@ -224,9 +224,9 @@ class ChannelThread
     {
         const string errorMsg = "Error getting {0} ({1})";
         if (result.Retrieved == null)
-            return string.Format(errorMsg, result.Requested, Exception.Message);
+            return string.Format(errorMsg, result.Requested, result.Exception.Message);
         else
-            return string.Format(errorMsg, result.Retrieved, Exception.Message);
+            return string.Format(errorMsg, result.Retrieved, result.Exception.Message);
     }
 }
 
