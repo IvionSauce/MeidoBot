@@ -1,7 +1,7 @@
 using IvionSoft;
 
 
-public class Whitelist : ControlList
+class Whitelist : ControlList
 {
     public bool? IsInList(string url, string channel, string nick)
     {        
@@ -18,7 +18,7 @@ public class Whitelist : ControlList
 }
 
 
-public class Blacklist : ControlList
+class Blacklist : ControlList
 {
     public bool IsInList(string url, string channel, string nick)
     {
@@ -39,7 +39,7 @@ public class Blacklist : ControlList
 
 // Common methods for both Black- and Whitelist.
 // Also wrap access to DomainLists to provide a workable (not exploding) interface even if there's nothing loaded.
-public class ControlList
+class ControlList
 {
     volatile DomainLists domLists;
     volatile string path;
