@@ -10,7 +10,7 @@ namespace WebIrc
         public int TopicMaxChars { get; set; }
         public string ContinuationSymbol { get; set; }
         
-        public RequestResult ThreadTopicToIrc(RequestObject req)
+        public TitlingResult ThreadTopicToIrc(TitlingRequest req)
         {
             ChanPost opPost = ChanTools.GetThreadOP(req.Url);
             req.Resource = opPost;

@@ -6,7 +6,7 @@ namespace WebIrc
 {
     public static class MiscHandlers
     {
-        public static RequestResult WikipediaSummarize(RequestObject req, string htmlDoc)
+        public static TitlingResult WikipediaSummarize(TitlingRequest req, string htmlDoc)
         {
             WikipediaArticle article = WikipediaTools.Parse(htmlDoc);
             
@@ -57,7 +57,7 @@ namespace WebIrc
         }
 
 
-        public static RequestResult YoutubeWithDuration(RequestObject req, string htmlDoc)
+        public static TitlingResult YoutubeWithDuration(TitlingRequest req, string htmlDoc)
         {
             // If duration can be found, change the html info to include that.
             int ytTime = WebTools.GetYoutubeTime(htmlDoc);

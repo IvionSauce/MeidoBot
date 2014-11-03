@@ -13,7 +13,7 @@ namespace WebIrc
         const int FetchSize = 65536;
 
 
-        public static RequestResult BinaryToIrc(RequestObject req)
+        public static TitlingResult BinaryToIrc(TitlingRequest req)
         {
             MediaInfo media;
             using (BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize))

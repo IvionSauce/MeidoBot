@@ -44,29 +44,42 @@ namespace WebIrc
         }
 
 
-        public RequestResult GetWebInfo(string url)
+        public TitlingResult WebInfo(string uriString)
         {
-            if (url == null)
-                throw new ArgumentNullException("url");
+            if (uriString == null)
+                throw new ArgumentNullException("requestUri");
 
-            // If we get passed a misformed Uri immediately return with a failure.
-            UriFormatException formatEx;
-            RequestObject request = Request(url, out formatEx);
+            Uri uri;
+            try
+            {
+                uri = new Uri(uriString);
+            }
+            catch (UriFormatException ex)
+            {
+                return TitlingResult.Failure(uriString, ex);
+            }
+            return WebInfo( new TitlingRequest(uri) );
+        }
+
+
+        public TitlingResult WebInfo(TitlingRequest request)
+        {
             if (request == null)
-                return RequestResult.Failure(url, formatEx);
+                throw new ArgumentNullException("request");
 
             // Danbooru handling.
-            if (url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
+            if (request.Url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
             {
                 return Danbo.PostToIrc(request);
             }
             // Gelbooru handling.
-            else if (url.Contains("gelbooru.com/index.php?page=post&s=view&id=", StringComparison.OrdinalIgnoreCase))
+            else if (request.Url.Contains("gelbooru.com/index.php?page=post&s=view&id=",
+                                          StringComparison.OrdinalIgnoreCase))
             {
                 return Gelbo.PostToIrc(request);
             }
             // Foolz and 4chan handling.
-            else if (ChanTools.IsAddressSupported(url))
+            else if (ChanTools.IsAddressSupported(request.Url))
             {
                 return Chan.ThreadTopicToIrc(request);
             }
@@ -104,7 +117,7 @@ namespace WebIrc
                 return MiscHandlers.YoutubeWithDuration(request, htmlContent);
             }
             // Wikipedia handling.
-            else if (url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
+            else if (request.Url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
             {
                 return MiscHandlers.WikipediaSummarize(request, htmlContent);
             }
@@ -114,25 +127,7 @@ namespace WebIrc
         }
 
 
-        // Not really happy about this, but this is the cleanest way I can think of for now.
-        static RequestObject Request(string url, out UriFormatException formatEx)
-        {
-            Uri uri;
-            try
-            {
-                uri = new Uri(url);
-            }
-            catch (UriFormatException ex)
-            {
-                formatEx = ex;
-                return null;
-            }
-            formatEx = null;
-            return new RequestObject(uri);
-        }
-
-
-        RequestResult GenericHandler(RequestObject req, string htmlTitle)
+        TitlingResult GenericHandler(TitlingRequest req, string htmlTitle)
         {
             // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
             // higher. The similarity would always be equal to or less than 1.
@@ -153,7 +148,7 @@ namespace WebIrc
         }
 
 
-        string GetHtmlContent(RequestObject req)
+        string GetHtmlContent(TitlingRequest req)
         {
             var webStr = htmlEncHelper.GetWebString(req.Uri, Cookies);
 

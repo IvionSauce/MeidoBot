@@ -6,7 +6,7 @@ using IvionWebSoft;
 
 namespace WebIrc
 {
-    public class RequestResult
+    public class TitlingResult
     {
         public string Requested { get; private set; }
         public Uri Retrieved { get; private set; }
@@ -19,7 +19,7 @@ namespace WebIrc
         public ReadOnlyCollection<string> Messages { get; private set; }
 
 
-        public RequestResult(string requested, Uri retrieved,
+        public TitlingResult(string requested, Uri retrieved,
                              bool success, Exception ex,
                              string title, bool printTitle,
                              IList<string> messages)
@@ -52,9 +52,9 @@ namespace WebIrc
         }
 
 
-        public static RequestResult Failure(string requested, Exception ex)
+        public static TitlingResult Failure(string requested, Exception ex)
         {
-            return new RequestResult(requested, null,
+            return new TitlingResult(requested, null,
                                      false, ex,
                                      string.Empty, false,
                                      new string[0]);
@@ -62,7 +62,7 @@ namespace WebIrc
     }
 
 
-    public class RequestObject
+    public class TitlingRequest
     {
         public readonly Uri Uri;
         public readonly string Url;
@@ -85,15 +85,35 @@ namespace WebIrc
         List<string> messages = new List<string>();
 
 
-        public RequestObject(Uri uri)
+
+        public TitlingRequest(Uri uri)
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
             else if (!uri.IsAbsoluteUri)
-                throw new ArgumentException("Uri must be absolute.");
+                throw new ArgumentException("Uri must be absolute: " + uri);
+            else if (!IsSchemeSupported(uri))
+                throw new NotSupportedException("Unsupported scheme, only HTTP(s) and FTP are supported: " + uri);
 
             Uri = uri;
             Url = uri.OriginalString;
+        }
+
+
+        public static bool IsSchemeSupported(Uri uri)
+        {
+            if (uri == null)
+                throw new ArgumentNullException("uri");
+
+            switch (uri.Scheme)
+            {
+            case "http":
+            case "https":
+            case "ftp":
+                return true;
+            default:
+                return false;
+            }
         }
 
 
@@ -105,7 +125,8 @@ namespace WebIrc
             messages.Add(message);
         }
 
-        public RequestResult CreateResult()
+
+        public TitlingResult CreateResult()
         {
             if (string.IsNullOrWhiteSpace(ConstructedTitle))
                 return CreateResult(false);
@@ -113,12 +134,12 @@ namespace WebIrc
                 return CreateResult(true);
         }
 
-        public RequestResult CreateResult(bool printTitle)
+        public TitlingResult CreateResult(bool printTitle)
         {
             if (Resource == null)
-                throw new InvalidOperationException("Cannot create RequestResult if Resource is null.");
+                throw new InvalidOperationException("Cannot create TitlingResult if Resource is null.");
 
-            return new RequestResult(Url,
+            return new TitlingResult(Url,
                                      Resource.Location, Resource.Success, Resource.Exception,
                                      ConstructedTitle, printTitle,
                                      messages);

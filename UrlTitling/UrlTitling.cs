@@ -132,7 +132,7 @@ public class UrlTitler : IMeidoHook
             var msg = e.MessageArray[i];
             if (Uri.IsWellFormedUriString(msg, UriKind.Absolute))
             {
-                var req = new RequestObject(new Uri(msg));
+                var req = new TitlingRequest(new Uri(msg));
                 var result = BinaryHandler.BinaryToIrc(req);
                 
                 if (result.PrintTitle)

@@ -89,7 +89,7 @@ namespace WebIrc
         const string resetCode = "\u000F";
         
         
-        public RequestResult PostToIrc(RequestObject req)
+        public TitlingResult PostToIrc(TitlingRequest req)
         {
             BooruPost postInfo = DanboTools.GetPostInfo(req.Url);
             req.Resource = postInfo;
@@ -184,7 +184,7 @@ namespace WebIrc
 
     public class GelboHandler : BooruHandler
     {
-        public RequestResult PostToIrc(RequestObject req)
+        public TitlingResult PostToIrc(TitlingRequest req)
         {
             BooruPost postInfo = GelboTools.GetPostInfo(req.Url);
             req.Resource = postInfo;

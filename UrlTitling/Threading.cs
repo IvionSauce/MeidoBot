@@ -204,7 +204,7 @@ class ChannelThread
     
     void OutputUrl(string url)
     {
-        var result = webToIrc.GetWebInfo(url);
+        var result = webToIrc.WebInfo(url);
 
         if (result.Success)
         {
@@ -220,7 +220,7 @@ class ChannelThread
         }
     }
 
-    string ReportWebError(RequestResult result)
+    string ReportWebError(TitlingResult result)
     {
         const string errorMsg = "Error getting {0} ({1})";
         if (result.Retrieved == null)
