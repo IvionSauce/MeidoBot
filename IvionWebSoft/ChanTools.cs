@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using IvionSoft;
-// For `InvalidEnumArgumentException`
-using System.ComponentModel;
 // For `HttpUtility.HtmlDecode`
 using System.Web;
 // JSON.NET
@@ -12,32 +10,239 @@ using Newtonsoft.Json;
 
 namespace IvionWebSoft
 {
-    /// <summary>
-    /// Collection of tools dealing with 4chan and/or Foolz.us.
-    /// </summary>
-    public static class ChanTools
+    public static class FourChan
     {
-        public enum Source
-        {
-            Fourchan,
-            ArchiveMoe
-        }
-        
-        static readonly Regex chanUrlRegexp = new Regex(@"(?i)boards\.4chan\.org/([a-z0-9]+)/thread/(\d+)");
-        static readonly Regex archiveUrlRegexp = new Regex(@"(?i)archive\.moe\/([a-z0-9]+)/thread/(\d+)");
-        
-        // <span class="quote">Quote</span>
-        // <a href="bla">Bla</a>
-        // <wbr>
+        static readonly Regex chanUrlRegexp =
+            new Regex(@"(?i)boards\.4chan\.org/([a-z0-9]+)/thread/(\d+)(?:[^#]*#[pq]?(\d+))?");
+
+        // Span tags
+        // Quote links at the start of a post (>>)
+        // 
+        // Hyperlink tags
+        // <wbr> tags
         // Bold and italic tags
-        static readonly Regex fixPostRegexp = new Regex(@"(?i)<span[^<>]*>|</span>|" +
-                                                        @"<a href=""[^<>""]*"">|</a>|" +
+        static readonly Regex fixPostRegexp = new Regex(@"(?i)<span[^>]*>|</span>|" +
+                                                        @"<a [^>]*>|</a>|" +
                                                         @"<wbr>|" +
                                                         @"<b>|</b>|<i>|</i>");
-        
-        static readonly Regex spoilerRegexp =  new Regex(@"(?i)(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
-        
-        
+
+
+        /// <summary>
+        /// Get the post pointed to by the URL.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL pointing to thread.</param>
+        public static ChanPost GetPost(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+            
+            var boardPost = Extract(url);
+            if (boardPost.Item3 > 0)
+                return GetPost(boardPost.Item1, boardPost.Item2, boardPost.Item3);
+            else if (boardPost.Item2 > 0)
+                return GetThreadOP(boardPost.Item1, boardPost.Item2);
+            else
+            {
+                var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
+                return new ChanPost(ex);
+            }
+        }
+
+
+        public static Tuple<string, int, int> Extract(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+
+            var match = chanUrlRegexp.Match(url);
+            
+            string board = string.Empty;
+            int threadNo = -1;
+            int postNo = -1;
+            
+            if (match.Success)
+            {
+                board = match.Groups[1].Value;
+                threadNo = int.Parse(match.Groups[2].Value);
+                
+                if (match.Groups[3].Success)
+                    postNo = int.Parse(match.Groups[3].Value);
+            }
+            
+            return new Tuple<string, int, int>(board, threadNo, postNo);
+        }
+
+
+        public static ChanPost GetThreadOP(string board, int threadNo)
+        {
+            return GetPost(board, threadNo, threadNo);
+        }
+
+        /// <summary>
+        /// Get post associated with post number.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if thread and/or post &lt= 0.</exception>
+        /// 
+        /// <param name="board">Board where thread/post is located.</param>
+        /// <param name="thread">Thread number.</param>
+        /// <param name="post">Post number.</param>
+        public static ChanPost GetPost(string board, int threadNo, int postNo)
+        {
+            board.ThrowIfNullOrWhiteSpace("board");
+            if (threadNo < 1)
+                throw new ArgumentOutOfRangeException("thread", "Cannot be 0 or negative.");
+            else if (postNo < 1)
+                throw new ArgumentOutOfRangeException("post", "Cannot be 0 or negative.");
+
+            var jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, threadNo);
+            WebString json = MinimalWeb.SimpleGet(jsonReq);
+            if (!json.Success)
+                return new ChanPost(json);
+            
+            dynamic threadJson = JsonConvert.DeserializeObject(json.Document);
+            string subject = null;
+            string comment = null;
+
+            // Simple linear search, seems fast enough for the 100s of posts it needs to look through
+            foreach (var post in threadJson.posts)
+            {
+                if (post.no == postNo)
+                {
+                    subject = post.sub;
+                    if (!string.IsNullOrEmpty(subject))
+                        subject = HttpUtility.HtmlDecode(subject);
+                    
+                    comment = post.com;
+                    if (!string.IsNullOrEmpty(comment))
+                        comment = Fix4chanPost(comment);
+
+                    break;
+                }
+            }
+
+            return new ChanPost(json,
+                                board, ChanTools.GetBoardName(board),
+                                threadNo, postNo,
+                                subject, comment);
+        }
+
+        static string Fix4chanPost(string post)
+        {
+            // Turn <br>'s into newlines.
+            string fixedPost = post.Replace("<br>", "\n");
+            
+            fixedPost = fixPostRegexp.Replace(fixedPost, "");
+            fixedPost = HttpUtility.HtmlDecode(fixedPost);
+            
+            return fixedPost;
+        }
+    }
+
+
+    public static class ArchiveMoe
+    {
+        static readonly Regex archiveUrlRegexp =
+            new Regex(@"(?i)archive\.moe\/([a-z0-9]+)/thread/(\d+)(?:[^#]*#[pq]?(\d+))?");
+
+
+        /// <summary>
+        /// Get the post pointed to by the URL.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL pointing to thread.</param>
+        public static ChanPost GetPost(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+            
+            var boardPost = Extract(url);
+            
+            if (boardPost.Item3 > 0)
+                return GetPost(boardPost.Item1, boardPost.Item3);
+            else if (boardPost.Item2 > 0)
+                return GetPost(boardPost.Item1, boardPost.Item2);
+            else
+            {
+                var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
+                return new ChanPost(ex);
+            }
+        }
+
+
+        public static Tuple<string, int, int> Extract(string url)
+        {
+            url.ThrowIfNullOrWhiteSpace("url");
+            
+            var match = archiveUrlRegexp.Match(url);
+            
+            string board = string.Empty;
+            int threadNo = -1;
+            int postNo = -1;
+            
+            if (match.Success)
+            {
+                board = match.Groups[1].Value;
+                threadNo = int.Parse(match.Groups[2].Value);
+                
+                if (match.Groups[3].Success)
+                    postNo = int.Parse(match.Groups[3].Value);
+            }
+            
+            return new Tuple<string, int, int>(board, threadNo, postNo);
+        }
+
+
+        /// <summary>
+        /// Get post associated with post number.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the post</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if thread post &lt= 0.</exception>
+        /// 
+        /// <param name="board">Board where post is located.</param>
+        /// <param name="post">Post number.</param>
+        public static ChanPost GetPost(string board, int postNo)
+        {
+            board.ThrowIfNullOrWhiteSpace("board");
+            if (postNo < 1)
+                throw new ArgumentOutOfRangeException("post", "Cannot be 0 or negative.");
+            
+            var jsonReq = string.Format("http://archive.moe/_/api/chan/post/?board={0}&num={1}", board, postNo);
+            WebString json = MinimalWeb.SimpleGet(jsonReq);
+            if (!json.Success)
+                return new ChanPost(json);
+            
+            dynamic threadJson = JsonConvert.DeserializeObject(json.Document);
+            int threadNo = threadJson.thread_num;
+            string subject = threadJson.title;
+            string comment = threadJson.comment_sanitized;
+            
+            return new ChanPost(json,
+                                board, ChanTools.GetBoardName(board),
+                                threadNo, postNo,
+                                subject, comment);
+        }
+    }
+
+
+    public static class ChanTools
+    {        
+        static readonly Regex spoilerRegexp = new Regex(@"(?i)(<s>|\[spoiler\])(.*?)(</s>|\[/spoiler])");
+
+        static readonly Regex quotRegexp = new Regex(@">>\d+\n");
+
         static readonly Dictionary<string, string> boardMapping = new Dictionary<string, string>()
         {
             // Japanese Culture
@@ -111,184 +316,26 @@ namespace IvionWebSoft
             {"s4s", "Shit 4chan Says"}
         };
 
-        static FormatException formatEx =
-            new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
         
-        
-        /// <summary>
-        /// Get the post of the OP of the thread.
-        /// </summary>
-        /// <returns><see cref="ChanPost">ChanPost</see> detailing the OP's comment.</returns>
-        /// 
-        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
-        /// 
-        /// <param name="url">URL pointing to thread.</param>
-        public static ChanPost GetThreadOP(string url)
+        static public string GetBoardName(string board)
         {
-            url.ThrowIfNullOrWhiteSpace("url");
-            
-            Source? src = GetSource(url);
-            if (src == null)
-                return new ChanPost(formatEx);
-            
-            var boardAndThread = ExtractBoardAndThreadNo(url, src.Value);
-            
-            if (boardAndThread.Item2 > 0)
-                return GetThreadOP(src.Value, boardAndThread.Item1, boardAndThread.Item2);
-            else
-                return new ChanPost(formatEx);
-        }
-        
-        static Source? GetSource(string url)
-        {
-            if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
-                return Source.Fourchan;
-            // Guard against URL's pointing to an image.
-            else if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase) &&
-                     !url.Contains("/image/", StringComparison.OrdinalIgnoreCase))
-                return Source.ArchiveMoe;
-            else
-                return null;
-        }
+            if (board == null)
+                throw new ArgumentNullException("board");
 
-
-        public static Tuple<string, int> ExtractBoardAndThreadNo(string url, Source source)
-        {
-            url.ThrowIfNullOrWhiteSpace("url");
-
-            GroupCollection groups;
-            switch(source)
-            {
-            case Source.Fourchan:
-                groups = chanUrlRegexp.Match(url).Groups;
-                break;
-            case Source.ArchiveMoe:
-                groups = archiveUrlRegexp.Match(url).Groups;
-                break;
-            default:
-                throw new InvalidEnumArgumentException();
-            }
-
-            if (groups[1].Success && groups[2].Success)
-            {
-                var threadNo = int.Parse(groups[2].Value);
-                return new Tuple<string, int>(groups[1].Value, threadNo);
-            }
-            else
-                return new Tuple<string, int>(string.Empty, -1);
-        }
-        
-        
-        /// <summary>
-        /// Determines if address is supported by ChanTools.
-        /// </summary>
-        /// <returns><c>true</c> if address is supported; otherwise, <c>false</c>.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <param name="url">URL</param>
-        public static bool IsAddressSupported(string url)
-        {
-            if (url == null)
-                throw new ArgumentNullException("url");
-            
-            Source? src = GetSource(url);
-            if (src == null)
-                return false;
-            else
-                return true;
-        }
-        
-        
-        /// <summary>
-        /// Get the post of the OP of the thread.
-        /// </summary>
-        /// <returns><see cref="ChanPost">ChanPost</see> detailing the OP's comment.</returns>
-        /// 
-        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if thread &lt= 0.</exception>
-        /// <exception cref="InvalidEnumArgumentException">Thrown if source is unsupported.</exception>
-        /// 
-        /// <param name="board">Board where thread is located.</param>
-        /// <param name="thread">Thread number.</param>
-        /// <param name="source">Whether it's a 4chan or foolz.us post.</param>
-        public static ChanPost GetThreadOP(Source source, string board, int thread)
-        {
-            board.ThrowIfNullOrWhiteSpace("board");
-            if (thread < 1)
-                throw new ArgumentOutOfRangeException("thread", "Can't be 0 or negative.");
-            
-            // GetJsonString checks whether we got passed a valid Source value.
-            WebString json = GetJsonString(source, board, thread);
-            if (!json.Success)
-                return new ChanPost(json);
-            
-            dynamic threadJson = JsonConvert.DeserializeObject(json.Document);
-            string opSubject, opComment;
-            if (source == Source.Fourchan)
-            {
-                opSubject = threadJson.posts[0].sub;
-                if (!string.IsNullOrEmpty(opSubject))
-                    opSubject = HttpUtility.HtmlDecode(opSubject);
-
-                opComment = threadJson.posts[0].com;
-                if (!string.IsNullOrEmpty(opComment))
-                    opComment = Fix4chanPost(opComment);
-            }
-            else
-            {
-                opSubject = threadJson.title;
-                opComment = threadJson.comment_sanitized;
-            }
-            // Make sure subject and comment are not null.
-            opSubject = opSubject ?? string.Empty;
-            opComment = opComment ?? string.Empty;
-            
-            var opPost = new ChanPost(json,
-                                      board, GetBoardName(board),
-                                      thread, thread,
-                                      opSubject, opComment);
-            
-            return opPost;
-        }
-        
-        static WebString GetJsonString(Source source, string board, int thread)
-        {
-            // Construct query.
-            string jsonReq;
-            switch(source)
-            {
-            case Source.Fourchan:
-                jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, thread);
-                break;
-            case Source.ArchiveMoe:
-                jsonReq = string.Format("http://archive.moe/_/api/chan/post/?board={0}&num={1}", board, thread);
-                break;
-            default:
-                throw new InvalidEnumArgumentException();
-            }
-            
-            return MinimalWeb.SimpleGet(jsonReq);
-        }
-        
-        static string Fix4chanPost(string post)
-        {
-            // Turn <br>'s into newlines.
-            string fixedPost = post.Replace("<br>", "\n");
-            
-            fixedPost = fixPostRegexp.Replace(fixedPost, "");
-            fixedPost = HttpUtility.HtmlDecode(fixedPost);
-            
-            return fixedPost;
-        }
-        
-        static string GetBoardName(string board)
-        {
             string name;
             if (boardMapping.TryGetValue(board, out name))
                 return name;
             else
                 return string.Empty;
+        }
+
+
+        public static string RemovePostQuotations(string post)
+        {
+            if (post == null)
+                throw new ArgumentNullException("post");
+
+            return quotRegexp.Replace(post, string.Empty);
         }
 
         
@@ -368,8 +415,10 @@ namespace IvionWebSoft
             BoardName = boardName;
             ThreadNo = threadNo;
             PostNo = postNo;
-            Subject = subject;
-            Comment = comment;
+            // Make sure subject and comment are not null.
+            Subject = subject ?? string.Empty;
+            Comment = comment ?? string.Empty;
         }
     }
+
 }
