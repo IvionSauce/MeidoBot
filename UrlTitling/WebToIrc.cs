@@ -58,7 +58,24 @@ namespace WebIrc
             {
                 return TitlingResult.Failure(uriString, ex);
             }
-            return WebInfo( new TitlingRequest(uri) );
+            return WebInfo(uri);
+        }
+
+
+        public TitlingResult WebInfo(Uri uri)
+        {
+            if (uri == null)
+                throw new ArgumentNullException("uri");
+            else if (!uri.IsAbsoluteUri)
+                throw new ArgumentException("Uri must be absolute: " + uri);
+
+            if (TitlingRequest.IsSchemeSupported(uri))
+                return WebInfo( new TitlingRequest(uri) );
+            else
+            {
+                var ex = new NotSupportedException("Unsupported scheme: " + uri.Scheme);
+                return TitlingResult.Failure(uri.OriginalString, ex);
+            }
         }
 
 
@@ -66,6 +83,14 @@ namespace WebIrc
         {
             if (request == null)
                 throw new ArgumentNullException("request");
+            // TitlingRequest ensures that what we get passed is an absolute URI with a scheme we support. Most
+            // importantly this relieves the individual handlers of checking for those conditions.
+
+
+            // If FTP jump immediately to binary handler
+            if (request.Uri.Scheme == Uri.UriSchemeFtp)
+                return BinaryHandler.BinaryToIrc(request);
+
 
             // Danbooru handling.
             if (request.Url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
@@ -79,7 +104,7 @@ namespace WebIrc
                 return Gelbo.PostToIrc(request);
             }
             // Foolz and 4chan handling.
-            else if (ChanTools.IsAddressSupported(request.Url))
+            else if (ChanHandler.Supports(request))
             {
                 return Chan.ThreadTopicToIrc(request);
             }
