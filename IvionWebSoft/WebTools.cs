@@ -137,7 +137,7 @@ namespace IvionWebSoft
         /// <exception cref="ArgumentNullException">Thrown if url or title is null.</exception>
         /// <param name="url">URL</param>
         /// <param name="title">Title</param>
-        public double CompareUrlAndTitle(string url, string title)
+        public double Similarity(string url, string title)
         {
             if (url == null)
                 throw new ArgumentNullException("url");

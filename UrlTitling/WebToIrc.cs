@@ -24,9 +24,9 @@ namespace WebIrc
         public GelboHandler Gelbo { get; private set; }
 
         public static CookieContainer Cookies { get; private set; }
+        internal static UrlTitleComparer UrlTitle { get; private set; }
 
         readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
-        static readonly UrlTitleComparer urlTitleComp = new UrlTitleComparer();
 
 
         static WebToIrc()
@@ -35,6 +35,7 @@ namespace WebIrc
             ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
 
             Cookies = new CookieContainer();
+            UrlTitle = new UrlTitleComparer();
         }
         public WebToIrc()
         {
@@ -163,7 +164,7 @@ namespace WebIrc
             else if (Threshold < 0)
                 return req.CreateResult(false);
 
-            double urlTitleSimilarity = urlTitleComp.CompareUrlAndTitle(req.Url, htmlTitle);
+            double urlTitleSimilarity = UrlTitle.Similarity(req.Url, htmlTitle);
             req.AddMessage("URL-Title Similarity: " + urlTitleSimilarity);
 
             if (urlTitleSimilarity <= Threshold)
