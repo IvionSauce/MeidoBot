@@ -58,7 +58,8 @@ class ChannelThreadManager
     public bool DisableNick(string channel, string nick)
     {
         ChannelThread thread = GetThread(channel);
-        
+
+        // Hijack the channelLock to serialize modifications (Add/Remove) to DisabledNicks.
         lock (thread._channelLock)
         {
             return thread.DisabledNicks.Add(nick);
@@ -216,11 +217,11 @@ class ChannelThread
         }
         else
         {
-            log.Message( ReportWebError(result) );
+            log.Message( ReportError(result) );
         }
     }
 
-    string ReportWebError(TitlingResult result)
+    string ReportError(TitlingResult result)
     {
         const string errorMsg = "Error getting {0} ({1})";
         if (result.Retrieved == null)
