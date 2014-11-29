@@ -36,17 +36,17 @@ namespace MinimalistParsers
          * L2 Duration      44-89           0x0489
          */
         static readonly byte[] ebmlId = {0x1a, 0x45, 0xdf, 0xa3};
-        const long Doctype = 0x282;
+        const long DoctypeId = 0x282;
 
         const long SegmentId = 0x08538067;
         const long TracksId = 0x0654AE6B;
         const long TrackEntryId = 0x2E;
 
-        static readonly long[] videoAndAudio = {0x60, 0x61};
-        static readonly long[] dims = {0x30, 0x3A};
+        static readonly long[] videoAndAudioIds = {0x60, 0x61};
+        static readonly long[] dimensionIds = {0x30, 0x3A};
         
         const long InfoId = 0x0549A966;
-        static readonly long[] duration = {0x0AD7B1, 0x0489};
+        static readonly long[] durationIds = {0x0AD7B1, 0x0489};
         
         
         public static MediaProperties Parse(Stream stream)
@@ -61,7 +61,7 @@ namespace MinimalistParsers
                 long len = ReadVarInt(stream);
                 long ebmlBlockEnd = stream.Position + len;
                 
-                var bDoc = Get(stream, Doctype, ebmlBlockEnd) ?? new byte[0];
+                var bDoc = Get(stream, DoctypeId, ebmlBlockEnd) ?? new byte[0];
                 MediaType type;
                 switch (Encoding.ASCII.GetString(bDoc))
                 {
@@ -98,7 +98,7 @@ namespace MinimalistParsers
             long len;
             if ( Match(stream, InfoId, out len) )
             {
-                var bDur = Get(stream, duration, stream.Position + len);
+                byte[][] bDur = Get(stream, durationIds, stream.Position + len);
                 if (bDur[0] != null && bDur[1] != null)
                 {
                     var scale = bDur[0].ToUlong();
@@ -126,20 +126,18 @@ namespace MinimalistParsers
             long len;
             if ( Match(stream, TracksId, out len) )
             {
-                long upperLimit = stream.Position + len;
-                var trackEntries = BreadthMatch(stream, TrackEntryId, upperLimit);
+                var trackEntries = BreadthMatch(stream, TrackEntryId, stream.Position + len);
 
                 foreach (var match in trackEntries)
                 {
                     stream.Position = match.Start;
-                    upperLimit = match.Stop;
 
-                    var tracks = MultiMatch(stream, videoAndAudio, upperLimit);
+                    var tracks = MultiMatch(stream, videoAndAudioIds, match.Stop);
                     // Video
                     if ( tracks[0] != null )
                     {
                         stream.Position = tracks[0].Start;
-                        var bDims = Get(stream, dims, tracks[0].Stop);
+                        byte[][] bDims = Get(stream, dimensionIds, tracks[0].Stop);
 
                         if (bDims[0] != null && bDims[1] != null)
                             dimensions = new Dimensions(bDims[0].ToUlong(), bDims[1].ToUlong());
@@ -153,6 +151,12 @@ namespace MinimalistParsers
 
             return new Tuple<Dimensions, bool>(dimensions, hasAudio);
         }
+
+
+        // -----
+        // Above: combining methods to extract the information I want.
+        // Below: general methods for selectively parsing EBML.
+        // -----
 
 
         static byte[] Get(Stream stream, long id, long readTo)

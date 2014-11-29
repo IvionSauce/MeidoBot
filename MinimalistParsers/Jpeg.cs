@@ -67,7 +67,9 @@ namespace MinimalistParsers
                 // 0xe1 ~ Exif (APP1)
                 // 0xe2 ~ ICC Profile (APP2)
                 // 0xdb ~ Quantization Tables (DQT)
-                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xe2 || segmentId == 0xdb)
+                // 0xee ~ Adobe specific
+                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xe2 ||
+                    segmentId == 0xdb || segmentId == 0xee)
                 {
                     var segmentLength = stream.ReadUint(2);
                     stream.Position += segmentLength - 2;

@@ -16,8 +16,6 @@ namespace IvionWebSoft
             new Regex(@"(?i)boards\.4chan\.org/([a-z0-9]+)/thread/(\d+)(?:[^#]*#[pq]?(\d+))?");
 
         // Span tags
-        // Quote links at the start of a post (>>)
-        // 
         // Hyperlink tags
         // <wbr> tags
         // Bold and italic tags
@@ -57,12 +55,11 @@ namespace IvionWebSoft
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
-            var match = chanUrlRegexp.Match(url);
-            
             string board = string.Empty;
             int threadNo = -1;
             int postNo = -1;
-            
+
+            var match = chanUrlRegexp.Match(url);
             if (match.Success)
             {
                 board = match.Groups[1].Value;
@@ -110,7 +107,7 @@ namespace IvionWebSoft
             string subject = null;
             string comment = null;
 
-            // Simple linear search, seems fast enough for the 100s of posts it needs to look through
+            // Simple linear search, seems fast enough for the 100s of posts it needs to look through.
             foreach (var post in threadJson.posts)
             {
                 if (post.no == postNo)
@@ -149,7 +146,7 @@ namespace IvionWebSoft
     public static class ArchiveMoe
     {
         static readonly Regex archiveUrlRegexp =
-            new Regex(@"(?i)archive\.moe\/([a-z0-9]+)/thread/(\d+)(?:[^#]*#[pq]?(\d+))?");
+            new Regex(@"(?i)archive\.moe/([a-z0-9]+)/thread/(\d+)(?:[^#]*#[pq]?(\d+))?");
 
 
         /// <summary>
@@ -166,7 +163,6 @@ namespace IvionWebSoft
             url.ThrowIfNullOrWhiteSpace("url");
             
             var boardPost = Extract(url);
-            
             if (boardPost.Item3 > 0)
                 return GetPost(boardPost.Item1, boardPost.Item3);
             else if (boardPost.Item2 > 0)
@@ -182,13 +178,12 @@ namespace IvionWebSoft
         public static Tuple<string, int, int> Extract(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
-            
-            var match = archiveUrlRegexp.Match(url);
-            
+
             string board = string.Empty;
             int threadNo = -1;
             int postNo = -1;
-            
+
+            var match = archiveUrlRegexp.Match(url);
             if (match.Success)
             {
                 board = match.Groups[1].Value;
@@ -224,10 +219,10 @@ namespace IvionWebSoft
             if (!json.Success)
                 return new ChanPost(json);
             
-            dynamic threadJson = JsonConvert.DeserializeObject(json.Document);
-            int threadNo = threadJson.thread_num;
-            string subject = threadJson.title;
-            string comment = threadJson.comment_sanitized;
+            dynamic postJson = JsonConvert.DeserializeObject(json.Document);
+            int threadNo = postJson.thread_num;
+            string subject = postJson.title;
+            string comment = postJson.comment_sanitized;
             
             return new ChanPost(json,
                                 board, ChanTools.GetBoardName(board),
