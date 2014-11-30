@@ -11,9 +11,15 @@ namespace Chainey
         }
         
         
-        internal string Sentence
+        internal string[] Sentence
         {
-            get { return string.Join(" ", sentence); }
+            get
+            {
+                var sentenceArr = new string[sentence.Count];
+                sentence.CopyTo(sentenceArr, 0);
+
+                return sentenceArr;
+            }
         }
         
         

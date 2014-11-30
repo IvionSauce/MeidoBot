@@ -171,7 +171,7 @@ namespace Chainey
         }
 
 
-        Sentence Select(List<Sentence> responses, IList<string> seeds)
+        Sentence Select(List<Sentence> responses, List<string> seeds)
         {
             // Debug
             Console.WriteLine("\n---");
@@ -197,7 +197,7 @@ namespace Chainey
             return SentenceSelector.Select(candidates);
         }
 
-        List<Sentence> MatchSeeds(List<Sentence> candidates, IList<string> seeds)
+        List<Sentence> MatchSeeds(List<Sentence> candidates, List<string> seeds)
         {
             var matches = new List<Sentence>();
             // Prepend space so as to not match irrelevant words. Do allow other characters to follow it (plural,
@@ -274,7 +274,7 @@ namespace Chainey
 
 
         // Get as much sentences from the seeds as time allows.
-        List<Sentence> GetSentences(IEnumerable<string> sentences)
+        List<Sentence> GetSentences(IEnumerable<string[]> sentences)
         {
             // Sentence and rarity pairs, united in a Sentence struct.
             var pairs = SentenceAndRarity(sentences);
@@ -307,17 +307,15 @@ namespace Chainey
         // ----------------------------------------
 
 
-        IEnumerable<Sentence> SentenceAndRarity(IEnumerable<string> sentences)
+        IEnumerable<Sentence> SentenceAndRarity(IEnumerable<string[]> sentences)
         {
-            foreach (string sen in sentences)
+            foreach (var sen in sentences)
                 yield return new Sentence(sen, SentenceRarity(sen));
         }
 
-        double SentenceRarity(string sentence)
+        double SentenceRarity(string[] sentence)
         {            
-            var split = sentence.Split();
-            var counts = brain.WordCount(split);
-
+            var counts = brain.WordCount(sentence);
             return CalculateRarity(counts);
         }
 

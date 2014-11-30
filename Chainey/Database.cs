@@ -359,7 +359,7 @@ namespace Chainey
         // ***
 
 
-        public IEnumerable<string> BuildSentences(IEnumerable<string> seeds, string source)
+        public IEnumerable<string[]> BuildSentences(IEnumerable<string> seeds, string source)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -375,7 +375,7 @@ namespace Chainey
 
                     CreateSeedSql(chainCmd, seed, source);
 
-                    foreach (string sentence in Builder(source, chainCmd, collectCmd))
+                    foreach (var sentence in Builder(source, chainCmd, collectCmd))
                         yield return sentence;
                 }
             }
@@ -412,7 +412,7 @@ namespace Chainey
         }
 
 
-        public IEnumerable<string> BuildRandomSentences(string source)
+        public IEnumerable<string[]> BuildRandomSentences(string source)
         {
             var conn = localSqlite.GetDb();
             using (SqliteCommand chainCmd = conn.CreateCommand(),
@@ -420,7 +420,7 @@ namespace Chainey
             {
                 CreateRandomSql(chainCmd, source);
 
-                foreach (string sentence in Builder(source, chainCmd, collectCmd))
+                foreach (var sentence in Builder(source, chainCmd, collectCmd))
                     yield return sentence;
             }
         }
@@ -451,7 +451,7 @@ namespace Chainey
         }
 
 
-        IEnumerable<string> Builder(string source, SqliteCommand chainCmd, SqliteCommand collectCmd)
+        IEnumerable<string[]> Builder(string source, SqliteCommand chainCmd, SqliteCommand collectCmd)
         {
             using (var reader = chainCmd.ExecuteReader())
             {

@@ -15,8 +15,8 @@ namespace Chainey
         IEnumerable<long> WordCount(IEnumerable<string> words);
 
         // Fallback for when seed-building fails.
-        IEnumerable<string> BuildRandomSentences(string source);
+        IEnumerable<string[]> BuildRandomSentences(string source);
         // Build sentences around given seed.
-        IEnumerable<string> BuildSentences(IEnumerable<string> seed, string source);
+        IEnumerable<string[]> BuildSentences(IEnumerable<string> seed, string source);
     }
 }
