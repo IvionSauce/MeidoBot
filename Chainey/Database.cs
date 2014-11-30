@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Data;
 using Mono.Data.Sqlite;
 using System.Collections.Generic;
 using IvionSoft;
@@ -27,7 +28,7 @@ namespace Chainey
                 if (value > 0)
                     _maxWords = value;
                 else
-                    throw new ArgumentOutOfRangeException("value", "MaxWords cannot be less than or equal to 0.");
+                    throw new ArgumentOutOfRangeException("value", "MaxWords cannot be 0 or negative.");
             }
         }
 
@@ -44,7 +45,7 @@ namespace Chainey
         {
             file.ThrowIfNullOrWhiteSpace("file");
             if (order < 1)
-                throw new ArgumentOutOfRangeException("order", "Cannot be less than or equal to 0.");
+                throw new ArgumentOutOfRangeException("order", "Cannot be 0 or negative.");
 
             localSqlite = new ThreadLocalSqlite(file);
             Order = order;
@@ -322,7 +323,7 @@ namespace Chainey
             }
 
             // If only punctuation/whitespace, return as is.
-            // This will never be empty, since calling methods guard against that.
+            // `word` will never be empty, since calling methods guard against that.
             if (removeFromStart == word.Length)
                 return word;
 
@@ -498,8 +499,11 @@ namespace Chainey
             while (sen.WordCount < maxWords)
             {
                 string chain = GetLatestChain(sen, dir);
-                cmd.Parameters.AddWithValue("@Chain", chain);
-                
+                // Seems like Add is slightly faster than AddWithValue, although the difference is so small it only
+                // makes sense to use it in this loop, which can get called 10's of thousands of times.
+                cmd.Parameters.Add("@Chain", DbType.String).Value = chain;
+                //cmd.Parameters.AddWithValue("@Chain", chain);
+
                 var followUp = cmd.ExecuteScalar() as string;
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
