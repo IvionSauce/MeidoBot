@@ -8,20 +8,18 @@ namespace IvionSoft
 {
     public class ThreadLocalSqlite : IDisposable
     {
-        public TimeSpan ConnectionTimeout { get; set; }
-
         ThreadLocal<LocalSqlite> local;
 
 
-        public ThreadLocalSqlite(string location)
+        public ThreadLocalSqlite(string location) : this(location, TimeSpan.FromMinutes(10)) {}
+
+        public ThreadLocalSqlite(string location, TimeSpan connectionTimeout)
         {
             location.ThrowIfNullOrWhiteSpace("location");
 
-            var connStr = string.Concat("URI=file:", location);
+            var connStr = "URI=file:"+location+";Journal Mode=WAL";
             local = new ThreadLocal<LocalSqlite>
-                ( () => new LocalSqlite(connStr, ConnectionTimeout) );
-
-            ConnectionTimeout = TimeSpan.FromMinutes(10);
+                ( () => new LocalSqlite(connStr, connectionTimeout) );
         }
 
 
@@ -86,12 +84,6 @@ namespace IvionSoft
         {
             lock (_locker)
             {
-                if (conn == null)
-                {
-                    Console.WriteLine("!!! Unexpected null-connection in LocalSqlite.Cleaner.");
-                    return;
-                }
-
                 var timeSinceLastAccess = (uint)Environment.TickCount - accessTime;
 
                 if (timeSinceLastAccess >= timeout)
