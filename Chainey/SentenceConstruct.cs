@@ -21,45 +21,18 @@ namespace Chainey
                 return sentenceArr;
             }
         }
-        
-        
-        internal string LatestForwardChain
+
+        internal string LatestChain
         {
-            get
-            {
-                var chain = new string[order];
-                
-                var node = sentence.Last;
-                for (int i = order - 1; i >= 0; i--)
-                {
-                    chain[i] = node.Value;
-                    node = node.Previous;
-                }
-                
-                return string.Join(" ", chain);
-            }
-        }
-        
-        internal string LatestBackwardChain
-        {
-            get
-            {
-                var chain = new string[order];
-                
-                var node = sentence.First;
-                for (int i = 0; i < order; i++)
-                {
-                    chain[i] = node.Value;
-                    node = node.Next;
-                }
-                
-                return string.Join(" ", chain);
-            }
+            get { return modeChain(); }
         }
         
         LinkedList<string> sentence = new LinkedList<string>();
         
         readonly int order;
+
+        Func<string> modeChain;
+        Action<string> modeAction;
         
         
         internal SentenceConstruct(string initialChain)
@@ -80,7 +53,53 @@ namespace Chainey
         {
             sentence.AddFirst(word);
         }
-        
+
+
+        internal string GetForwardChain()
+        {
+            var chain = new string[order];
+            
+            var node = sentence.Last;
+            for (int i = order - 1; i >= 0; i--)
+            {
+                chain[i] = node.Value;
+                node = node.Previous;
+            }
+            
+            return string.Join(" ", chain);
+        }
+
+        internal string GetBackwardChain()
+        {
+            var chain = new string[order];
+            
+            var node = sentence.First;
+            for (int i = 0; i < order; i++)
+            {
+                chain[i] = node.Value;
+                node = node.Next;
+            }
+            
+            return string.Join(" ", chain);
+        }
+
+
+        internal void AppendMode()
+        {
+            modeChain = GetForwardChain;
+            modeAction = Append;
+        }
+
+        internal void PrependMode()
+        {
+            modeChain = GetBackwardChain;
+            modeAction = Prepend;
+        }
+
+        internal void ModeAdd(string word)
+        {
+            modeAction(word);
+        }
     }
 
 

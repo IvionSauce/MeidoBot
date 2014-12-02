@@ -46,6 +46,7 @@
     <Compile Include="BrainFrontend.cs" />
     <Compile Include="SentenceConstruct.cs" />
     <Compile Include="Selectors.cs" />
+    <Compile Include="BuilderVectors.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

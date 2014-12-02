@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Data;
 using Mono.Data.Sqlite;
 using System.Collections.Generic;
@@ -365,95 +364,40 @@ namespace Chainey
                 throw new ArgumentNullException("seeds");
 
             var conn = localSqlite.GetDb();
-            using (SqliteCommand chainCmd = conn.CreateCommand(),
-                   collectCmd = conn.CreateCommand())
+            using (var buildVectors = new BuilderVectors(conn, source))
             {
                 foreach (string seed in seeds)
                 {
                     if (string.IsNullOrEmpty(seed))
                         continue;
+                    
+                    buildVectors.PrepareSeedSql(seed);
 
-                    CreateSeedSql(chainCmd, seed, source);
-
-                    foreach (var sentence in Builder(source, chainCmd, collectCmd))
+                    foreach (var sentence in Builder(buildVectors))
                         yield return sentence;
                 }
             }
-        }
-
-        static void CreateSeedSql(SqliteCommand cmd, string seed, string source)
-        {
-            string seedSql;
-            // Get chains with seed.
-            if (string.IsNullOrEmpty(source))
-            {
-                seedSql = "SELECT backward, chain, forward FROM Chains " +
-                    "WHERE chain LIKE @SeedPat OR forward LIKE @SeedPat ORDER BY RANDOM()";
-            }
-            // Get chains with seed, but constrained by source.
-            else
-            {
-                seedSql = "SELECT Chains.backward, Chains.chain, Chains.forward FROM Chains, Sources, SrcMap " +
-                    "WHERE Sources.source=@Source " +
-                    "AND Sources.id=SrcMap.sId " +
-                    "AND SrcMap.cId=Chains.id " +
-                    "AND (Chains.chain LIKE @SeedPat OR Chains.forward LIKE @SeedPat) ORDER BY RANDOM()";
-            }
-
-            if (cmd.CommandText != seedSql)
-            {
-                cmd.CommandText = seedSql;
-                if (!string.IsNullOrEmpty(source))
-                    cmd.Parameters.AddWithValue("@Source", source);
-            }
-
-            var seedPattern = string.Concat(seed, "%");
-            cmd.Parameters.AddWithValue("@SeedPat", seedPattern);
         }
 
 
         public IEnumerable<string[]> BuildRandomSentences(string source)
         {
             var conn = localSqlite.GetDb();
-            using (SqliteCommand chainCmd = conn.CreateCommand(),
-                   collectCmd = conn.CreateCommand())
+            using (var buildVectors = new BuilderVectors(conn, source))
             {
-                CreateRandomSql(chainCmd, source);
+                buildVectors.PrepareRandomSql();
 
-                foreach (var sentence in Builder(source, chainCmd, collectCmd))
+                foreach (var sentence in Builder(buildVectors))
                     yield return sentence;
             }
         }
 
-        void CreateRandomSql(SqliteCommand cmd, string source)
+
+        IEnumerable<string[]> Builder(BuilderVectors v)
         {
-            string randomSql;
-            // Completely random.
-            // In time this will probably have to be replaced with something more efficient.
-            if (string.IsNullOrEmpty(source))
-                randomSql = "SELECT backward, chain, forward FROM Chains ORDER BY RANDOM()";
-            // Random, but constrained to chains originating from `source`.
-            else
-            {
-                randomSql = "SELECT Chains.backward, Chains.chain, Chains.forward " +
-                    "FROM Chains, Sources, SrcMap " +
-                    "WHERE Sources.source=@Source " +
-                    "AND Sources.id=SrcMap.sId " +
-                    "AND SrcMap.cId=Chains.id ORDER BY RANDOM()";
-            }
-
-            if (cmd.CommandText != randomSql)
-            {
-                cmd.CommandText = randomSql;
-                if (!string.IsNullOrEmpty(source))
-                    cmd.Parameters.AddWithValue("@Source", source);
-            }
-        }
-
-
-        IEnumerable<string[]> Builder(string source, SqliteCommand chainCmd, SqliteCommand collectCmd)
-        {
-            using (var reader = chainCmd.ExecuteReader())
+            // Copy out the volatile field, so we have a consistent MaxWords while building the sentences.
+            int maxWords = MaxWords;
+            using (var reader = v.ChainCmd.ExecuteReader())
             {
                 while (reader.Read())
                 {
@@ -463,21 +407,20 @@ namespace Chainey
 
                     var words = new SentenceConstruct(chain);
 
-                    // Copy out the volatile field, so we have a consistent MaxWords while building the sentence.
-                    int maxWords = MaxWords;
-
                     if (backward != string.Empty)
                     {
                         // Backward search.
-                        words.Prepend(backward);
-                        CollectChains(words, source, Direction.Backward, maxWords, collectCmd);
+                        words.PrependMode();
+                        words.ModeAdd(backward);
+                        CollectChains(words, maxWords, v.BackwardCmd);
                     }
 
                     if (forward != string.Empty)
                     {
                         // Forward search.
-                        words.Append(forward);
-                        CollectChains(words, source, Direction.Forward, maxWords, collectCmd);
+                        words.AppendMode();
+                        words.ModeAdd(forward);
+                        CollectChains(words, maxWords, v.ForwardCmd);
                     }
 
                     yield return words.Sentence;
@@ -486,91 +429,22 @@ namespace Chainey
         }
 
 
-        // ***
-        // --------------------------------------------------------------------------
-        // Methods for collecting chains and pushing them unto the SentenceConstruct.
-        // --------------------------------------------------------------------------
-        // ***
-
-        static void CollectChains(SentenceConstruct sen, string source, Direction dir, int maxWords, SqliteCommand cmd)
+        static void CollectChains(SentenceConstruct sen, int maxWords, SqliteCommand cmd)
         {
-            PrepareSearch(cmd, dir, source);
-
             while (sen.WordCount < maxWords)
             {
-                string chain = GetLatestChain(sen, dir);
+                string chain = sen.LatestChain;
                 // Seems like Add is slightly faster than AddWithValue, although the difference is so small it only
-                // makes sense to use it in this loop, which can get called 10's of thousands of times.
+                // makes sense to use it in this loop, where it can get called 10's of thousands of times.
                 cmd.Parameters.Add("@Chain", DbType.String).Value = chain;
-                //cmd.Parameters.AddWithValue("@Chain", chain);
 
                 var followUp = cmd.ExecuteScalar() as string;
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )
-                    AddTo(sen, dir, followUp);
+                    sen.ModeAdd(followUp);
                 else
                     return;
-            }
-        }
-
-        static void PrepareSearch(SqliteCommand cmd, Direction dir, string source)
-        {
-            string column;
-            switch(dir)
-            {
-            case Direction.Forward:
-                column = "Chains.forward";
-                break;
-            case Direction.Backward:
-                column = "Chains.backward";
-                break;
-            default:
-                throw new InvalidOperationException("Unexpected Direction.");
-            }
-
-            string searchSql;
-            if (string.IsNullOrEmpty(source))
-                searchSql = "SELECT " + column + " FROM Chains WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            else
-            {
-                searchSql = "SELECT " + column + " FROM Chains, Sources, SrcMap " +
-                    "WHERE Sources.source=@Source " +
-                    "AND Sources.id=SrcMap.sId " +
-                    "AND SrcMap.cId=Chains.id " +
-                    "AND Chains.chain=@Chain ORDER BY RANDOM() LIMIT 1";
-            }
-
-            if (cmd.CommandText != searchSql)
-            {
-                cmd.CommandText = searchSql;
-                cmd.Parameters.AddWithValue("@Source", source);
-            }
-        }
-
-        static string GetLatestChain(SentenceConstruct sen, Direction dir)
-        {
-            switch (dir)
-            {
-            case Direction.Forward:
-                return sen.LatestForwardChain;
-            case Direction.Backward:
-                return sen.LatestBackwardChain;
-            default:
-                throw new InvalidOperationException("Unexpected Direction.");
-            }
-        }
-
-        static void AddTo(SentenceConstruct sen, Direction dir, string followUp)
-        {
-            switch (dir)
-            {
-            case Direction.Forward:
-                sen.Append(followUp);
-                return;
-            case Direction.Backward:
-                sen.Prepend(followUp);
-                return;
             }
         }
 
