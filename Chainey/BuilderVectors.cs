@@ -6,50 +6,50 @@ namespace Chainey
 {
     internal class BuilderVectors : IDisposable
     {
-        public SqliteCommand ChainCmd { get; private set; }
-        public SqliteCommand BackwardCmd { get; private set; }
-        public SqliteCommand ForwardCmd { get; private set; }
+        public SqliteCommand StartingChains { get; private set; }
+        public SqliteCommand BackwardSearch { get; private set; }
+        public SqliteCommand ForwardSearch { get; private set; }
 
-        readonly string source;
+        public string Source { get; set; }
 
 
         public BuilderVectors(SqliteConnection conn, string source)
         {
-            ChainCmd = conn.CreateCommand();
-            BackwardCmd = conn.CreateCommand();
-            ForwardCmd = conn.CreateCommand();
+            StartingChains = conn.CreateCommand();
+            BackwardSearch = conn.CreateCommand();
+            ForwardSearch = conn.CreateCommand();
 
-            this.source = source;
+            Source = source;
 
-            CreateSearches();
+            PrepareSearches();
         }
 
 
-        void CreateSearches()
+        void PrepareSearches()
         {
-            const string forward = "Chains.forward";
-            const string backward = "Chains.backward";
+            const string forward = "SELECT Chains.forward ";
+            const string backward = "SELECT Chains.backward ";
             
-            if (string.IsNullOrEmpty(source))
+            if (string.IsNullOrEmpty(Source))
             {
-                const string noSource = " FROM Chains WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
+                const string noSource = "FROM Chains WHERE chain=@Chain ORDER BY RANDOM() LIMIT 1";
                 
-                BackwardCmd.CommandText = "SELECT " + backward + noSource;
-                ForwardCmd.CommandText = "SELECT " + forward + noSource;
+                BackwardSearch.CommandText = backward + noSource;
+                ForwardSearch.CommandText = forward + noSource;
             }
             else
             {
-                const string withSource = " FROM Chains, Sources, SrcMap " +
+                const string withSource = "FROM Chains, Sources, SrcMap " +
                     "WHERE Sources.source=@Source " +
                     "AND Sources.id=SrcMap.sId " +
                     "AND SrcMap.cId=Chains.id " +
                     "AND Chains.chain=@Chain ORDER BY RANDOM() LIMIT 1";
                 
-                BackwardCmd.CommandText = "SELECT " + backward + withSource;
-                ForwardCmd.CommandText = "SELECT " + forward + withSource;
+                BackwardSearch.CommandText = backward + withSource;
+                ForwardSearch.CommandText = forward + withSource;
                 
-                BackwardCmd.Parameters.AddWithValue("@Source", source);
-                ForwardCmd.Parameters.AddWithValue("@Source", source);
+                BackwardSearch.Parameters.AddWithValue("@Source", Source);
+                ForwardSearch.Parameters.AddWithValue("@Source", Source);
             }
         }
 
@@ -58,7 +58,7 @@ namespace Chainey
         {
             string seedSql;
             // Get chains with seed.
-            if (string.IsNullOrEmpty(source))
+            if (string.IsNullOrEmpty(Source))
             {
                 seedSql = "SELECT backward, chain, forward FROM Chains " +
                     "WHERE chain LIKE @SeedPat OR forward LIKE @SeedPat ORDER BY RANDOM()";
@@ -73,15 +73,15 @@ namespace Chainey
                     "AND (Chains.chain LIKE @SeedPat OR Chains.forward LIKE @SeedPat) ORDER BY RANDOM()";
             }
             
-            if (ChainCmd.CommandText != seedSql)
+            if (StartingChains.CommandText != seedSql)
             {
-                ChainCmd.CommandText = seedSql;
-                if (!string.IsNullOrEmpty(source))
-                    ChainCmd.Parameters.AddWithValue("@Source", source);
+                StartingChains.CommandText = seedSql;
+                if (!string.IsNullOrEmpty(Source))
+                    StartingChains.Parameters.AddWithValue("@Source", Source);
             }
             
             var seedPattern = string.Concat(seed, "%");
-            ChainCmd.Parameters.AddWithValue("@SeedPat", seedPattern);
+            StartingChains.Parameters.AddWithValue("@SeedPat", seedPattern);
         }
 
 
@@ -90,7 +90,7 @@ namespace Chainey
             string randomSql;
             // Completely random.
             // In time this will probably have to be replaced with something more efficient.
-            if (string.IsNullOrEmpty(source))
+            if (string.IsNullOrEmpty(Source))
                 randomSql = "SELECT backward, chain, forward FROM Chains ORDER BY RANDOM()";
             // Random, but constrained to chains originating from `source`.
             else
@@ -102,20 +102,20 @@ namespace Chainey
                     "AND SrcMap.cId=Chains.id ORDER BY RANDOM()";
             }
             
-            if (ChainCmd.CommandText != randomSql)
+            if (StartingChains.CommandText != randomSql)
             {
-                ChainCmd.CommandText = randomSql;
-                if (!string.IsNullOrEmpty(source))
-                    ChainCmd.Parameters.AddWithValue("@Source", source);
+                StartingChains.CommandText = randomSql;
+                if (!string.IsNullOrEmpty(Source))
+                    StartingChains.Parameters.AddWithValue("@Source", Source);
             }
         }
 
 
         public void Dispose()
         {
-            BackwardCmd.Dispose();
-            ForwardCmd.Dispose();
-            ChainCmd.Dispose();
+            BackwardSearch.Dispose();
+            ForwardSearch.Dispose();
+            StartingChains.Dispose();
         }
     }
 }

@@ -397,7 +397,7 @@ namespace Chainey
         {
             // Copy out the volatile field, so we have a consistent MaxWords while building the sentences.
             int maxWords = MaxWords;
-            using (var reader = v.ChainCmd.ExecuteReader())
+            using (var reader = v.StartingChains.ExecuteReader())
             {
                 while (reader.Read())
                 {
@@ -412,7 +412,7 @@ namespace Chainey
                         // Backward search.
                         words.PrependMode();
                         words.ModeAdd(backward);
-                        CollectChains(words, maxWords, v.BackwardCmd);
+                        CollectChains(words, maxWords, v.BackwardSearch);
                     }
 
                     if (forward != string.Empty)
@@ -420,7 +420,7 @@ namespace Chainey
                         // Forward search.
                         words.AppendMode();
                         words.ModeAdd(forward);
-                        CollectChains(words, maxWords, v.ForwardCmd);
+                        CollectChains(words, maxWords, v.ForwardSearch);
                     }
 
                     yield return words.Sentence;
