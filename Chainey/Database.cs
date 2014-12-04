@@ -33,12 +33,6 @@ namespace Chainey
 
         readonly ThreadLocalSqlite localSqlite;
 
-        private enum Direction
-        {
-            Forward,
-            Backward
-        }
-
 
         public SqliteBrain(string file, int order)
         {
@@ -121,21 +115,21 @@ namespace Chainey
             var conn = localSqlite.GetDb();
             using (SqliteTransaction tr = conn.BeginTransaction())
             using (SqliteCommand insertCmd = conn.CreateCommand(),
-                   updateCmd = conn.CreateCommand())
+                   sourcesCmd = conn.CreateCommand())
             {
                 insertCmd.Transaction = tr;
-                updateCmd.Transaction = tr;
+                sourcesCmd.Transaction = tr;
 
                 if (!string.IsNullOrEmpty(source))
                 {
                     // Make sure `source` exists in Sources.
-                    updateCmd.CommandText = "INSERT OR IGNORE INTO Sources VALUES(null, @Source)";
-                    updateCmd.Parameters.AddWithValue("@Source", source);
-                    updateCmd.ExecuteNonQuery();
+                    sourcesCmd.CommandText = "INSERT OR IGNORE INTO Sources VALUES(null, @Source)";
+                    sourcesCmd.Parameters.AddWithValue("@Source", source);
+                    sourcesCmd.ExecuteNonQuery();
                 }
 
                 UpdateWordCount(sentenceWords, insertCmd);
-                InsertChains(chains, source, insertCmd, updateCmd);
+                InsertChains(chains, source, insertCmd, sourcesCmd);
 
                 try
                 {
@@ -156,14 +150,14 @@ namespace Chainey
 
 
         // Insert chains and add/update relevant Source-mapping to SrcMap.
-        static void InsertChains(string[][] chains, string source, SqliteCommand cmd, SqliteCommand updateCmd)
+        static void InsertChains(string[][] chains, string source, SqliteCommand cmd, SqliteCommand sourcesCmd)
         {
             cmd.CommandText = "INSERT OR IGNORE INTO Chains VALUES(null, @Backward, @Chain, @Forward)";
 
-            updateCmd.CommandText = "INSERT OR IGNORE INTO SrcMap VALUES(" +
+            sourcesCmd.CommandText = "INSERT OR IGNORE INTO SrcMap VALUES(" +
                 "(SELECT id FROM Sources WHERE source=@Source), " +
                 "(SELECT id FROM Chains WHERE backward=@Backward AND chain=@Chain AND forward=@Forward))";
-            updateCmd.Parameters.AddWithValue("@Source", source);
+            sourcesCmd.Parameters.AddWithValue("@Source", source);
 
             var backward = string.Empty;
             foreach (string[] chain in chains)
@@ -178,10 +172,10 @@ namespace Chainey
 
                 if (!string.IsNullOrEmpty(source))
                 {
-                    updateCmd.Parameters.AddWithValue("@Backward", backward);
-                    updateCmd.Parameters.AddWithValue("@Chain", insertChain);
-                    updateCmd.Parameters.AddWithValue("@Forward", forward);
-                    updateCmd.ExecuteNonQuery();
+                    sourcesCmd.Parameters.AddWithValue("@Backward", backward);
+                    sourcesCmd.Parameters.AddWithValue("@Chain", insertChain);
+                    sourcesCmd.Parameters.AddWithValue("@Forward", forward);
+                    sourcesCmd.ExecuteNonQuery();
                 }
 
                 backward = chain[0];
