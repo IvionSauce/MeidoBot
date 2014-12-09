@@ -133,25 +133,12 @@ public class IrcChainey : IMeidoHook
         string first = msg[0];
         string last = msg[msg.Length - 1];
         
-        // If directly addressed. (nick: message)
-        if (first.StartsWith(irc.Nickname, StringComparison.OrdinalIgnoreCase))
+        // If directly addressed. (nick: message || message, nick)
+        if (first.StartsWith(irc.Nickname, StringComparison.OrdinalIgnoreCase) ||
+            last.Contains(irc.Nickname, StringComparison.OrdinalIgnoreCase))
         {
-            msg = msg.Slice(1, 0);
             HandleAddressed(e.Channel, e.Nick, msg);
-        }
-        // If directly addressed. (message, nick)
-        else if (last.Contains(irc.Nickname, StringComparison.OrdinalIgnoreCase))
-        {
-            msg = msg.Slice(0, -1);
-            
-            // Remove comma if message now ends with it due to the removal of the nick.
-            last = msg[msg.Length - 1];
-            if (last.EndsWith(",", StringComparison.OrdinalIgnoreCase))
-                msg[msg.Length - 1] = last.Substring(0, last.Length - 1);
-            
-            HandleAddressed(e.Channel, e.Nick, msg);
-        }
-        
+        }        
         else
             HandleUnaddressed(e.Channel, e.Nick, msg);
     }
