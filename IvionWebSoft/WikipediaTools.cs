@@ -11,6 +11,8 @@ namespace IvionWebSoft
             new Regex(@"(?i)<h1 id=""firstHeading"" class=""firstHeading"" lang=""([^""]+)"">" +
                       @"<span dir=""auto"">([^>]+)</span></h1>");
 
+        static readonly Regex tableRegexp = new Regex(@"(?i)(?s)<table[^>]*>.+?</table>");
+
         static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=</p>)");
 
         static readonly Regex sectionRegexp =
@@ -41,7 +43,9 @@ namespace IvionWebSoft
             if (htmlDoc == null)
                 throw new ArgumentNullException("htmlDoc");
 
-            var sectionMatches = sectionRegexp.Matches(htmlDoc);
+            var withTablesRemoved = tableRegexp.Replace(htmlDoc, string.Empty);
+            var sectionMatches = sectionRegexp.Matches(withTablesRemoved);
+
             var sections = new WikipediaSection[sectionMatches.Count];
 
             for (int i = 0; i < sectionMatches.Count; i++)
@@ -63,7 +67,7 @@ namespace IvionWebSoft
                 sections[i] = new WikipediaSection(title, htmlId, paragraphs);
             }
 
-            var summary = GetSummaryParagraphs(htmlDoc, sectionMatches);
+            var summary = GetSummaryParagraphs(withTablesRemoved, sectionMatches);
             return new WikipediaArticle(GetTitle(htmlDoc), summary, sections);
         }
 
