@@ -2,8 +2,10 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using MeidoCommon;
 using IvionSoft;
 using WebIrc;
+
 
 // Container for storing the various settings.
 class WebToIrcConfig
@@ -34,9 +36,9 @@ class Config : XmlConfig
     public Dictionary<string, WebToIrcConfig> WebIrcSettings { get; private set; }
     
     
-    public Config(string file) : base(file)
-    {}
-    
+    public Config(string file, ILog log) : base(file, log) {}
+
+
     public WebToIrc ConstructWebToIrc(string channel)
     {
         var webIrc = new WebToIrc();
@@ -231,7 +233,8 @@ class Config : XmlConfig
                                 new XElement("tag", "furry"),
                                 new XElement("tag", "rape"),
                                 new XElement("tag", "loli"),
-                                new XElement("tag", "shota")
+                                new XElement("tag", "shota"),
+                                new XElement("tag", "urethral_insertion")
                                 )
                             ),
                          

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
-using IvionSoft;
+using MeidoCommon;
 
 
 class Config : XmlConfig
@@ -10,15 +10,14 @@ class Config : XmlConfig
     public HashSet<string> SkipCategories { get; set; }
     
     
-    public Config(string file) : base(file)
-    {}
+    public Config(string file, ILog log) : base(file, log) {}
     
     public override void LoadConfig()
     {
         Interval = (int)Config.Element("interval");
         
         SkipCategories = new HashSet<string>();
-        XElement skipCategories = Config.Element("skipcategories");
+        XElement skipCategories = Config.Element("skip-categories");
         if (skipCategories != null)
         {
             foreach (XElement cat in skipCategories.Elements())
@@ -34,7 +33,7 @@ class Config : XmlConfig
         var config =
             new XElement("config",
                          new XElement("interval", 15, new XComment("In minutes")),
-                         new XElement("skipcategories",
+                         new XElement("skip-categories",
                          new XElement("category", "Non-English-translated Anime"),
                          new XElement("category", "Non-English-translated Live Action"),
                          new XElement("category", "Non-English-scanlated Books")

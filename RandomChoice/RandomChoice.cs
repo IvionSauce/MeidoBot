@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -50,9 +51,9 @@ public class IrcRandom : IMeidoHook
     {}
 
     [ImportingConstructor]
-    public IrcRandom(IIrcComm ircComm, IMeidoComm meidoComm)
+    public IrcRandom(IIrcComm ircComm, IMeidoComm meido)
     {
-        conf = new Config(meidoComm.ConfDir + "/RandomChoice.xml");
+        conf = new Config(Path.Combine(meido.ConfDir, "RandomChoice.xml"), meido.CreateLogger(this));
 
         irc = ircComm;
         irc.AddTriggerHandler(HandleTrigger);
@@ -250,8 +251,8 @@ class Config : XmlConfig
     public List<string> LaunchChoices { get; set; }
 
 
-    public Config(string file) : base(file)
-    {}
+    public Config(string file, ILog log) : base(file, log) {}
+
 
     public override void LoadConfig()
     {

@@ -45,29 +45,28 @@ public class UrlTitler : IMeidoHook
     [ImportingConstructor]
     public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
     {
-        var conf = new Config(meidoComm.ConfDir + "/UrlTitling.xml");
         var log = meidoComm.CreateLogger(this);
+        var conf = new Config(Path.Combine(meidoComm.ConfDir, "UrlTitling.xml"), log);
 
         WebToIrc.Cookies.Add(conf.CookieColl);
 
         // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(ircComm, log, conf);
-        // Setup black- and whitelist.
-        SetupBWLists(conf);
+        SetupBWLists(conf, log);
 
         irc = ircComm;
         irc.AddChannelMessageHandler(HandleChannelMessage);
         irc.AddTriggerHandler(HandleTrigger);
     }
 
-    void SetupBWLists(Config conf)
+    void SetupBWLists(Config conf, ILog log)
     {
         if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
         {
             try
             {
                 manager.Blacklist.LoadFromFile(conf.BlacklistLocation);
-                Console.WriteLine("-> Loaded blacklist from " + conf.BlacklistLocation);
+                log.Message("-> Loaded blacklist from " + conf.BlacklistLocation);
             }
             catch (FileNotFoundException)
             {}
@@ -79,7 +78,7 @@ public class UrlTitler : IMeidoHook
             try
             {
                 manager.Whitelist.LoadFromFile(conf.WhitelistLocation);
-                Console.WriteLine("-> Loaded whitelist from " + conf.WhitelistLocation);
+                log.Message("-> Loaded whitelist from " + conf.WhitelistLocation);
             }
             catch (FileNotFoundException)
             {}

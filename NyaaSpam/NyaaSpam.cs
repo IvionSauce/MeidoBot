@@ -36,8 +36,7 @@ public class NyaaSpam : IMeidoHook
                     "marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
                 {"nyaa del", "del <index...> - Removes pattern(s) inidicated by given indices. Can be seperated by " +
                     "\",\" and accepts ranges given as \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
-                {"nyaa show", "show [index...] - Gives an overview of all patterns that are checked for. If given " +
-                    "an index/indices it will show just those. (Ex: nyaa show) (Ex: nyaa show 4, 7, 0-2)"}
+                {"nyaa show", "show - Gives an overview of all patterns that are checked for."}
             };
         }
     }
@@ -55,7 +54,7 @@ public class NyaaSpam : IMeidoHook
         meido = meidoComm;
 
         nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) );
-        string nyaaFile = meido.ConfDir + "/_nyaapatterns.xml";
+        string nyaaFile = Path.Combine(meido.DataDir, "_nyaapatterns.xml");
         try
         {
             nyaa.Deserialize(nyaaFile);
@@ -64,7 +63,7 @@ public class NyaaSpam : IMeidoHook
         {}
 
         var log = meido.CreateLogger(this);
-        var conf = new Config(meido.ConfDir + "/NyaaSpam.xml");
+        var conf = new Config(Path.Combine(meido.ConfDir, "NyaaSpam.xml"), log);
         feedReader = new NyaaFeedReader(ircComm, log, conf, nyaa);
         feedReader.Start();
 
@@ -202,23 +201,6 @@ public class NyaaSpam : IMeidoHook
         }
         irc.SendNotice(nick, " -----");
     }
-
-
-    /* void Show(string channel, string nick, string numbersStr)
-    {
-        int[] numbers = GetNumbers(numbersStr);
-        var patterns = new List<string>();
-
-        string pat;
-        foreach (int n in numbers)
-        {
-            pat = nyaa.Get(channel, n);
-            if (pat != null)
-                patterns.Add(pat);
-        }
-
-        IrcShow(nick, patterns.ToArray());
-    } */
 
 
     void ShowAll(string channel, string nick, int? assocPat)

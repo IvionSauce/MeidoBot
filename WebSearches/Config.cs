@@ -1,6 +1,6 @@
 using System.Xml;
 using System.Xml.Linq;
-using IvionSoft;
+using MeidoCommon;
 
 
 public class Config : XmlConfig
@@ -8,7 +8,7 @@ public class Config : XmlConfig
     public string WeatherUndergroundApiKey { get; set; }
 
 
-    public Config(string file) : base(file) {}
+    public Config(string file, ILog log) : base(file, log) {}
 
     public override void LoadConfig()
     {

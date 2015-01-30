@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using IvionWebSoft;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -41,7 +42,7 @@ public class WebSearches : IMeidoHook
     [ImportingConstructor]
     public WebSearches(IIrcComm ircComm, IMeidoComm meido)
     {
-        var conf = new Config(meido.ConfDir + "/WebSearches.xml");
+        var conf = new Config(Path.Combine(meido.ConfDir, "WebSearches.xml"), meido.CreateLogger(this));
 
         if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
             weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
