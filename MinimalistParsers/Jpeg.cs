@@ -36,7 +36,8 @@ namespace MinimalistParsers
                     stream.ReadInto(marker);
                     segmentLength = stream.ReadUint(2);
 
-                    if (IsSof(marker) && segmentLength >= 7)
+                    // Test for SOF and if the stream is long enough for the values that we want (width/height).
+                    if (IsSof(marker) && (stream.Position + 5) <= stream.Length)
                     {
                         // Skip over the Sample Precision field.
                         stream.Position += 1;
@@ -66,10 +67,10 @@ namespace MinimalistParsers
                 // 0xe0 ~ JFIF (APP0)
                 // 0xe1 ~ Exif (APP1)
                 // 0xe2 ~ ICC Profile (APP2)
+                // [...]
+                // Non-APPn segments:
                 // 0xdb ~ Quantization Tables (DQT)
-                // 0xee ~ Adobe specific
-                if (segmentId == 0xe0 || segmentId == 0xe1 || segmentId == 0xe2 ||
-                    segmentId == 0xdb || segmentId == 0xee)
+                if ( (segmentId >= 0xe0 && segmentId < 0xf0) || segmentId == 0xdb )
                 {
                     var segmentLength = stream.ReadUint(2);
                     stream.Position += segmentLength - 2;
