@@ -15,34 +15,38 @@ public class NyaaPatterns : IDisposable
     }
 
     TimeSpan bufferTime;
-    Timer tmr;
+    bool pendingWrites;
+    DateTimeOffset lastWriteCall;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
-    readonly object _locker = new object();
+    readonly object _storageLock = new object();
 
     string path;
 
 
-    public NyaaPatterns()
-    {
-        bufferTime = TimeSpan.Zero;
-    }
+    public NyaaPatterns() : this(TimeSpan.Zero) {}
 
     public NyaaPatterns(TimeSpan bufferTime)
     {
+        if (bufferTime < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException("bufferTime", "Cannot be less than 0.");
+
         this.bufferTime = bufferTime;
     }
 
 
     public int Add(string channel, string pattern)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         if (string.IsNullOrWhiteSpace(pattern))
             return -1;
 
         string[] split = pattern.Split();
-        lock (_locker)
+        lock (_storageLock)
         {
-            ChannelPatterns chanPat = GetOrAdd(channel);
+            ChannelPatterns chanPat = storage.GetOrSet( channel, () => new ChannelPatterns(channel) );
             chanPat.Patterns.Add( new PatternEntry(split) );
             Write();
 
@@ -52,15 +56,17 @@ public class NyaaPatterns : IDisposable
 
     public int AddExclude(string channel, int assocPat, string exclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         int index = -1;
         if (string.IsNullOrWhiteSpace(exclude))
             return index;
         
         string[] split = exclude.Split();
-        lock (_locker)
+        lock (_storageLock)
         {
-            ChannelPatterns chanPat = GetOrAdd(channel);
-
+            ChannelPatterns chanPat = storage.GetOrSet( channel, () => new ChannelPatterns(channel) );
             List<string[]> exPatterns;
             if (TryGetExPatterns(chanPat, assocPat, out exPatterns))
             {
@@ -73,35 +79,36 @@ public class NyaaPatterns : IDisposable
         return index;
     }
 
-    ChannelPatterns GetOrAdd(string channel)
-    {
-        ChannelPatterns chanPat = storage.Get(channel);
-        if (chanPat == null)
-        {
-            chanPat = new ChannelPatterns(channel);
-            storage.Set(channel, chanPat);
-        }
-        return chanPat;
-    }
-
 
     public string Get(string channel, int index)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return GetOrRemove(false, channel, index);
     }
 
     public string GetExclude(string channel, int assocPat, int iExclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return GetOrRemove(false, channel, assocPat, iExclude);
     }
 
     public string Remove(string channel, int index)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return GetOrRemove(true, channel, index);
     }
 
     public string RemoveExclude(string channel, int assocPat, int iExclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return GetOrRemove(true, channel, assocPat, iExclude);
     }
 
@@ -109,7 +116,7 @@ public class NyaaPatterns : IDisposable
     string GetOrRemove(bool remove, string channel, int index)
     {
         string[] pattern = null;
-        lock (_locker)
+        lock (_storageLock)
         {
             ChannelPatterns chanPat = storage.Get(channel);
             if ( IndexExists(chanPat, index) )
@@ -134,7 +141,7 @@ public class NyaaPatterns : IDisposable
             return null;
 
         string[] exPattern = null;
-        lock (_locker)
+        lock (_storageLock)
         {
             ChannelPatterns chanPat = storage.Get(channel);
             
@@ -158,30 +165,48 @@ public class NyaaPatterns : IDisposable
 
     public int AddGlobalExclude(string channel, string exclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return AddExclude(channel, -1, exclude);
     }
 
     public string GetGlobalExclude(string channel, int iExclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return GetExclude(channel, -1, iExclude);
     }
 
     public string RemoveGlobalExclude(string channel, int iExclude)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return RemoveExclude(channel, -1, iExclude);
     }
 
 
     public string[] GetPatterns(string channel)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return InternalPatternsGet(channel, false, -1);
     }
     public string[] GetExcludePatterns(string channel, int assocPat)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return InternalPatternsGet(channel, true, assocPat);
     }
     public string[] GetGlobalExcludePatterns(string channel)
     {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
         return InternalPatternsGet(channel, true, -1);
     }
 
@@ -192,7 +217,7 @@ public class NyaaPatterns : IDisposable
     string[] InternalPatternsGet(string channel, bool exclude, int assocPat)
     {
         string[] patternsToRead = null;
-        lock (_locker)
+        lock (_storageLock)
         {
             ChannelPatterns chanPat = storage.Get(channel);
             // Get all Include Patterns.
@@ -263,9 +288,12 @@ public class NyaaPatterns : IDisposable
 
     public string[] PatternMatch(string title)
     {
+        if (string.IsNullOrWhiteSpace(title))
+            return new string[0];
+
         List<string> channels = new List<string>();
 
-        lock (_locker)
+        lock (_storageLock)
         {
             // Iterate over the channels.
             foreach (ChannelPatterns chanPattern in storage.GetAll())
@@ -348,45 +376,50 @@ public class NyaaPatterns : IDisposable
             storage.Serialize(path);
         else
         {
-            if (tmr != null)
-                tmr.Dispose();
-            tmr = new Timer(BufferedWrite, null, bufferTime, TimeSpan.Zero);
+            lastWriteCall = DateTimeOffset.Now;
+            if (!pendingWrites)
+            {
+                pendingWrites = true;
+                var t = new Thread(BufferedWrite);
+                t.IsBackground = true;
+                t.Start();
+            }
         }
     }
 
-    // Since Write returns after spawning this thread we cannot be sure of the lock's state, reacquire.
     void BufferedWrite(object stateInfo)
     {
-        lock (_locker)
+        DateTimeOffset lastwrite;
+        do
         {
-            if (path != null)
-                storage.Serialize(path);
+            Thread.Sleep(bufferTime);
+            lock (_storageLock)
+                lastwrite = lastWriteCall;
 
-            // Clean up after ourselves.
-            tmr.Dispose();
-            tmr = null;
-        }
+        } while (lastwrite + bufferTime < DateTimeOffset.Now);
+
+        Serialize();
     }
 
 
     public void Serialize()
     {
-        lock (_locker)
+        lock (_storageLock)
         {
             if (path != null)
+            {
                 storage.Serialize(path);
+                pendingWrites = false;
+            }
         }
     }
 
-    public void Serialize(string path)
-    {
-        lock (_locker)
-            storage.Serialize(path);
-    }
 
     public void Deserialize(string path)
     {
-        lock (_locker)
+        path.ThrowIfNullOrWhiteSpace("path");
+
+        lock (_storageLock)
         {
             this.path = path;
             storage = Storage<ChannelPatterns>.Deserialize(path);
@@ -396,31 +429,32 @@ public class NyaaPatterns : IDisposable
 
     public void Dispose()
     {
-        lock (_locker)
+        lock (_storageLock)
         {
             // If outstanding BufferedWrites, write storage to disk.
-            if (tmr != null && path != null)
-            {
-                tmr.Dispose();
-                storage.Serialize(path);
-            }
+            if (pendingWrites)
+                Serialize();
+
             // Disable BufferedWrite.
             bufferTime = TimeSpan.Zero;
+            // Disable all writing to disk.
+            path = null;
         }
     }
 }
 
 [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
-class ChannelPatterns
+internal class ChannelPatterns
 {
     [DataMember]
     public string Channel { get; private set; }
 
     [DataMember]
     // Each item is a single Include Pattern and its associated Exclude Patterns.
-    public List<PatternEntry> Patterns { get; set; }
+    public List<PatternEntry> Patterns { get; private set; }
     [DataMember]
-    public List<string[]> GlobalExcludePatterns { get; set; }
+    // Exclude patterns applicable to all patterns.
+    public List<string[]> GlobalExcludePatterns { get; private set; }
 
 
     public ChannelPatterns(string channel)
@@ -431,23 +465,23 @@ class ChannelPatterns
     }
 }
 
-// When I copy out the Pattern Arrays I copy out the pointers to those arrays. So even if the original list (whether
-// it's Patterns or ExcludePatterns or GlobalExcludePatterns) deletes that Pattern Array (the pointer to it), that which
-// it points to will continue to exist (as long as references/pointers to it exist).
+// When I copy out the Pattern Arrays I copy out the references to those arrays. So even if the original list (whether
+// it's Patterns or ExcludePatterns or GlobalExcludePatterns) deletes that Pattern Array (the reference to it),
+// that which it points to will continue to exist (as long as references to it exist).
 // But then, maybe, what it points to can be changed. Since what it points to is an array of strings, each index in the
 // array could be changed, assigned a different string.
 // Luckily this is no worry, since the Pattern Arrays are either added or deleted in their entirety and are not modified
 // during their lifetime.
 
 [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/IvionSoft")]
-class PatternEntry
+internal class PatternEntry
 {
     [DataMember]
     // Single Pattern Array.
-    public string[] IncludePattern { get; set; }
+    public string[] IncludePattern { get; private set; }
     [DataMember]
     // Multiple Pattern Arrays.
-    public List<string[]> ExcludePatterns { get; set; }
+    public List<string[]> ExcludePatterns { get; private set; }
 
 
     public PatternEntry(string[] pattern)

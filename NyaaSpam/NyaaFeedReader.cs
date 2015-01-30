@@ -83,8 +83,7 @@ class NyaaFeedReader
             string[] channels = Nyaa.PatternMatch(item.Title.Text);
             foreach (string channel in channels)
             {
-                irc.SendMessage(channel, string.Format("号外! 号外! 号外! \u0002:: {0} ::\u000F {1}",
-                                                       item.Title.Text, item.Id));
+                irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
             }
         }
         lastPrintedTime = latestPublish;
