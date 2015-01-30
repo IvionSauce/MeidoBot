@@ -19,7 +19,7 @@ public class TimeLeft : IMeidoHook
     readonly Timer cleaner;
     readonly object _locker = new object();
 
-    const string loc = "conf/_timeleft.xml";
+    readonly string loc;
     
     public string Prefix { get; set; }
     
@@ -54,8 +54,10 @@ public class TimeLeft : IMeidoHook
     }
     
     [ImportingConstructor]
-    public TimeLeft(IIrcComm ircComm)
+    public TimeLeft(IIrcComm ircComm, IMeidoComm meido)
     {
+        loc = Path.Combine(meido.DataDir, "_timeleft.xml");
+
         try
         {
             storage = Storage<TimeLeftUnit>.Deserialize(loc);
@@ -189,7 +191,7 @@ public class TimeLeft : IMeidoHook
             SendTime(target, unit.Name, unit.Date);
     }
 
-    TimeLeftUnit[] SortByDate(IEnumerable<TimeLeftUnit> tlunits)
+    static TimeLeftUnit[] SortByDate(IEnumerable<TimeLeftUnit> tlunits)
     {
         var sorted = (from tlu in tlunits
                       orderby tlu.Date
@@ -224,8 +226,7 @@ public class TimeLeft : IMeidoHook
         {
             bool modified = false;
 
-            var all = storage.GetAll().ToArray();
-            foreach ( TimeLeftUnit unit in all )
+            foreach ( TimeLeftUnit unit in storage.GetAll() )
             {
                 if (DateTime.UtcNow > unit.Date)
                 {

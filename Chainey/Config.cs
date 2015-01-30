@@ -24,7 +24,7 @@ class Config
     
     public Config()
     {
-        Location = "conf/chainey.sqlite";
+        Location = "data/chainey.sqlite";
         Order = 3;
         Threads = 2;
 
