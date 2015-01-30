@@ -18,10 +18,12 @@ namespace IvionSoft
         static DataContractSerializer dcs = new DataContractSerializer( typeof(Storage<T>) );
 
 
-        public Storage()
+        public Storage() : this(default(T)) {}
+
+        public Storage(T defaultValue)
         {
             Items = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
-            DefaultValue = default(T);
+            DefaultValue = defaultValue;
         }
 
         [OnDeserialized]
@@ -35,44 +37,105 @@ namespace IvionSoft
 
         public void Set(string id, T item)
         {
+            if (id == null)
+                throw new ArgumentNullException("id");
+
             Items[id] = item;
         }
 
         public bool Contains(string id)
         {
+            if (id == null)
+                throw new ArgumentNullException("id");
+            
             return Items.ContainsKey(id);
         }
 
+
+        public T GetOrSet(string id, Func<T> itemGenerator)
+        {
+            if (id == null)
+                throw new ArgumentNullException("id");
+            else if (itemGenerator == null)
+                throw new ArgumentNullException("itemGenerator");
+
+            T item;
+            if (!Items.TryGetValue(id, out item))
+            {
+                item = itemGenerator();
+                Items[id] = item;
+            }
+
+            return item;
+        }
+
+
         public T Get(string id)
         {
+            if (id == null)
+                throw new ArgumentNullException("id");
+            
             return Get(id, DefaultValue);
         }
 
         public T Get(string id, T defaultValue)
         {
+            if (id == null)
+                throw new ArgumentNullException("id");
+            
             T item;
             if (Items.TryGetValue(id, out item))
                 return item;
             else
                 return defaultValue;
         }
-        
-        public IEnumerable<T> GetAll()
+
+
+        public T[] GetAll()
         {
-            foreach (T item in Items.Values)
-                yield return item;
+            var items = new T[Items.Count];
+            int i = 0;
+            foreach (var item in Items.Values)
+            {
+                items[i] = item;
+                i++;
+            }
+
+            return items;
         }
         
         public IEnumerable<T> Search(string partialId)
         {
+            if (partialId == null)
+                throw new ArgumentNullException("partialId");
+            
             foreach (var pair in Items)
+            {
                 if (pair.Key.Contains(partialId, StringComparison.OrdinalIgnoreCase))
                     yield return pair.Value;
+            }
         }
-        
+
+
         public bool Remove(string id)
         {
+            if (id == null)
+                throw new ArgumentNullException("id");
+            
             return Items.Remove(id);
+        }
+
+
+        public void RemoveAll(Func<T, bool> predicate)
+        {
+            if (predicate == null)
+                throw new ArgumentNullException("predicate");
+            
+            foreach (var pair in Items)
+            {
+                if (predicate(pair.Value))
+                    Items.Remove(pair.Key);
+            }
         }
 
 
@@ -84,15 +147,23 @@ namespace IvionSoft
 
         static public void Serialize(Storage<T> storage, string path)
         {
+            if (storage == null)
+                throw new ArgumentNullException("storage");
+            path.ThrowIfNullOrWhiteSpace("path");
+
             var settings = new XmlWriterSettings() { Indent = true };
             
             using (var stream = File.Open(path, FileMode.Create))
+            {
                 using (var writer = XmlWriter.Create(stream, settings))
                     dcs.WriteObject(writer, storage);
+            }
         }
 
         static public Storage<T> Deserialize(string path)
         {
+            path.ThrowIfNullOrWhiteSpace("path");
+
             using (var stream = File.Open(path, FileMode.Open))
                    return (Storage<T>)dcs.ReadObject(stream);
         }
