@@ -4,35 +4,35 @@ using System.Xml;
 using System.Xml.Linq;
 
 
-namespace IvionSoft
+namespace MeidoCommon
 {
     public abstract class XmlConfig
     {
         public XElement Config { get; private set; }
         
-        public XmlConfig(string file)
+        public XmlConfig(string file, ILog log)
         {
             try
             {
                 Config = XElement.Load(file);
-                Console.WriteLine("-> Loaded config from " + file);
+                log.Message("-> Loaded config from " + file);
             }
             catch (FileNotFoundException)
             {
                 Config = DefaultConfig();
                 Config.Save(file);
-                Console.WriteLine("-> Created default config at " + file);
+                log.Message("-> Created default config at " + file);
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine(" ! Directory not found: " + file);
-                Console.WriteLine("-> Loading default config.");
+                log.Error("Directory not found: " + file);
+                log.Message("-> Loading default config.");
                 Config = DefaultConfig();
             }
             catch (XmlException ex)
             {
-                Console.WriteLine("!! XML Exception: " + ex.Message);
-                Console.WriteLine("-> Loading default config.");
+                log.Error("XML Exception in loading {0}. ({1})", file, ex.Message);
+                log.Message("-> Loading default config.");
                 Config = DefaultConfig();
             }
             
@@ -44,8 +44,8 @@ namespace IvionSoft
             {
                 if (ex is FormatException || ex is NullReferenceException)
                 {
-                    Console.WriteLine(" ! Error(s) in loading values from {0}. ({1})", file, ex.Message);
-                    Console.WriteLine("-> Loading default config.");
+                    log.Error("Error(s) in loading values from {0}. ({1})", file, ex.Message);
+                    log.Message("-> Loading values from default config.");
                     Config = DefaultConfig();
                     LoadConfig();
                 }
