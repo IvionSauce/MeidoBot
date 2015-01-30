@@ -10,8 +10,8 @@ namespace MeidoBot
     class Meido : IDisposable
     {
         IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
-        PluginManager plugins = new PluginManager();
-        LogFactory logFac;
+        PluginManager plugins;
+        Logger log;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
         // Also used to call the relevant method(s) on receiving messages.
@@ -26,70 +26,77 @@ namespace MeidoBot
 
         public Meido(string server, int port, string nick, string[] channels, string prefix)
         {
+            // We need these parameters for events, store them in fields.
             this.nick = nick;
             this.channels = channels;
+
+            // Initialize the IrcComm with the IrcClient for this server/instance.
+            ircComm = new IrcComm(irc);
+
+            // Initialize the MeidoComm with the log factory for this server/instance.
+            var logFac = new LogFactory(server);
+            meidoComm = new MeidoComm(logFac);
+            // Set aside some logging for ourself.
+            log = logFac.CreateLogger("MEIDO");
+
+            // Setup plugins and load them.
+            plugins = new PluginManager(prefix);
+            LoadPlugins();
             
             // Setting some SmartIrc4Net options.
-            irc.CtcpVersion = "MeidoBot v0.88.4";
+            irc.CtcpVersion = "MeidoBot " + Program.Version;
             irc.ActiveChannelSyncing = true;
             irc.AutoJoinOnInvite = true;
             irc.AutoReconnect = true;
             irc.AutoRejoin = true;
             irc.Encoding = Encoding.UTF8;
 
-            // Make sure they know my greatness.
-            Console.WriteLine("Starting {0}, written by Ivion.", irc.CtcpVersion);
-
-            // Setup proper conditions for plugins and load them.
-            plugins.Prefix = prefix;
-            logFac = new LogFactory(server);
-            LoadPlugins();
-            
-            // Add our methods (defined above) to handle IRC events.
+            // Set event handlers and connect to the server.
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnChannelMessage += new IrcEventHandler(OnMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnMessage);
-
-            // Actually connect to the server.
             Connect(server, port);
         }
 
 
         void LoadPlugins()
         {
-            // Initialize the IrcComm with our IrcClient instance.
-            ircComm = new IrcComm(irc);
-            meidoComm = new MeidoComm(logFac);
-
             // Load plugins and announce we're doing so.
-            Console.WriteLine("Loading plugins...");
+            log.Message("Loading plugins...");
             plugins.LoadPlugins(ircComm, meidoComm);
             // Print number and descriptions of loaded plugins.
-            Console.WriteLine("Done! Loaded {0} plugin(s):", plugins.Count);
+            log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
             foreach (string s in plugins.GetDescriptions())
-                Console.WriteLine("- " + s);
+                log.Message("- " + s);
         }
         
 
         void Connect(string server, int port)
         {
-            Console.WriteLine("\nTrying to connect to {0}:{1} ...", server, port);
+            log.Message("Trying to connect to {0}:{1} ...", server, port);
             try
             {
                 irc.Connect(server, port);
             }
             catch (CouldNotConnectException ex)
             {
-                Console.WriteLine(ex);
+                log.Error("Could not connect.", ex);
             }
         }
+
+
+        // ---------------
+        // Event handlers.
+        // ---------------
 
 
         // Tell the server who we are and join channel(s).
         void OnConnected(object sender, EventArgs e)
         {
-            Console.WriteLine("Connection succesful!");
             irc.Login(nick, "Meido Bot", 0, "MeidoBot");
+
+            log.Message("Success! Connected as {0} to {1}", irc.Nickname, irc.Address);
+
             irc.RfcJoin(channels);
             irc.Listen();
         }
@@ -134,6 +141,11 @@ namespace MeidoBot
         }
 
 
+        // -------------------------
+        // Special trigger handling.
+        // -------------------------
+
+
         void SpecialTriggers(IIrcMessage msg)
         {
             if (msg.Trigger == "h" || msg.Trigger == "help")
@@ -142,7 +154,7 @@ namespace MeidoBot
             else if (msg.Trigger == "auth")
                 msg.Reply( Auth(msg.Nick, msg.MessageArray) );
 
-            if (msg.Trigger == "disconnect" && meidoComm.AuthLevel(msg.Nick) == 10)
+            else if (msg.Trigger == "disconnect" && meidoComm.AuthLevel(msg.Nick) == 10)
             {
                 // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
                 // been given no new messages will arrive.
@@ -150,9 +162,7 @@ namespace MeidoBot
                 plugins.StopPlugins();
             }
             
-            else if (msg.Trigger == "part" &&
-                     msg.MessageArray.Length == 2 &&
-                     meidoComm.AuthLevel(msg.Nick) == 10)
+            else if (msg.Trigger == "part" && msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) == 10)
                 irc.RfcPart(msg.MessageArray[1]);
         }
 

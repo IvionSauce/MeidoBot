@@ -16,7 +16,13 @@ namespace MeidoBot
         IEnumerable<IMeidoHook> pluginContainer;
 
         public int Count { get; private set; }
-        public string Prefix { get; set; }
+        public string Prefix { get; private set; }
+
+
+        public PluginManager(string prefix)
+        {
+            Prefix = prefix;
+        }
 
 
         public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)

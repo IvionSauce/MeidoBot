@@ -10,6 +10,8 @@ namespace MeidoBot
     // Ugly shit, will need to be refactored... someday.
     static class Program
     {
+        public static readonly string Version = "0.88.4";
+
         static void Main(string[] args)
         {
             const string abort = "!! Aborting.";
@@ -47,14 +49,10 @@ namespace MeidoBot
             
             // Allow port to have the default of 6667.
             int port = (int?)config.Element("port") ?? 6667;
-            
             string[] channels = ParseChannels(config);
             
-            // Default configuration directory is the base directory of the application, since we know for sure that
-            // that directory exists.
-            // var confDir = (string)config.Element("conf-directory") ?? AppDomain.CurrentDomain.BaseDirectory;
-            
-            // Finally active the Meido.
+            // Finally activate the Meido.
+            Console.WriteLine("Starting MeidoBot {0}\n", Version);
             new Meido(server, port, nick, channels, prefix);
         }
         
@@ -82,10 +80,9 @@ namespace MeidoBot
             XElement channels = config.Element("channels");
             if (channels != null)
             {
-                string chan;
                 foreach (XElement channel in channels.Elements())
                 {
-                    chan = channel.Value;
+                    string chan = channel.Value;
                     // Ignore empty entries or those not indicating a channel (with "#").
                     if (!string.IsNullOrEmpty(chan) && chan[0] == '#')
                         chanList.Add(chan);

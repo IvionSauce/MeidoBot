@@ -39,7 +39,7 @@ namespace MeidoBot
 
         internal Logger(string server, string pluginName, Verbosity verb)
         {
-            msgPrefix = string.Format("[{0}] [{1}]", server, pluginName);
+            msgPrefix = string.Format("[{0}] {1}", server, pluginName);
             verbosity = verb;
         }
 
@@ -123,8 +123,7 @@ namespace MeidoBot
 
         void OutputLog(string message, Verbosity verb)
         {
-            var logMsg = FormatLogEntry(DateTime.Now, verb);
-            logMsg = logMsg + message;
+            var logMsg = FormatLogEntry(DateTime.Now, verb) + message;
 
             Console.WriteLine(logMsg);
         }
