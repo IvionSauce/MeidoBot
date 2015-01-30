@@ -56,10 +56,10 @@ namespace IvionWebSoft
                 if (i + 1 < sectionMatches.Count)
                     nextIndex = sectionMatches[i + 1].Index;
                 else
-                    nextIndex = htmlDoc.Length;
+                    nextIndex = withTablesRemoved.Length;
 
                 int length = nextIndex - match.Index;
-                var paragraphs = GetParagraphs(htmlDoc, match.Index, length);
+                var paragraphs = GetParagraphs(withTablesRemoved, match.Index, length);
 
                 var htmlId = match.Groups[1].Value;
                 var title = match.Groups[2].Value;
