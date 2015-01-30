@@ -9,7 +9,7 @@ namespace MeidoBot
         public string ConfDir { get; private set; }
         public string DataDir { get; private set; }
 
-        LogFactory logFac;
+        readonly LogFactory logFac;
 
 
         readonly Dictionary<string, UserAuth> userAuths =

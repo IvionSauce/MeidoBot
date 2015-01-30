@@ -16,7 +16,7 @@ namespace MeidoBot
         }
 
 
-        IrcClient irc;
+        readonly IrcClient irc;
         public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
         public Action<IIrcMessage> ChannelActionHandlers { get; private set; }
 

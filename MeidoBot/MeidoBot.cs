@@ -9,19 +9,19 @@ namespace MeidoBot
 {
     class Meido : IDisposable
     {
-        IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
-        PluginManager plugins;
-        Logger log;
+        readonly IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
+        readonly PluginManager plugins;
+        readonly Logger log;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
         // Also used to call the relevant method(s) on receiving messages.
-        IrcComm ircComm;
+        readonly IrcComm ircComm;
         // MeidoBot Communication object, used for functions that concern both the bot-framework and the plugins
         // running in it.
-        MeidoComm meidoComm;
+        readonly MeidoComm meidoComm;
 
-        string nick;
-        string[] channels;
+        readonly string nick;
+        readonly string[] channels;
 
 
         public Meido(string server, int port, string nick, string[] channels, string prefix)
