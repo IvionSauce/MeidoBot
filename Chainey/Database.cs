@@ -299,6 +299,16 @@ namespace Chainey
             return count ?? 0;
         }
 
+        static long[] WordCount(string[] words, SqliteCommand cmd)
+        {
+            var counts = new long[words.Length];
+            for (int i = 0; i < words.Length; i++)
+            {
+                counts[i] = WordCount(words[i], cmd);
+            }
+            return counts;
+        }
+
 
         // For when adding or looking up a word. To make sure each word is approached consistently, regardless of the
         // splitting method used.
@@ -352,7 +362,7 @@ namespace Chainey
         // ***
 
 
-        public IEnumerable<string[]> BuildSentences(IEnumerable<string> seeds, string source)
+        public IEnumerable<Sentence> BuildSentences(IEnumerable<string> seeds, string source)
         {
             if (seeds == null)
                 throw new ArgumentNullException("seeds");
@@ -374,7 +384,7 @@ namespace Chainey
         }
 
 
-        public IEnumerable<string[]> BuildRandomSentences(string source)
+        public IEnumerable<Sentence> BuildRandomSentences(string source)
         {
             var conn = localSqlite.GetDb();
             using (var buildVectors = new BuilderVectors(conn, source))
@@ -387,7 +397,7 @@ namespace Chainey
         }
 
 
-        IEnumerable<string[]> Builder(BuilderVectors v)
+        IEnumerable<Sentence> Builder(BuilderVectors v)
         {
             // Copy out the volatile field, so we have a consistent MaxWords while building the sentences.
             int maxWords = MaxWords;
@@ -417,7 +427,10 @@ namespace Chainey
                         CollectChains(words, maxWords, v.ForwardSearch);
                     }
 
-                    yield return words.Sentence;
+                    string[] sentenceWords = words.Sentence;
+                    long[] wordCounts = WordCount(sentenceWords, v.WordCount);
+
+                    yield return new Sentence(sentenceWords, wordCounts);
                 }
             }
         }

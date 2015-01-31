@@ -9,6 +9,7 @@ namespace Chainey
         public SqliteCommand StartingChains { get; private set; }
         public SqliteCommand BackwardSearch { get; private set; }
         public SqliteCommand ForwardSearch { get; private set; }
+        public SqliteCommand WordCount { get; private set; }
 
         public string Source { get; set; }
 
@@ -18,10 +19,12 @@ namespace Chainey
             StartingChains = conn.CreateCommand();
             BackwardSearch = conn.CreateCommand();
             ForwardSearch = conn.CreateCommand();
+            WordCount = conn.CreateCommand();
 
             Source = source;
 
             PrepareSearches();
+            WordCount.CommandText = "SELECT count FROM WordCount WHERE word=@Word";
         }
 
 
@@ -115,6 +118,7 @@ namespace Chainey
         {
             BackwardSearch.Dispose();
             ForwardSearch.Dispose();
+            WordCount.Dispose();
             StartingChains.Dispose();
         }
     }

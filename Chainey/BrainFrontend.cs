@@ -183,16 +183,12 @@ namespace Chainey
 
                 if (candidates.Count == 0)
                     candidates = responses;
-                // Debug
-                else
-                    Console.WriteLine("2ND SEED FOUND");
             }
             else
                 candidates = responses;
 
             // Debug
-            Console.WriteLine("Debug -- Responses: {0} - High: {1}, Low: {2}",
-                              candidates.Count, candidates[candidates.Count - 1].Rarity, candidates[0].Rarity);
+            Console.WriteLine("Responses: {0} | Candidates: {1}", responses.Count, candidates.Count);
 
             return SentenceSelector.Select(candidates);
         }
@@ -228,15 +224,9 @@ namespace Chainey
             if (count < 1)
                 throw new ArgumentOutOfRangeException("count", "Cannot be 0 or negative.");
 
-            var coll = brain.BuildRandomSentences(source).Take(count).ToArray();
+            var coll = brain.BuildRandomSentences(source).Take(count);
 
-            var sentences = new List<Sentence>(coll.Length);
-            for (int i = 0; i < coll.Length; i++)
-            {
-                sentences.Add( new Sentence( coll[i], SentenceRarity(coll[i]) ) );
-            }
-
-            return sentences;
+            return coll.ToList();
         }
 
 
@@ -274,11 +264,8 @@ namespace Chainey
 
 
         // Get as much sentences from the seeds as time allows.
-        List<Sentence> GetSentences(IEnumerable<string[]> sentences)
+        List<Sentence> GetSentences(IEnumerable<Sentence> sentences)
         {
-            // Sentence and rarity pairs, united in a Sentence struct.
-            var pairs = SentenceAndRarity(sentences);
-
             // Make sure we have a consistent TimeLimit during the loop execution.
             var limit = TimeLimit.TotalMilliseconds;
 
@@ -287,61 +274,18 @@ namespace Chainey
             if (limit > 0)
             {
                 var startTicks = (uint)Environment.TickCount;
-                foreach (var pair in pairs)
+                foreach (var sen in sentences)
                 {
-                    coll.Add(pair);
+                    coll.Add(sen);
                     if ( ((uint)Environment.TickCount - startTicks) > limit )
                         break;
                 }
             }
             // Add all Sentence objects when time is not of the essence.
             else
-                coll.AddRange(pairs);
+                coll.AddRange(sentences);
 
             return coll;
-        }
-
-
-        // ----------------------------------------
-        // Methods for calculating sentence rarity.
-        // ----------------------------------------
-
-
-        IEnumerable<Sentence> SentenceAndRarity(IEnumerable<string[]> sentences)
-        {
-            foreach (var sen in sentences)
-                yield return new Sentence(sen, SentenceRarity(sen));
-        }
-
-        double SentenceRarity(string[] sentence)
-        {            
-            var counts = brain.WordCount(sentence);
-            return CalculateRarity(counts);
-        }
-
-        // The closer to 0, the less rare the sentence is. If the sentence contains only words we've never seen before
-        // the rarity will be `Infinity`.
-        // Will return `-Infinity` if the sentence has no words.
-        // If sorted order will be: NaN, -Infinity, [...], Infinity
-        static double CalculateRarity(IEnumerable<long> counts)
-        {
-            int len = 0;
-            // Sum word counts in ulong for extra headroom.
-            ulong sum = 0;
-            foreach (long count in counts)
-            {
-                // Skip negative word counts.
-                if (count >= 0)
-                {
-                    sum += (ulong)count;
-                    len++;
-                }
-            }
-
-            if (len > 0)
-                return (double)len / sum;
-            else
-                return double.NegativeInfinity;
         }
 
     }
