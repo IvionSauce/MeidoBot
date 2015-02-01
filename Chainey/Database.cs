@@ -399,8 +399,9 @@ namespace Chainey
 
         IEnumerable<Sentence> Builder(BuilderVectors v)
         {
-            // Copy out the volatile field, so we have a consistent MaxWords while building the sentences.
-            int maxWords = MaxWords;
+            // SentenceConstruct copies out the volatile field, so we have a consistent MaxWords while building.
+            var words = new SentenceConstruct(Order, MaxWords);
+
             using (var reader = v.StartingChains.ExecuteReader())
             {
                 while (reader.Read())
@@ -409,25 +410,25 @@ namespace Chainey
                     string chain = reader.GetString(1);
                     string forward = reader.GetString(2);
 
-                    var words = new SentenceConstruct(chain);
+                    words.Set(chain);
 
                     if (backward != string.Empty)
                     {
                         // Backward search.
                         words.PrependMode();
                         words.ModeAdd(backward);
-                        CollectChains(words, maxWords, v.BackwardSearch);
+                        CollectChains(words, v.BackwardSearch);
                     }
 
-                    if (forward != string.Empty)
+                    if (forward != string.Empty && words.Continue)
                     {
                         // Forward search.
                         words.AppendMode();
                         words.ModeAdd(forward);
-                        CollectChains(words, maxWords, v.ForwardSearch);
+                        CollectChains(words, v.ForwardSearch);
                     }
 
-                    string[] sentenceWords = words.Sentence;
+                    string[] sentenceWords = words.Sentence();
                     long[] wordCounts = WordCount(sentenceWords, v.WordCount);
 
                     yield return new Sentence(sentenceWords, wordCounts);
@@ -436,11 +437,11 @@ namespace Chainey
         }
 
 
-        static void CollectChains(SentenceConstruct sen, int maxWords, SqliteCommand cmd)
+        static void CollectChains(SentenceConstruct sen, SqliteCommand cmd)
         {
-            while (sen.WordCount < maxWords)
+            while (sen.Continue)
             {
-                string chain = sen.LatestChain;
+                string chain = sen.LatestChain();
                 // Seems like Add is slightly faster than AddWithValue, although the difference is so small it only
                 // makes sense to use it in this loop, where it can get called 10's of thousands of times.
                 cmd.Parameters.Add("@Chain", DbType.String).Value = chain;

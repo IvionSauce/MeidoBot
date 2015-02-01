@@ -5,100 +5,108 @@ namespace Chainey
 {
     internal class SentenceConstruct
     {
-        internal int WordCount
-        {
-            get { return sentence.Count; }
-        }
-        
-        
-        internal string[] Sentence
-        {
-            get
-            {
-                var sentenceArr = new string[sentence.Count];
-                sentence.CopyTo(sentenceArr, 0);
+        public int WordCount { get; private set; }
 
-                return sentenceArr;
-            }
+        public bool Continue
+        {
+            get { return WordCount < maxWords; }
         }
 
-        internal string LatestChain
-        {
-            get { return modeChain(); }
-        }
-        
-        LinkedList<string> sentence = new LinkedList<string>();
-        
+        public Func<string> LatestChain { get; private set; }
+        public Action<string> ModeAdd { get; private set; }
+
+        readonly string[] sentence;
+        int senStart, senEnd;
+
         readonly int order;
+        readonly int maxWords;
 
-        Func<string> modeChain;
-        Action<string> modeAction;
-        
-        
-        internal SentenceConstruct(string initialChain)
+
+        public SentenceConstruct(int order, int maxWords)
+        {
+            this.order = order;
+            this.maxWords = maxWords;
+
+            int arrSize = (maxWords * 2) - order;
+            sentence = new string[arrSize];
+        }
+
+
+        // -------------------------------------------------------
+        // Methods for setting the initial chain and adding words.
+        // -------------------------------------------------------
+
+        public void Set(string initialChain)
         {
             string[] split = initialChain.Split(' ');
-            foreach (string s in split)
-                sentence.AddLast(s);
-            
-            order = split.Length;
-        }
-        
-        internal void Append(string word)
-        {
-            sentence.AddLast(word);
-        }
-        
-        internal void Prepend(string word)
-        {
-            sentence.AddFirst(word);
-        }
+            WordCount = split.Length;
 
-
-        internal string GetForwardChain()
-        {
-            var chain = new string[order];
-            
-            var node = sentence.Last;
-            for (int i = order - 1; i >= 0; i--)
+            int initialChainPos = maxWords - order;
+            senStart = initialChainPos;
+            for (int i = 0; i < split.Length; i++, initialChainPos++)
             {
-                chain[i] = node.Value;
-                node = node.Previous;
+                sentence[initialChainPos] = split[i];
             }
-            
-            return string.Join(" ", chain);
+            senEnd = initialChainPos - 1;
         }
 
-        internal string GetBackwardChain()
+        public void Append(string word)
         {
-            var chain = new string[order];
-            
-            var node = sentence.First;
-            for (int i = 0; i < order; i++)
-            {
-                chain[i] = node.Value;
-                node = node.Next;
-            }
-            
-            return string.Join(" ", chain);
+            // Points to the current head(/end) of the sentence, increment to append.
+            senEnd++;
+            sentence[senEnd] = word;
+            WordCount++;
         }
 
-
-        internal void AppendMode()
+        public void Prepend(string word)
         {
-            modeChain = GetForwardChain;
-            modeAction = Append;
+            // Points to the current tail(/beginning) of the sentence, decrement to prepend.
+            senStart--;
+            sentence[senStart] = word;
+            WordCount++;
         }
 
-        internal void PrependMode()
+        // ---------------------------------------------------------------------------------
+        // Methods for getting chains while building and for getting the sentence when done.
+        // ---------------------------------------------------------------------------------
+
+        public string ForwardChain()
         {
-            modeChain = GetBackwardChain;
-            modeAction = Prepend;
+            // Get last n (order) words.
+            int forwardStart = (senEnd + 1) - order;
+            var chain = string.Join(" ", sentence, forwardStart, order);
+            return chain;
         }
 
-        internal void ModeAdd(string word)
+        public string BackwardChain()
         {
-            modeAction(word);
+            // Get first n (order) words.
+            var chain = string.Join(" ", sentence, senStart, order);
+            return chain;
+        }
+
+        public string[] Sentence()
+        {
+            var sentence = new string[WordCount];
+            Array.Copy(this.sentence, senStart, sentence, 0, WordCount);
+
+            return sentence;
+        }
+
+        // ---------------------
+        // Mode setting methods.
+        // ---------------------
+
+        public void AppendMode()
+        {
+            ModeAdd = Append;
+            LatestChain = ForwardChain;
+        }
+
+        public void PrependMode()
+        {
+            ModeAdd = Prepend;
+            LatestChain = BackwardChain;
         }
     }
 }
