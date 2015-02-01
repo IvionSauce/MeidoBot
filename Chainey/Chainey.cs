@@ -13,6 +13,7 @@ public class IrcChainey : IMeidoHook
 {
     readonly IIrcComm irc;
     readonly IMeidoComm meido;
+    readonly ILog log;
 
     readonly BrainFrontend chainey;
     readonly Random rnd = new Random();
@@ -61,6 +62,7 @@ public class IrcChainey : IMeidoHook
     public IrcChainey(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         meido = meidoComm;
+        log = meido.CreateLogger(this);
 
         chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
@@ -265,7 +267,7 @@ public class IrcChainey : IMeidoHook
         var sw = Stopwatch.StartNew();
         var sentence = chainey.BuildResponse(respondTo);
         sw.Stop();
-        Console.WriteLine("-- BuildResponse time: " + sw.Elapsed);
+        log.Verbose("BuildResponse time: {0}", sw.Elapsed);
 
         SendSentence(target, sentence, fromNick);
     }
@@ -278,7 +280,7 @@ public class IrcChainey : IMeidoHook
             string senReplaceNicks = sentence.Content.Replace(nickPlaceholder, fromNick);
             
             irc.SendMessage(target, senReplaceNicks);
-            Console.WriteLine("[Chainey] [{0}] {1}", sentence.Rarity, sentence);
+            log.Message("{0} <> {1}", target, sentence);
         }
     }
 }

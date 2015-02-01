@@ -173,9 +173,6 @@ namespace Chainey
 
         Sentence Select(List<Sentence> responses, List<string> seeds)
         {
-            // Debug
-            Console.WriteLine("\n---");
-
             List<Sentence> candidates;
             if (seeds.Count > 1)
             {
@@ -188,7 +185,7 @@ namespace Chainey
                 candidates = responses;
 
             // Debug
-            Console.WriteLine("Responses: {0} | Candidates: {1}", responses.Count, candidates.Count);
+            Console.WriteLine("--- Responses: {0} | Candidates: {1}", responses.Count, candidates.Count);
 
             return SentenceSelector.Select(candidates);
         }
