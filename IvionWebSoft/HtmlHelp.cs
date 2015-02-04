@@ -348,14 +348,6 @@ namespace IvionWebSoft
                 UsedEncoding = EncHeaders;
                 return prelimHtmlString;
             }
-            // SPECIAL: If at first the headers say it's UTF-8, but the HTML declares itself to be ISO-8859-1,
-            // prefer UTF-8. UTF-8 is probably the correct choice and even when it isn't, most ISO-8859-1 codepoints
-            // code for the same character as the UTF-8 codepoints (as far as they overlap).
-            /*else if (EncHeaders == Encoding.UTF8 && EncHtml == Latin1)
-            {
-                UsedEncoding = EncHeaders;
-                return prelimHtmlString;
-            }*/
             // If they are not in agreement and the HTML has a charset declaration, prefer that one.
             else
             {
