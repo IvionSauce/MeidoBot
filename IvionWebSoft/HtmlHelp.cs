@@ -49,7 +49,7 @@ namespace IvionWebSoft
         public string HeadersCharset { get; private set; }
         /// <summary>
         /// The encoding as indicated by the HTTP headers. If the headers charset didn't map to an encoding it will
-        /// default to ISO-8859-1.
+        /// default to Windows-1252.
         /// </summary>
         public Encoding EncHeaders { get; private set; }
 
@@ -86,6 +86,10 @@ namespace IvionWebSoft
             // Unicode
             {"utf8", "utf-8"}
         };
+
+        // Shorthands for commonly used encodings, so I don't have to go typing GetEncoding everywhere. :v
+        static readonly Encoding Latin1 = Encoding.GetEncoding("ISO-8859-1");
+        static readonly Encoding Windows1252 = Encoding.GetEncoding(1252);
 
 
         /// <summary>
@@ -217,8 +221,8 @@ namespace IvionWebSoft
                 Uri redirectUrl = FixRefreshUrl(refreshUrl, url);
                 
                 // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
-                const int maxRedirects = 10;
-                if (redirects < maxRedirects)
+                const int MaxRedirects = 10;
+                if (redirects < MaxRedirects)
                 {    
                     // If during the redirects we get a different page/HTML string, refrain from following more redirects.
                     // It probably means we've arrived, but only more real world testing will tell us if that's true.
@@ -291,28 +295,33 @@ namespace IvionWebSoft
         void ForgePrelimString()
         {
             // Encoding according to HTTP Headers.
-            // Fall back to ISO-8859-1 in case of encoding not being supported.
+            // Fall back to Windows-1252 in case of encoding not being supported.
             try
             {
-                EncHeaders = Encoding.GetEncoding( FixCharset(HeadersCharset) );
+                EncHeaders = GetEncoding(HeadersCharset);
             }
             catch(ArgumentException)
             {
-                EncHeaders = Encoding.GetEncoding("ISO-8859-1");
+                EncHeaders = Windows1252;
             }
             
             prelimHtmlString = EncHeaders.GetString(HtmlData);
         }
 
 
-        // If charset exists in charsetReplace dict, return proper charset. Else return as-is.
-        static string FixCharset(string charset)
+        static Encoding GetEncoding(string charset)
         {
             string fixedCharset;
-            if (charsetReplace.TryGetValue(charset, out fixedCharset))
-                return fixedCharset;
+            if (!charsetReplace.TryGetValue(charset, out fixedCharset))
+                fixedCharset = charset;
+
+            var enc = Encoding.GetEncoding(fixedCharset);
+
+            // If ISO-8859-1 prefer Windows-1252, this is what most clients do as well.
+            if (enc != Latin1)
+                return enc;
             else
-                return charset;
+                return Windows1252;
         }
 
 
@@ -342,11 +351,11 @@ namespace IvionWebSoft
             // SPECIAL: If at first the headers say it's UTF-8, but the HTML declares itself to be ISO-8859-1,
             // prefer UTF-8. UTF-8 is probably the correct choice and even when it isn't, most ISO-8859-1 codepoints
             // code for the same character as the UTF-8 codepoints (as far as they overlap).
-            else if (EncHeaders == Encoding.UTF8 && EncHtml == Encoding.GetEncoding("ISO-8859-1"))
+            /*else if (EncHeaders == Encoding.UTF8 && EncHtml == Latin1)
             {
                 UsedEncoding = EncHeaders;
                 return prelimHtmlString;
-            }
+            }*/
             // If they are not in agreement and the HTML has a charset declaration, prefer that one.
             else
             {
@@ -370,7 +379,7 @@ namespace IvionWebSoft
 
             try
             {
-                Encoding htmlEncoding = Encoding.GetEncoding( FixCharset(HtmlCharset) );
+                Encoding htmlEncoding = GetEncoding(HtmlCharset);
                 return htmlEncoding;
             }
             catch (ArgumentException)
