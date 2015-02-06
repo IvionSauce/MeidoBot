@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{F2E548A3-E400-43A0-A695-6E9D0D6B0FC9}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -47,6 +47,8 @@
     <Compile Include="Request.cs" />
     <Compile Include="BinaryHandler.cs" />
     <Compile Include="HandlersMisc.cs" />
+    <Compile Include="TitleConstruct.cs" />
+    <Compile Include="UrlExtractor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

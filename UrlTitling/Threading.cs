@@ -29,7 +29,7 @@ class ChannelThreadManager
     }
     
     
-    public void EnqueueMessage(string channel, string nick, string[] message)
+    public void EnqueueMessage(string channel, string nick, string message)
     {
         var item = new MessageItem(nick, message);
         ChannelThread thread = GetThread(channel);
@@ -159,26 +159,18 @@ class ChannelThread
 
     void ProcessMessage(MessageItem item)
     {
-        if (!DisabledNicks.Contains(item.Nick))
+        string[] urls = UrlExtractor.Extract(item.Message);
+        if (urls.Length > 0)
         {
-            foreach ( string url in ExtractUrls(item.Message) )         
-                ProcessUrl(item.Nick, url);
-        }
-        else
-            log.Message("Titling disabled for {0}.", item.Nick);
-    }
-    
-    
-    IEnumerable<string> ExtractUrls(string[] message)
-    {
-        foreach (string s in message)
-        {
-            if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            log.Verbose("{0}/{1} {2}", Channel, item.Nick, item.Message);
+
+            if (!DisabledNicks.Contains(item.Nick))
             {
-                log.Verbose("URL detected in {0}: {1}", Channel, s);
-                yield return s;
+                foreach (string url in urls)
+                    ProcessUrl(item.Nick, url);
             }
+            else
+                log.Message("Titling disabled for {0}.", item.Nick);
         }
     }
     
@@ -235,10 +227,10 @@ class ChannelThread
 class MessageItem
 {
     public string Nick { get; private set; }
-    public string[] Message { get; private set; }
+    public string Message { get; private set; }
     
     
-    public MessageItem(string nick, string[] message)
+    public MessageItem(string nick, string message)
     {
         Nick = nick;
         Message = message;

@@ -34,7 +34,7 @@ namespace WebIrc
                 else
                     summary = p.Substring(0, MaxChars) + "[...]";
                 
-                req.ConstructedTitle = string.Format("[ {0} ]", summary);
+                req.ConstructedTitle.SetFormat("[ {0} ]", summary);
             }
             return req.CreateResult(true);
         }
@@ -60,13 +60,9 @@ namespace WebIrc
         public static TitlingResult YoutubeWithDuration(TitlingRequest req, string htmlDoc)
         {
             // If duration can be found, change the html info to include that.
-            int ytTime = WebTools.GetYoutubeTime(htmlDoc);
-            if (ytTime > 0)
-            {
-                int ytMinutes = ytTime / 60;
-                int ytSeconds = ytTime % 60;
-                req.ConstructedTitle += string.Format(" [{0}:{1:00}]", ytMinutes, ytSeconds);
-            }
+            var ytTime = WebTools.GetYoutubeTime(htmlDoc);
+            req.ConstructedTitle.SetHtmlTitle().AppendTime(ytTime);
+
             return req.CreateResult(true);
         }
     }

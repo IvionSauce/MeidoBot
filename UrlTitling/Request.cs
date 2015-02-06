@@ -69,17 +69,10 @@ namespace WebIrc
 
         public WebResource Resource { get; set; }
 
-        string _title = string.Empty;
-        public string ConstructedTitle
+        TitleConstruct _title = new TitleConstruct();
+        public TitleConstruct ConstructedTitle
         {
             get { return _title; }
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException("value", "ConstructedTitle cannot be set to null.");
-
-                _title = value;
-            }
         }
 
         List<string> messages = new List<string>();
@@ -128,10 +121,7 @@ namespace WebIrc
 
         public TitlingResult CreateResult()
         {
-            if (string.IsNullOrWhiteSpace(ConstructedTitle))
-                return CreateResult(false);
-            else
-                return CreateResult(true);
+            return CreateResult(true);
         }
 
         public TitlingResult CreateResult(bool printTitle)
@@ -141,7 +131,7 @@ namespace WebIrc
 
             return new TitlingResult(Url,
                                      Resource.Location, Resource.Success, Resource.Exception,
-                                     ConstructedTitle, printTitle,
+                                     ConstructedTitle.ToString(), printTitle,
                                      messages);
         }
     }

@@ -61,8 +61,7 @@ namespace WebIrc
                     return req.CreateResult(false);
                 }
 
-                req.ConstructedTitle = string.Format("[ /{0}/ - {1} ] [ {2} ]",
-                                                     post.Board, post.BoardName, topic);
+                req.ConstructedTitle.SetFormat("[ /{0}/ - {1} ] [ {2} ]", post.Board, post.BoardName, topic);
                 return req.CreateResult(true);
             }
             else

@@ -12,20 +12,17 @@ namespace WebIrc
         public string NormalCode { get; set; }
 
 
-        // NormalCode, Rating, Warning and PostInfo/PostNo.
-        const string msgFormat = "{0}[{1}]{2} [ {3} ]";
-
-
-        protected string FormatMessage(BooruPost.Rating rated, string warning, int postNo)
-        {
-            var postId = string.Concat( "#", postNo.ToString() );
-            return FormatMessage(rated, warning, postId);
-        }
-
-        protected string FormatMessage(BooruPost.Rating rated, string warning, string info)
+        protected void FormatMessage(TitleConstruct title, BooruPost.Rating rated, string warning, int postNo)
         {
             string rating = ResolveRating(rated);
-            return string.Format(msgFormat, NormalCode, rating, warning, info);
+            title.SetFormat("{0}[{1}]", NormalCode, rating);
+            title.Append(warning).AppendFormat("[ #{0} ]", postNo);
+        }
+
+        protected void FormatMessage(TitleConstruct title, BooruPost.Rating rated, string warning)
+        {
+            string rating = ResolveRating(rated);
+            title.SetFormat("{0}[{1}]", NormalCode, rating).Append(warning);
         }
 
 
@@ -55,7 +52,7 @@ namespace WebIrc
                     warnings.Add(tag);
             
             if (warnings.Count > 0)
-                return string.Concat( " [", string.Join(", ", warnings), "]" );
+                return string.Concat("[", string.Join(", ", warnings), "]");
             else
                 return string.Empty;
         }
@@ -104,8 +101,8 @@ namespace WebIrc
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
-                    return req.CreateResult(true);;
+                    FormatMessage(req.ConstructedTitle, postInfo.Rated, warning, postInfo.PostNo);
+                    return req.CreateResult(true);
                 }
                 
                 DanboTools.CleanupCharacterTags(postInfo.CharacterTags, postInfo.CopyrightTags);
@@ -115,9 +112,9 @@ namespace WebIrc
                 var characters = TagArrayToString(postInfo.CharacterTags, CharacterCode);
                 var copyrights = TagArrayToString(postInfo.CopyrightTags, CopyrightCode);
                 var artists = TagArrayToString(postInfo.ArtistTags, ArtistCode);
-                
-                string danbo = FormatDanboInfo(characters, copyrights, artists);
-                req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, danbo);
+
+                FormatMessage(req.ConstructedTitle, postInfo.Rated, warning);
+                FormatDanboInfo(req.ConstructedTitle, characters, copyrights, artists);
 
                 return req.CreateResult(true);
             }
@@ -150,34 +147,20 @@ namespace WebIrc
         }
         
         
-        static string FormatDanboInfo(string characters, string copyrights, string artists)
+        static void FormatDanboInfo(TitleConstruct title, string characters, string copyrights, string artists)
         {
-            string danbo = null;
-            
+            title.Append('[');
             // If we have characters and copyrights, use them both. If we just have either characters or copyrights
             // use the one we have.
-            if (!string.IsNullOrEmpty(characters))
-            {                
-                if (!string.IsNullOrEmpty(copyrights))
-                    danbo = string.Format("{0} ({1})", characters, copyrights);
-                else
-                    danbo = characters;
-            }
-            else if (!string.IsNullOrEmpty(copyrights))
-                danbo = copyrights;
-            
+            title.Append(characters);
+            if (!string.IsNullOrEmpty(copyrights))
+                title.AppendFormat("({0})", copyrights);
+
             // Use the artists tags if we have them.
             if (!string.IsNullOrEmpty(artists))
-            {
-                // Dependent on whether we have the previous 2 (characters and copyrights) prepend the artist bit with
-                // a space.
-                if (danbo == null)
-                    danbo = string.Concat("drawn by ", artists);
-                else
-                    danbo = string.Concat(danbo, " drawn by ", artists);
-            }
-            
-            return danbo;
+                title.Append("drawn by").Append(artists);
+
+            title.Append(']');
         }
     }
 
@@ -194,7 +177,7 @@ namespace WebIrc
                 string warning = ConstructWarning(postInfo.AllTags);
                 if (!string.IsNullOrEmpty(warning))
                 {
-                    req.ConstructedTitle = FormatMessage(postInfo.Rated, warning, postInfo.PostNo);
+                    FormatMessage(req.ConstructedTitle, postInfo.Rated, warning, postInfo.PostNo);
                     return req.CreateResult(true);
                 }
             }

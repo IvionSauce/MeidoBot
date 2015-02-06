@@ -48,57 +48,24 @@ namespace WebIrc
                 break;
             }
             
-            req.ConstructedTitle = FormatBinaryInfo(type, media);
+            FormatBinaryInfo(req.ConstructedTitle, type, media);
             return req.CreateResult(true);
         }
 
-        static string FormatBinaryInfo(string content, MediaInfo media)
+        static void FormatBinaryInfo(TitleConstruct title, string content, MediaInfo media)
         {
-            var sizeStr = FormatSize(media.ContentLength);
-
-            string binaryInfo;
             if (media.Dimensions.Width > 0 && media.Dimensions.Height > 0)
             {
-                var timeStr = FormatTime(media.Duration);
-                if (timeStr != string.Empty && media.HasAudio)
-                    timeStr += " ♫";
+                title.SetFormat("[ {0}: {1}x{2} ]", content, media.Dimensions.Width, media.Dimensions.Height);
+                title.AppendTime(media.Duration);
 
-                binaryInfo = string.Format("[ {0}: {1}x{2} ]{3} {4}",
-                                           content, media.Dimensions.Width, media.Dimensions.Height,
-                                           timeStr, sizeStr);
+                if (media.HasAudio)
+                    title.Append('♫');
+
+                title.AppendSize(media.ContentLength);
             }
             else
-                binaryInfo = string.Format("[ {0} ] {1}", content, sizeStr);
-
-            return binaryInfo;
-        }
-
-        // Size is in bytes/octets.
-        static string FormatSize(long size)
-        {
-            if (size < 1)
-                return string.Empty;
-
-            var sizeInK = size / 1024d;
-            if (sizeInK > 1024)
-            {
-                var sizeInM = sizeInK / 1024;
-                return sizeInM.ToString("#.#") + "MB";
-            }
-            else
-                return sizeInK.ToString("#.#") + "kB";
-        }
-
-        static string FormatTime(TimeSpan duration)
-        {
-            if (duration.TotalSeconds < 1d)
-                return string.Empty;
-
-            var total = (int)Math.Round(duration.TotalSeconds);
-            var minutes = total / 60;
-            var seconds = total % 60;
-
-            return string.Format(" [{0}:{1:00}]", minutes, seconds);
+                title.AppendFormat("[ {0} ]", content).AppendSize(media.ContentLength);
         }
 
 

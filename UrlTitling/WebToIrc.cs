@@ -132,7 +132,7 @@ namespace WebIrc
                 return request.CreateResult(false);
             }
 
-            request.ConstructedTitle = string.Format("[ {0} ]", htmlTitle);
+            request.ConstructedTitle.HtmlTitle = htmlTitle;
             // -----------------------------------------
             // ----- Below: Need HTML and/or Title -----
 
@@ -149,11 +149,11 @@ namespace WebIrc
             }
             // Other URLs.
             else
-                return GenericHandler(request, htmlTitle);
+                return GenericHandler(request);
         }
 
 
-        TitlingResult GenericHandler(TitlingRequest req, string htmlTitle)
+        TitlingResult GenericHandler(TitlingRequest req)
         {
             // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
             // higher. The similarity would always be equal to or less than 1.
@@ -164,7 +164,7 @@ namespace WebIrc
             else if (Threshold < 0)
                 return req.CreateResult(false);
 
-            double urlTitleSimilarity = UrlTitle.Similarity(req.Url, htmlTitle);
+            double urlTitleSimilarity = UrlTitle.Similarity(req.Url, req.ConstructedTitle.HtmlTitle);
             req.AddMessage("URL-Title Similarity: " + urlTitleSimilarity);
 
             if (urlTitleSimilarity <= Threshold)

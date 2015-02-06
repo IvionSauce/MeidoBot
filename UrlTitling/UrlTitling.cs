@@ -94,7 +94,7 @@ public class UrlTitler : IMeidoHook
         {
         // Handling of URLs.
         case null:
-            manager.EnqueueMessage(e.Channel, e.Nick, e.MessageArray);
+            manager.EnqueueMessage(e.Channel, e.Nick, e.Message);
             return;
         // Trigger handling.
         case "disable":
