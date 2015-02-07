@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using WebIrc;
+using IvionWebSoft;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -113,8 +114,8 @@ public class UrlTitler : IMeidoHook
     {
         switch (e.Trigger)
         {
-        case "bin":
-            ThreadPool.QueueUserWorkItem( (data) => BinaryPrint(e) );
+        case "dump":
+            Dump(e);
             return;
         case "reload_bw":
             manager.Blacklist.ReloadFile();
@@ -124,21 +125,14 @@ public class UrlTitler : IMeidoHook
         }
     }
 
-    void BinaryPrint(IIrcMessage e)
+    void Dump(IIrcMessage e)
     {
-        for (int i = 1; i < e.MessageArray.Length; i++)
+        if (e.MessageArray.Length > 1)
         {
-            var msg = e.MessageArray[i];
-            if (Uri.IsWellFormedUriString(msg, UriKind.Absolute))
-            {
-                var req = new TitlingRequest(new Uri(msg));
-                var result = BinaryHandler.BinaryToIrc(req);
-                
-                if (result.PrintTitle)
-                    e.Reply(result.Title);
-                else
-                    e.Reply(result.Exception.Message);
-            }
+            var encHelper = new HtmlEncodingHelper();
+            var resource = encHelper.GetWebString(e.MessageArray[1]);
+            if (resource.Success)
+                File.WriteAllText("/tmp/dump.html", resource.Document);
         }
     }
 
