@@ -64,8 +64,16 @@ namespace IvionWebSoft
         {
             if (docString == null)
                 throw new ArgumentNullException("docString");
-            
-            Match charset = xmlCharsetRegexp.Match(docString);
+
+            // Hack to make finding the XML charset declaration faster, it should be at the start of the document
+            // so limit to searching the first 100 characters.
+            int len;
+            if (docString.Length > 100)
+                len = 100;
+            else
+                len = docString.Length;
+
+            Match charset = xmlCharsetRegexp.Match(docString, 0, len);
             
             if (charset.Success)
                 return charset.Value;

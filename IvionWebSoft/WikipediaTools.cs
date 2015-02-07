@@ -11,7 +11,7 @@ namespace IvionWebSoft
             new Regex(@"(?i)<h1 id=""firstHeading"" class=""firstHeading"" lang=""([^""]+)"">" +
                       @"<span dir=""auto"">([^>]+)</span></h1>");
 
-        static readonly Regex tableRegexp = new Regex(@"(?i)(?s)<table[^>]*>.+?</table>");
+        static readonly Regex tableRegexp = new Regex(@"(?i)(?s)<td[^>]*>.+?</td>");
 
         static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=</p>)");
 

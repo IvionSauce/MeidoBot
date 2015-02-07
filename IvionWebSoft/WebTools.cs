@@ -60,19 +60,22 @@ namespace IvionWebSoft
         /// <summary>
         /// Gets the duration of a YouTube movie.
         /// </summary>
-        /// <returns>The duration in seconds. If unable to determine duration it will return -1.</returns>
+        /// <returns>The duration as TimeSpan.</returns>
         /// <exception cref="ArgumentNullException">Thrown if htmlString is null.</exception>
         /// <param name="htmlString">String content of the (X)HTML page with the YouTube video.</param>
-        public static int GetYoutubeTime(string htmlString)
+        public static TimeSpan GetYoutubeTime(string htmlString)
         {
             if (htmlString == null)
                 throw new ArgumentNullException("htmlString");
 
             Match timeMatch = ytRegexp.Match(htmlString);
             if (timeMatch.Success)
-                return int.Parse(timeMatch.Value);
+            {
+                var seconds = int.Parse(timeMatch.Value);
+                return TimeSpan.FromSeconds(seconds);
+            }
             else
-                return -1;
+                return TimeSpan.Zero;
         }
     }
 
@@ -182,5 +185,53 @@ namespace IvionWebSoft
             else
                 return foundWords / (double)totalWords;
         }
+
+        /* public double Similarity2(string url, string title)
+        {
+            if (url == null)
+                throw new ArgumentNullException("url");
+            else if (title == null)
+                throw new ArgumentNullException("title");
+
+            var word = new StringBuilder();
+            int totalWords = 0;
+            int foundWords = 0;
+            foreach (char c in title)
+            {
+                if (char.IsWhiteSpace(c) || CharIgnore.Contains(c))
+                {
+                    if (word.Length > 0)
+                    {
+                        totalWords++;
+                        if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
+                            foundWords++;
+
+                        word.Clear();
+                    }
+                }
+                else if (c > maxCharCode)
+                {
+                    if (word.Length > 0)
+                    {
+                        totalWords++;
+                        if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
+                            foundWords++;
+
+                        word.Clear();
+                    }
+                    totalWords++;
+                    if (url.IndexOf(c) >= 0)
+                        foundWords++;
+                }
+                else
+                    word.Append(c);
+            }
+            // Clean up final word.
+            totalWords++;
+            if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
+                foundWords++;
+
+            return foundWords / (double)totalWords;
+        } */
     }
 }
