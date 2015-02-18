@@ -32,7 +32,22 @@ namespace MeidoBot
 
         public ILog CreateLogger(IMeidoHook plugin)
         {
-            return logFac.CreateLogger(plugin.Name);
+            string name;
+            switch (plugin.Name)
+            {
+            case "":
+            case null:
+                name = "Unknown";
+                break;
+            case "MEIDO":
+                name = "_" + plugin.Name;
+                break;
+            default:
+                name = plugin.Name;
+                break;
+            }
+
+            return logFac.CreateLogger(name);
         }
 
 

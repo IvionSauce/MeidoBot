@@ -50,6 +50,8 @@ namespace MeidoCommon
 
         void Reply(string message);
         void Reply(string message, params object[] args);
+        void SendNotice(string message);
+        void SendNotice(string message, params object[] args);
     }
 
 

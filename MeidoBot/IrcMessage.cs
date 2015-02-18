@@ -64,6 +64,17 @@ namespace MeidoBot
             else
                 return null;
         }
+
+
+        public void SendNotice(string message, params object[] args)
+        {
+            SendNotice( string.Format(message, args) );
+        }
+
+        public void SendNotice(string message)
+        {
+            irc.SendMessage(SendType.Notice, Nick, message);
+        }
         
         
         public void Reply(string message, params object[] args)

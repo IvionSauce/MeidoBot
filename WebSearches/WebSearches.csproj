@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -47,10 +47,6 @@
     <ProjectReference Include="..\IvionWebSoft\IvionWebSoft.csproj">
       <Project>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</Project>
       <Name>IvionWebSoft</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
-      <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
-      <Name>IvionSoft</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
