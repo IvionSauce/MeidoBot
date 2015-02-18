@@ -35,6 +35,8 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="MiscUtils.cs" />
+    <Compile Include="Timers.cs" />
+    <Compile Include="ExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
