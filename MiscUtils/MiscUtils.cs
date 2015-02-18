@@ -22,7 +22,7 @@ public class MiscUtils : IMeidoHook
     }
     public string Version
     {
-        get { return "0.40"; }
+        get { return "0.50"; }
     }
 
     public Dictionary<string,string> Help
