@@ -85,12 +85,17 @@ namespace Chainey
             return chain;
         }
 
-        public string[] Sentence()
+        public string[] ToArray()
         {
             var sentence = new string[WordCount];
             Array.Copy(this.sentence, senStart, sentence, 0, WordCount);
 
             return sentence;
+        }
+
+        public ArraySegment<string> CurrentSegment()
+        {
+            return new ArraySegment<string>(sentence, senStart, WordCount);
         }
 
         // ---------------------

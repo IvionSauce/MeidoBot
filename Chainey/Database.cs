@@ -299,12 +299,12 @@ namespace Chainey
             return count ?? 0;
         }
 
-        static long[] WordCount(string[] words, SqliteCommand cmd)
+        static long[] WordCount(ArraySegment<string> words, SqliteCommand cmd)
         {
-            var counts = new long[words.Length];
-            for (int i = 0; i < words.Length; i++)
+            var counts = new long[words.Count];
+            for (int i = 0; i < words.Count; i++)
             {
-                counts[i] = WordCount(words[i], cmd);
+                counts[i] = WordCount(words.Array[words.Offset + i], cmd);
             }
             return counts;
         }
@@ -428,10 +428,10 @@ namespace Chainey
                         CollectChains(words, v.ForwardSearch);
                     }
 
-                    string[] sentenceWords = words.Sentence();
-                    long[] wordCounts = WordCount(sentenceWords, v.WordCount);
+                    var segment = words.CurrentSegment();
+                    long[] wordCounts = WordCount(segment, v.WordCount);
 
-                    yield return new Sentence(sentenceWords, wordCounts);
+                    yield return new Sentence(segment, wordCounts);
                 }
             }
         }
@@ -446,7 +446,8 @@ namespace Chainey
                 // makes sense to use it in this loop, where it can get called 10's of thousands of times.
                 cmd.Parameters.Add("@Chain", DbType.String).Value = chain;
 
-                var followUp = cmd.ExecuteScalar() as string;
+                var followUp = (string)cmd.ExecuteScalar();
+
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is
                 // empty) stop collecting chains.
                 if ( !string.IsNullOrEmpty(followUp) )
