@@ -270,12 +270,22 @@ namespace Chainey
             // Only bother checking for time if the limit is applicable.
             if (limit > 0)
             {
+                const int Interval = 256;
+                int loopCount = 1;
+
                 var startTicks = (uint)Environment.TickCount;
                 foreach (var sen in sentences)
                 {
                     coll.Add(sen);
-                    if ( ((uint)Environment.TickCount - startTicks) > limit )
-                        break;
+                    if (loopCount == Interval)
+                    {
+                        if ( ((uint)Environment.TickCount - startTicks) > limit )
+                            break;
+                        else
+                            loopCount = 0;
+                    }
+
+                    loopCount++;
                 }
             }
             // Add all Sentence objects when time is not of the essence.
