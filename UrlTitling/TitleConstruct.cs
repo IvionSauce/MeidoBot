@@ -26,15 +26,6 @@ namespace WebIrc
             sb = new StringBuilder(256);
         }
 
-        public TitleConstruct(StringBuilder sb)
-        {
-            if (sb == null)
-                throw new ArgumentNullException("sb");
-
-            sb.Clear();
-            this.sb = sb;
-        }
-
 
         public TitleConstruct Append(string s)
         {
@@ -92,19 +83,9 @@ namespace WebIrc
         }
 
 
-        public TitleConstruct Set(StringBuilder sb)
-        {
-            if (sb == null)
-                throw new ArgumentNullException("sb");
-
-            this.sb = sb;
-            return this;
-        }
-
-
         public TitleConstruct AppendTime(TimeSpan duration)
         {
-            if (duration.TotalSeconds >= 1d)
+            if (duration.TotalSeconds >= 0.5d)
             {
                 sb.Append(' ');
 

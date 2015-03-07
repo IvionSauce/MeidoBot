@@ -65,7 +65,7 @@ namespace WebIrc
                 title.AppendSize(media.ContentLength);
             }
             else
-                title.AppendFormat("[ {0} ]", content).AppendSize(media.ContentLength);
+                title.SetFormat("[ {0} ]", content).AppendSize(media.ContentLength);
         }
 
 

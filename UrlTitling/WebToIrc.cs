@@ -48,7 +48,7 @@ namespace WebIrc
         public TitlingResult WebInfo(string uriString)
         {
             if (uriString == null)
-                throw new ArgumentNullException("requestUri");
+                throw new ArgumentNullException("uriString");
 
             Uri uri;
             try

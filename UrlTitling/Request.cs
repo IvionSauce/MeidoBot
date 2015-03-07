@@ -119,11 +119,6 @@ namespace WebIrc
         }
 
 
-        public TitlingResult CreateResult()
-        {
-            return CreateResult(true);
-        }
-
         public TitlingResult CreateResult(bool printTitle)
         {
             if (Resource == null)
