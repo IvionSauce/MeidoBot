@@ -52,14 +52,18 @@ namespace MeidoBot
             if (type == ReceiveType.ChannelAction || type == ReceiveType.QueryAction)
                 return null;
 
+            // If message starts with prefix.
             if (Message.StartsWith(prefix, StringComparison.Ordinal))
             {
-                if (MessageArray[0].Length == prefix.Length)
-                    return string.Empty;
+                string trigger = MessageArray[0].Substring(prefix.Length);
+                // If trigger starts with prefix suppose it wasn't the intent to call a trigger.
+                if (trigger.StartsWith(prefix, StringComparison.Ordinal))
+                    return null;
                 else
-                    return MessageArray[0].Substring(prefix.Length);
+                    return trigger;
             }
-            else if (type == ReceiveType.QueryMessage)
+
+            if (type == ReceiveType.QueryMessage)
                 return MessageArray[0];
             else
                 return null;
