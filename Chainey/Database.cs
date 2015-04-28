@@ -399,7 +399,7 @@ namespace Chainey
 
         IEnumerable<Sentence> Builder(BuilderVectors v)
         {
-            // SentenceConstruct copies out the volatile field, so we have a consistent MaxWords while building.
+            // Copies out the volatile field, so we have a consistent MaxWords while building.
             var words = new SentenceConstruct(Order, MaxWords);
 
             using (var reader = v.StartingChains.ExecuteReader())
@@ -445,7 +445,6 @@ namespace Chainey
                 // Seems like Add is slightly faster than AddWithValue, although the difference is so small it only
                 // makes sense to use it in this loop, where it can get called 10's of thousands of times.
                 cmd.Parameters.Add("@Chain", DbType.String).Value = chain;
-
                 var followUp = (string)cmd.ExecuteScalar();
 
                 // If the chain couldn't be found (followUp is null) or if the chain is an ending chain (followUp is

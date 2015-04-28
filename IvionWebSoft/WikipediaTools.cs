@@ -16,7 +16,7 @@ namespace IvionWebSoft
         static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=</p>)");
 
         static readonly Regex sectionRegexp =
-            new Regex(@"(?i)<h[1-4]><span class=""mw-headline"" id=""([^""]+)"">([^<]+)</span>");
+            new Regex(@"(?i)<span class=""mw-headline"" id=""([^""]+)"">([^<]+)</span>");
 
 
         /* Matches:
