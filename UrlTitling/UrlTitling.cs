@@ -49,7 +49,7 @@ public class UrlTitler : IMeidoHook
         var log = meidoComm.CreateLogger(this);
         var conf = new Config(Path.Combine(meidoComm.ConfDir, "UrlTitling.xml"), log);
 
-        WebToIrc.Cookies.Add(conf.CookieColl);
+        //WebToIrc.Cookies.Add(conf.CookieColl);
 
         // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(ircComm, log, conf);

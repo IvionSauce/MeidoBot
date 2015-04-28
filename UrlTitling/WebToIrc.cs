@@ -23,7 +23,8 @@ namespace WebIrc
         public DanboHandler Danbo { get; private set; }
         public GelboHandler Gelbo { get; private set; }
 
-        public static CookieContainer Cookies { get; private set; }
+        public CookieContainer Cookies { get; private set; }
+
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
         readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
@@ -33,8 +34,6 @@ namespace WebIrc
         {
             // State we want to use our ACCEPT ALL implementation.
             ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
-
-            Cookies = new CookieContainer();
             UrlTitle = new UrlTitleComparer();
         }
         public WebToIrc()
@@ -42,6 +41,8 @@ namespace WebIrc
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
+
+            Cookies = new CookieContainer();
         }
 
 

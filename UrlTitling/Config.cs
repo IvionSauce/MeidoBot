@@ -42,6 +42,7 @@ class Config : XmlConfig
     public WebToIrc ConstructWebToIrc(string channel)
     {
         var webIrc = new WebToIrc();
+        webIrc.Cookies.Add(CookieColl);
 
         var global = WebIrcSettings.GetOrAdd("_all");
         WebToIrcConfig specific;
