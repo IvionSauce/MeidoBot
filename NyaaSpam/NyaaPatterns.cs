@@ -460,7 +460,7 @@ public class NyaaPatterns : IDisposable
             lock (_storageLock)
                 lastwrite = lastWriteCall;
 
-        } while (lastwrite + bufferTime < DateTimeOffset.Now);
+        } while (lastwrite + bufferTime > DateTimeOffset.Now);
 
         Serialize();
     }
