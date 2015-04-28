@@ -14,14 +14,28 @@ public class NyaaPatterns : IDisposable
         set { _serialize = value; }
     }
 
+    volatile string _path;
+    public string FileLocation
+    {
+        get { return _path; }
+        set
+        {
+            lock (_storageLock)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    _path = null;
+                else
+                    _path = value;
+            }
+        }
+    }
+
     TimeSpan bufferTime;
     bool pendingWrites;
     DateTimeOffset lastWriteCall;
 
     Storage<ChannelPatterns> storage = new Storage<ChannelPatterns>();
     readonly object _storageLock = new object();
-
-    string path;
 
 
     public NyaaPatterns() : this(TimeSpan.Zero) {}
@@ -34,6 +48,10 @@ public class NyaaPatterns : IDisposable
         this.bufferTime = bufferTime;
     }
 
+
+    // ----------------------
+    // Add (exclude) pattern.
+    // ----------------------
 
     public int Add(string channel, string pattern)
     {
@@ -80,6 +98,10 @@ public class NyaaPatterns : IDisposable
     }
 
 
+    // ----------------------
+    // Get (exclude) pattern.
+    // ----------------------
+
     public string Get(string channel, int index)
     {
         if (channel == null)
@@ -95,6 +117,11 @@ public class NyaaPatterns : IDisposable
 
         return GetOrRemove(false, channel, assocPat, iExclude);
     }
+
+
+    // -------------------------
+    // Remove (exclude) pattern.
+    // -------------------------
 
     public string Remove(string channel, int index)
     {
@@ -112,6 +139,39 @@ public class NyaaPatterns : IDisposable
         return GetOrRemove(true, channel, assocPat, iExclude);
     }
 
+
+    // --------------------------------------
+    // Add/Get/Remove global exclude pattern.
+    // --------------------------------------
+
+    public int AddGlobalExclude(string channel, string exclude)
+    {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
+        return AddExclude(channel, -1, exclude);
+    }
+
+    public string GetGlobalExclude(string channel, int iExclude)
+    {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
+        return GetExclude(channel, -1, iExclude);
+    }
+
+    public string RemoveGlobalExclude(string channel, int iExclude)
+    {
+        if (channel == null)
+            throw new ArgumentNullException("channel");
+
+        return RemoveExclude(channel, -1, iExclude);
+    }
+
+
+    // -----------------------------------------------------------
+    // Private methods for getting or removing (exclude) patterns.
+    // -----------------------------------------------------------
 
     string GetOrRemove(bool remove, string channel, int index)
     {
@@ -163,30 +223,9 @@ public class NyaaPatterns : IDisposable
     }
 
 
-    public int AddGlobalExclude(string channel, string exclude)
-    {
-        if (channel == null)
-            throw new ArgumentNullException("channel");
-
-        return AddExclude(channel, -1, exclude);
-    }
-
-    public string GetGlobalExclude(string channel, int iExclude)
-    {
-        if (channel == null)
-            throw new ArgumentNullException("channel");
-
-        return GetExclude(channel, -1, iExclude);
-    }
-
-    public string RemoveGlobalExclude(string channel, int iExclude)
-    {
-        if (channel == null)
-            throw new ArgumentNullException("channel");
-
-        return RemoveExclude(channel, -1, iExclude);
-    }
-
+    // -------------------------------------------------------------------------------
+    // Get all (exclude) patterns belonging to a certain channel or a certain pattern.
+    // -------------------------------------------------------------------------------
 
     public string[] GetPatterns(string channel)
     {
@@ -195,6 +234,7 @@ public class NyaaPatterns : IDisposable
 
         return InternalPatternsGet(channel, false, -1);
     }
+
     public string[] GetExcludePatterns(string channel, int assocPat)
     {
         if (channel == null)
@@ -202,6 +242,7 @@ public class NyaaPatterns : IDisposable
 
         return InternalPatternsGet(channel, true, assocPat);
     }
+
     public string[] GetGlobalExcludePatterns(string channel)
     {
         if (channel == null)
@@ -220,7 +261,7 @@ public class NyaaPatterns : IDisposable
         lock (_storageLock)
         {
             ChannelPatterns chanPat = storage.Get(channel);
-            // Get all Include Patterns.
+            // Include Patterns.
             if (chanPat != null && !exclude)
             {
                 patternsToRead = new string[chanPat.Patterns.Count];
@@ -228,6 +269,7 @@ public class NyaaPatterns : IDisposable
                 for (int i = 0; i < patternsToRead.Length; i++)
                     patternsToRead[i] = string.Join(" ", chanPat.Patterns[i].IncludePattern);
             }
+            // (Global) Exclude Patterns.
             else
             {
                 List<string[]> exPatterns;
@@ -247,6 +289,10 @@ public class NyaaPatterns : IDisposable
             return patternsToRead;
     }
 
+
+    // ------------------------------------------------------
+    // Helper functions for the above Add/Get/Remove methods.
+    // ------------------------------------------------------
 
     static bool TryGetExPatterns(ChannelPatterns chanPat, int assocPat, out List<string[]> exPatterns)
     {
@@ -286,6 +332,10 @@ public class NyaaPatterns : IDisposable
     }
 
 
+    // -----------------------------------------------------------------------------
+    // Function for determining which channels have a pattern matching passed title.
+    // -----------------------------------------------------------------------------
+
     public string[] PatternMatch(string title)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -313,13 +363,17 @@ public class NyaaPatterns : IDisposable
                         channels.Add(chanPattern.Channel);
                         break;
                     }
-                }
+                } // foreach
             } // foreach
         } // lock
 
         return channels.ToArray();
     }
 
+
+    // ----------------------------------
+    // Helper functions for PatternMatch.
+    // ----------------------------------
 
     static bool ContainsGlobalExcludePattern(ChannelPatterns chanPat, string title)
     {
@@ -336,6 +390,12 @@ public class NyaaPatterns : IDisposable
                 return true;
         return false;
     }
+
+
+    // ----------------------------------------------------------------------------------------------------------
+    // In a sense also a helper function for PatternMatch, but this is the main function deciding whether a title
+    // matches a pattern.
+    // ----------------------------------------------------------------------------------------------------------
 
     static bool IsMatch(string[] pattern, string title)
     {
@@ -366,14 +426,18 @@ public class NyaaPatterns : IDisposable
     }
 
 
+    // --------------------------
+    // Methods for serialization.
+    // --------------------------
+
     // Write depends on the calling method to hold the lock.
     void Write()
     {
-        if (path == null || !SerializeOnModification)
+        if (FileLocation == null || !SerializeOnModification)
             return;
 
         if (bufferTime <= TimeSpan.Zero)
-            storage.Serialize(path);
+            storage.Serialize(FileLocation);
         else
         {
             lastWriteCall = DateTimeOffset.Now;
@@ -401,28 +465,24 @@ public class NyaaPatterns : IDisposable
         Serialize();
     }
 
-
     public void Serialize()
     {
         lock (_storageLock)
         {
-            if (path != null)
+            if (FileLocation != null)
             {
-                storage.Serialize(path);
+                storage.Serialize(FileLocation);
                 pendingWrites = false;
             }
         }
     }
 
-
-    public void Deserialize(string path)
+    public void Deserialize()
     {
-        path.ThrowIfNullOrWhiteSpace("path");
-
         lock (_storageLock)
         {
-            this.path = path;
-            storage = Storage<ChannelPatterns>.Deserialize(path);
+            if (FileLocation != null)
+                storage = Storage<ChannelPatterns>.Deserialize(FileLocation);
         }
     }
 
@@ -438,7 +498,7 @@ public class NyaaPatterns : IDisposable
             // Disable BufferedWrite.
             bufferTime = TimeSpan.Zero;
             // Disable all writing to disk.
-            path = null;
+            FileLocation = null;
         }
     }
 }

@@ -53,11 +53,11 @@ public class NyaaSpam : IMeidoHook
     {
         meido = meidoComm;
 
-        nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) );
         string nyaaFile = Path.Combine(meido.DataDir, "_nyaapatterns.xml");
+        nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) ) { FileLocation = nyaaFile };
         try
         {
-            nyaa.Deserialize(nyaaFile);
+            nyaa.Deserialize();
         }
         catch (FileNotFoundException)
         {}
