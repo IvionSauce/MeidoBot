@@ -70,7 +70,8 @@ namespace MinimalistParsers
                 // [...]
                 // Non-APPn segments:
                 // 0xdb ~ Quantization Tables (DQT)
-                if ( (segmentId >= 0xe0 && segmentId < 0xf0) || segmentId == 0xdb )
+                // 0xfe ~ Comment (COM)
+                if ( (segmentId >= 0xe0 && segmentId < 0xf0) || segmentId == 0xdb || segmentId == 0xfe )
                 {
                     var segmentLength = stream.ReadUint(2);
                     stream.Position += segmentLength - 2;
