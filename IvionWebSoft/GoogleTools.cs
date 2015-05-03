@@ -22,7 +22,7 @@ namespace IvionWebSoft
             if (searchTerm == null)
                 throw new ArgumentNullException("searchTerm");
 
-            const string searchUrl = "https://www.google.com/search?q={0}&ie=utf-8&oe=utf-8";
+            const string searchUrl = "https://www.google.com/search?q={0}&ie=utf-8&oe=utf-8&hl=en";
 
             var currentSearch = string.Format(searchUrl, Uri.EscapeDataString(searchTerm));
             WebString results = MinimalWeb.SimpleGet(currentSearch);
