@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using WebIrc;
 using IvionWebSoft;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -11,10 +10,8 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class UrlTitler : IMeidoHook
 {
-    readonly IIrcComm irc;
     readonly ChannelThreadManager manager;
 
-    public string Prefix { get; set; }
 
     public string Name
     {
@@ -44,20 +41,25 @@ public class UrlTitler : IMeidoHook
     }
 
     [ImportingConstructor]
-    public UrlTitler(IIrcComm ircComm, IMeidoComm meidoComm)
+    public UrlTitler(IIrcComm irc, IMeidoComm meido)
     {
-        var log = meidoComm.CreateLogger(this);
-        var conf = new Config(Path.Combine(meidoComm.ConfDir, "UrlTitling.xml"), log);
+        var log = meido.CreateLogger(this);
+        var conf = new Config(Path.Combine(meido.ConfDir, "UrlTitling.xml"), log);
 
         //WebToIrc.Cookies.Add(conf.CookieColl);
 
         // Sharing stuff with all the ChannelThreads.
-        manager = new ChannelThreadManager(ircComm, log, conf);
+        manager = new ChannelThreadManager(irc, log, conf);
         SetupBWLists(conf, log);
 
-        irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
-        irc.AddTriggerHandler(HandleTrigger);
+        // For handling messages/actions that can potentially containg URL(s).
+        irc.AddChannelMessageHandler(UrlHandler);
+        irc.AddChannelActionHandler(UrlHandler);
+        // Trigger handling.
+        meido.RegisterTrigger("disable", Disable, true);
+        meido.RegisterTrigger("enable", Enable, true);
+        meido.RegisterTrigger("reload_bw", ReloadBW);
+        meido.RegisterTrigger("dump", Dump);
     }
 
     void SetupBWLists(Config conf, ILog log)
@@ -89,43 +91,35 @@ public class UrlTitler : IMeidoHook
     }
 
 
-    public void HandleChannelMessage(IIrcMessage e)
+    public void UrlHandler(IIrcMessage e)
     {
-        switch (e.Trigger)
-        {
-        // Handling of URLs.
-        case null:
+        // Only process messages that aren't a trigger call.
+        if (e.Trigger == null)
             manager.EnqueueMessage(e.Channel, e.Nick, e.Message);
-            return;
-        // Trigger handling.
-        case "disable":
-            manager.DisableNick(e.Channel, e.Nick);
-            irc.SendNotice(e.Nick, "Disabling URL-Titling for you. (In {0})", e.Channel);
-            return;
-        case "enable":
-            if ( manager.EnableNick(e.Channel, e.Nick ) )
-                irc.SendNotice(e.Nick, "Re-enabling URL-Titling for you.");
-            return;
-        }
     }
 
 
-    public void HandleTrigger(IIrcMessage e)
+    public void Disable(IIrcMessage e)
     {
-        switch (e.Trigger)
-        {
-        case "dump":
-            Dump(e);
-            return;
-        case "reload_bw":
-            manager.Blacklist.ReloadFile();
-            manager.Whitelist.ReloadFile();
-            e.Reply("Black- and whitelist have been reloaded.");
-            return;
-        }
+        manager.DisableNick(e.Channel, e.Nick);
+        e.SendNotice("Disabling URL-Titling for you. (In {0})", e.Channel);
     }
 
-    void Dump(IIrcMessage e)
+    public void Enable(IIrcMessage e)
+    {
+        if ( manager.EnableNick(e.Channel, e.Nick) )
+            e.SendNotice("Re-enabling URL-Titling for you.");
+    }
+
+
+    public void ReloadBW(IIrcMessage e)
+    {
+        manager.Blacklist.ReloadFile();
+        manager.Whitelist.ReloadFile();
+        e.Reply("Black- and whitelist have been reloaded.");
+    }
+
+    public void Dump(IIrcMessage e)
     {
         if (e.MessageArray.Length > 1)
         {

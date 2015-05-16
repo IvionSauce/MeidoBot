@@ -11,8 +11,7 @@ public class WebSearches : IMeidoHook
     readonly IIrcComm irc;
 
     readonly WeatherUnderground weather;
-    
-    public string Prefix { get; set; }
+
     
     public string Name
     {
@@ -48,21 +47,8 @@ public class WebSearches : IMeidoHook
             weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
 
         irc = ircComm;
-        irc.AddTriggerHandler(Handle);
-    }
-
-    
-    public void Handle(IIrcMessage e)
-    {
-        switch(e.Trigger)
-        {
-        case "g":
-            GoogleSearch(e);
-            return;
-        case "w":
-            WeatherSearch(e);
-            return;
-        }
+        meido.RegisterTrigger("g", GoogleSearch);
+        meido.RegisterTrigger("w", WeatherSearch);
     }
 
 

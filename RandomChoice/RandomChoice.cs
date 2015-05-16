@@ -17,8 +17,6 @@ public class IrcRandom : IMeidoHook
     readonly Config conf;
 
 
-    public string Prefix { get; set; }
-
     public string Name
     {
         get { return "RandomChoice"; }
@@ -56,42 +54,35 @@ public class IrcRandom : IMeidoHook
         conf = new Config(Path.Combine(meido.ConfDir, "RandomChoice.xml"), meido.CreateLogger(this));
 
         irc = ircComm;
-        irc.AddTriggerHandler(HandleTrigger);
+        meido.RegisterTrigger("c", Choose);
+        meido.RegisterTrigger("cd", Countdown);
+        meido.RegisterTrigger("8ball", EightBall);
     }
 
-    public void HandleTrigger(IIrcMessage e)
+
+    void Choose(IIrcMessage e)
     {
-        switch(e.Trigger)
-        {
-        case "c":
-            string choice = RandomChoice.RndChoice(e.MessageArray);
-            if (choice != null)
-                e.Reply(choice);
-            return;
-        case "cd":
-            Countdown(e.ReturnTo, e.MessageArray);
-            return;
-        case "8ball":
-            ThreadPool.QueueUserWorkItem( (data) => EightBall(e.ReturnTo) );
-            return;
-        }
+        string choice = RandomChoice.RndChoice(e.MessageArray);
+        if (choice != null)
+            e.Reply(choice);
     }
 
 
-    void Countdown(string target, string[] message)
+    void Countdown(IIrcMessage e)
     {
         const int maxCountdownSec = 10;
         const int minCountdownSec = 3;
         int tminus;
-        if ( message.Length == 2 && int.TryParse(message[1], out tminus) )
+        // cd [seconds]
+        if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
         {
             if (tminus >= minCountdownSec && tminus <= maxCountdownSec)
-                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(target, tminus) );
+                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.ReturnTo, tminus) );
         }
+        // cd
         else
-            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(target, minCountdownSec) );
+            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.ReturnTo, minCountdownSec) );
     }
-
 
     void IrcCountdown(string target, int seconds)
     {
@@ -109,14 +100,19 @@ public class IrcRandom : IMeidoHook
     }
 
 
-    void EightBall(string target)
+    void EightBall(IIrcMessage e)
+    {
+        ThreadPool.QueueUserWorkItem( (data) => EightBall(e.ReturnTo) );
+    }
+
+    void EightBall(string returnTo)
     {
         string choice = RandomChoice.Shake8Ball();
 
-        irc.SendMessage(target, "The Magic 8-Ball says...");
+        irc.SendMessage(returnTo, "The Magic 8-Ball says...");
         // Wait for 1.5 seconds.
         Thread.Sleep(1500);
-        irc.SendMessage(target, choice + ".");
+        irc.SendMessage(returnTo, choice + ".");
     }
 }
 

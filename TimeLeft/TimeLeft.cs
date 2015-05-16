@@ -20,9 +20,8 @@ public class TimeLeft : IMeidoHook
     readonly object _locker = new object();
 
     readonly string loc;
-    
-    public string Prefix { get; set; }
-    
+
+
     public string Name
     {
         get { return "TimeLeft"; }
@@ -70,39 +69,36 @@ public class TimeLeft : IMeidoHook
         cleaner = new Timer(Cleaner, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
 
         irc = ircComm;
-        irc.AddTriggerHandler(HandleTrigger);
+        meido.RegisterTrigger("timeleft", HandleTrigger);
     }
     
     public void HandleTrigger(IIrcMessage e)
     {
-        if (e.Trigger == "timeleft")
+        // timeleft
+        if (e.MessageArray.Length == 1)
         {
-            // timeleft
-            if (e.MessageArray.Length == 1)
-            {
-                ShowAll(e.ReturnTo);
-                return;
-            }
+            ShowAll(e.ReturnTo);
+            return;
+        }
 
-            string command = e.MessageArray[1];
+        string command = e.MessageArray[1];
 
-            // timeleft set Title 2104-01-01
-            if ( (command == "set" || command == "add") && e.MessageArray.Length >= 4 )
-            {
-                Set(e.Nick, e.MessageArray);
-            }
+        // timeleft set Title 2104-01-01
+        if ( (command == "set" || command == "add") && e.MessageArray.Length >= 4 )
+        {
+            Set(e.Nick, e.MessageArray);
+        }
 
-            // timeleft del Title
-            else if (command == "del" && e.MessageArray.Length >= 3)
-            {
-                Del(e.Nick, e.MessageArray);
-            }
+        // timeleft del Title
+        else if (command == "del" && e.MessageArray.Length >= 3)
+        {
+            Del(e.Nick, e.MessageArray);
+        }
 
-            // timeleft Title
-            else
-            {
-                Show(e.ReturnTo, e.MessageArray);
-            }
+        // timeleft Title
+        else
+        {
+            Show(e.ReturnTo, e.MessageArray);
         }
     }
 

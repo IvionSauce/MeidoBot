@@ -8,8 +8,6 @@ using System.ComponentModel.Composition.Hosting;
 [Export(typeof(IMeidoHook))]
 public class Calc : IMeidoHook
 {
-    public string Prefix { get; set; }
-
     public string Name
     {
         get { return "IrcCalc"; }
@@ -36,14 +34,14 @@ public class Calc : IMeidoHook
     {}
 
     [ImportingConstructor]
-    public Calc(IIrcComm ircComm)
+    public Calc(IMeidoComm meido)
     {
-        ircComm.AddTriggerHandler(HandleTrigger);
+        meido.RegisterTrigger("calc", HandleTrigger);
     }
 
     public void HandleTrigger(IIrcMessage e)
     {
-        if (e.Trigger == "calc" && e.MessageArray.Length > 1)
+        if (e.MessageArray.Length > 1)
         {
             var expr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             string [] tokenizedExpr;

@@ -23,9 +23,8 @@ public class IrcChainey : IMeidoHook
     // Housekeeping for producer-consumer queue.
     readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
     readonly object _locker = new object();
-    
-    public string Prefix { get; set; }
-    
+
+
     public string Name
     {
         get { return "Chainey"; }
@@ -71,11 +70,18 @@ public class IrcChainey : IMeidoHook
             new Thread(Consume).Start();
 
         irc = ircComm;
-        irc.AddChannelMessageHandler(Handle);
-        irc.AddTriggerHandler(HandleTrigger);
+        irc.AddChannelMessageHandler(Handler);
+
+        meido.RegisterTrigger("markov", Markov);
+        meido.RegisterTrigger("remove", Remove);
     }
 
-    public void Handle(IIrcMessage e)
+
+    // --------------------------------------------------
+    // Boilerplate for the threaded handling of messages.
+    // --------------------------------------------------
+
+    void Handler(IIrcMessage e)
     {
         if (e.Trigger == null)
         {
@@ -87,25 +93,6 @@ public class IrcChainey : IMeidoHook
         }
     }
 
-    public void HandleTrigger(IIrcMessage e)
-    {
-        switch (e.Trigger)
-        {
-        case "markov":
-            Markov(e);
-            return;
-        case "remove":
-            if (meido.AuthLevel(e.Nick) >= 9)
-            {
-                var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
-                chainey.Remove(toRemove);
-                e.Reply("Removed sentence.");
-            }
-            return;
-        }
-    }
-
-
     void Consume()
     {
         IIrcMessage message;
@@ -115,7 +102,7 @@ public class IrcChainey : IMeidoHook
             {
                 while (MessageQueue.Count == 0)
                     Monitor.Wait(_locker);
-                
+
                 message = MessageQueue.Dequeue();
             }
             if (message != null)
@@ -126,25 +113,19 @@ public class IrcChainey : IMeidoHook
     }
 
 
-    void ThreadedHandler(IIrcMessage e)
+    // -----------------
+    // Chainey triggers.
+    // -----------------
+
+    public void Remove(IIrcMessage e)
     {
-        var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-        if (msg.Length == 0)
-            return;
-
-        string first = msg[0];
-        string last = msg[msg.Length - 1];
-        
-        // If directly addressed. (nick: message || message, nick)
-        if (first.StartsWith(irc.Nickname, StringComparison.OrdinalIgnoreCase) ||
-            last.Contains(irc.Nickname, StringComparison.OrdinalIgnoreCase))
+        if (meido.AuthLevel(e.Nick) >= 9)
         {
-            HandleAddressed(e.Channel, e.Nick, msg);
-        }        
-        else
-            HandleUnaddressed(e.Channel, e.Nick, msg);
+            var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
+            chainey.Remove(toRemove);
+            e.Reply("Removed sentence.");
+        }
     }
-
 
     void Markov(IIrcMessage e)
     {
@@ -176,6 +157,30 @@ public class IrcChainey : IMeidoHook
             msg = msg.Slice(1, 0);
             EmitSentence(e.ReturnTo, msg, e.Nick);
         }
+    }
+
+
+    // ---------------------------------------------
+    // Handling of messages (learning and replying).
+    // ---------------------------------------------
+
+    void ThreadedHandler(IIrcMessage e)
+    {
+        var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        if (msg.Length == 0)
+            return;
+
+        string first = msg[0];
+        string last = msg[msg.Length - 1];
+        
+        // If directly addressed. (nick: message || message, nick)
+        if (first.StartsWith(irc.Nickname, StringComparison.OrdinalIgnoreCase) ||
+            last.Contains(irc.Nickname, StringComparison.OrdinalIgnoreCase))
+        {
+            HandleAddressed(e.Channel, e.Nick, msg);
+        }        
+        else
+            HandleUnaddressed(e.Channel, e.Nick, msg);
     }
 
 
@@ -261,6 +266,7 @@ public class IrcChainey : IMeidoHook
         }
         return false;
     }
+
 
     void EmitSentence(string target, string[] respondTo, string fromNick)
     {

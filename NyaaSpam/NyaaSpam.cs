@@ -15,7 +15,6 @@ public class NyaaSpam : IMeidoHook
     readonly NyaaPatterns nyaa;
     readonly NyaaFeedReader feedReader;
 
-    public string Prefix { get; set; }
 
     public string Name
     {
@@ -68,20 +67,15 @@ public class NyaaSpam : IMeidoHook
         feedReader.Start();
 
         irc = ircComm;
-        // The methods depend on having a meaningful channel parameter, so only accept the trigger when it's typed in a
-        // channel.
-        irc.AddChannelMessageHandler(Handler);
+        meido.RegisterTrigger("nyaa", Handler, true);
     }
 
     public void Handler(IIrcMessage e)
     {
-        if (e.Trigger == "nyaa" && meido.AuthLevel(e.Nick) > 0)
+        if (meido.AuthLevel(e.Nick) > 0)
         {
             if (e.MessageArray.Length == 1)
-            {
-                e.Reply("See \"{0}h nyaa <add|del|show>\" for help.", Prefix);
                 return;
-            }
 
             string command = e.MessageArray[1];
             string input = string.Empty;
@@ -130,7 +124,9 @@ public class NyaaSpam : IMeidoHook
                 ShowAll(e.Channel, e.Nick, assocPat);
                 return;
             }
-        } // if
+        }
+        else
+            e.Reply("Access denied, please contact my owner for information and/or clearance.");
     }
 
 

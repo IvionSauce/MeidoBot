@@ -14,7 +14,6 @@ public class MiscUtils : IMeidoHook
 
     readonly IrcTimers ircTimers = new IrcTimers();
 
-    public string Prefix { get; set; }
 
     public string Name
     {
@@ -51,27 +50,15 @@ public class MiscUtils : IMeidoHook
     {
         irc = ircComm;
         log = meido.CreateLogger(this);
-        irc.AddTriggerHandler(HandleTrigger);
+
+        meido.RegisterTrigger("timer", Timer);
+        meido.RegisterTrigger("say", Say);
     }
 
-    public void HandleTrigger(IIrcMessage e)
-    {
-        switch(e.Trigger)
-        {
-        case "say":
-            string fromChannel = e.Channel ?? "PM";
-            string toChannel = Say(e.MessageArray, e.Channel);
-            if (toChannel != null)
-            {
-                log.Message("Say: {0}/{1} -> {2}", fromChannel, e.Nick, toChannel);
-            }
-            return;
-        case "timer":
-            Timer(e);
-            return;
-        }
-    }
 
+    // --------------
+    // Timer trigger.
+    // --------------
 
     void Timer(IIrcMessage e)
     {
@@ -201,36 +188,45 @@ public class MiscUtils : IMeidoHook
     }
 
 
-    string Say(string[] command, string currentChannel)
+    // ------------
+    // Say trigger.
+    // ------------
+
+    void Say(IIrcMessage e)
     {
         string channel = null;
         string message = null;
         // say [channel] <message>
         // Send message to specified channel.
-        if ( command.Length > 2 && command[1].StartsWith("#") )
+        if ( e.MessageArray.Length > 2 && e.MessageArray[1].StartsWith("#") )
         {
-            channel = command[1];
-            message = string.Join(" ", command, 2, command.Length - 2);
+            channel = e.MessageArray[1];
+            message = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
         }
+        // say <message>
         // Send message to current channel.
-        else if (command.Length > 1)
+        else if (e.MessageArray.Length > 1)
         {
-            channel = currentChannel;
-            message = string.Join(" ", command, 1, command.Length - 1);
+            channel = e.Channel;
+            message = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
         }
 
-        return Say(channel, message);
+        if ( Say(channel, message) )
+        {
+            string origin = e.Channel ?? "PM";
+            log.Message("Say: {0}/{1} -> {2}", origin, e.Nick, channel);
+        }
     }
 
-    string Say(string channel, string message)
+    bool Say(string channel, string message)
     {
         if (!string.IsNullOrEmpty(channel) && InChannel(channel))
         {
             irc.SendMessage(channel, message);
-            return channel;
+            return true;
         }
         else
-            return null;
+            return false;
     }
 
 
