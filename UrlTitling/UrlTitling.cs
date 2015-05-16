@@ -132,7 +132,10 @@ public class UrlTitler : IMeidoHook
             var encHelper = new HtmlEncodingHelper();
             var resource = encHelper.GetWebString(e.MessageArray[1]);
             if (resource.Success)
-                File.WriteAllText("/tmp/dump.html", resource.Document);
+            {
+                string path = Path.Combine(Path.GetTempPath(), "dump.html");
+                File.WriteAllText(path, resource.Document);
+            }
         }
     }
 
