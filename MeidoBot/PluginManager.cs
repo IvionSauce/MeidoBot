@@ -44,10 +44,8 @@ namespace MeidoBot
             // Also share the prefix with them.
             int count = 0;
             foreach (var plugin in pluginContainer)
-            {
-                plugin.Prefix = this.Prefix;
                 count++;
-            }
+
             Count = count;
         }
 

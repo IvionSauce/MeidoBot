@@ -10,9 +10,6 @@ namespace MeidoCommon
         string Version { get; }
         Dictionary<string, string> Help { get; }
 
-        // Things we provide to the plugin.
-        string Prefix { set; }
-
         // Method to signal to the plugins they need to stop whatever seperate threads they have running.
         // As well as to save/deserialize whatever it needs to.
         void Stop();
@@ -61,6 +58,10 @@ namespace MeidoCommon
         string DataDir { get; }
 
         ILog CreateLogger(IMeidoHook plugin);
+
+        void RegisterTrigger(string trigger, Action<IIrcMessage> callback);
+        void RegisterTrigger(string trigger, Action<IIrcMessage> callback, bool needChannel);
+
         bool Auth(string nick, string pass);
         int AuthLevel(string nick);
     }
@@ -76,6 +77,7 @@ namespace MeidoCommon
         void AddQueryMessageHandler(Action<IIrcMessage> handler);
         void AddQueryActionHandler(Action<IIrcMessage> handler);
 
+        [Obsolete("Please use RegisterTrigger instead.")]
         void AddTriggerHandler(Action<IIrcMessage> handler);
 
         void SendMessage(string target, string message);

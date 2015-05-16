@@ -42,6 +42,8 @@ namespace MeidoBot
             // Setup plugins and load them.
             plugins = new PluginManager(prefix);
             LoadPlugins();
+            // Register non-plugin triggers.
+            RegisterSpecialTriggers();
             
             // Setting some SmartIrc4Net options.
             irc.CtcpVersion = "MeidoBot " + Program.Version;
@@ -51,10 +53,16 @@ namespace MeidoBot
             irc.AutoRejoin = true;
             irc.Encoding = Encoding.UTF8;
 
-            // Set event handlers and connect to the server.
+            // Set event handlers...
             irc.OnConnected += new EventHandler(OnConnected);
+
             irc.OnChannelMessage += new IrcEventHandler(OnMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnMessage);
+
+            irc.OnChannelAction += new ActionEventHandler(ChannelAction);
+            irc.OnQueryAction += new ActionEventHandler(QueryAction);
+
+            // and connect to the server.
             Connect(server, port);
         }
 
@@ -89,13 +97,12 @@ namespace MeidoBot
         // Event handlers.
         // ---------------
 
-
         // Tell the server who we are and join channel(s).
         void OnConnected(object sender, EventArgs e)
         {
             irc.Login(nick, "Meido Bot", 0, "MeidoBot");
 
-            log.Message("Success! Connected as {0} to {1}", irc.Nickname, irc.Address);
+            log.Message("Connected as {0} to {1}", irc.Nickname, irc.Address);
 
             irc.RfcJoin(channels);
             irc.Listen();
@@ -108,10 +115,10 @@ namespace MeidoBot
             
             if (msg.Trigger != null)
             {
-                SpecialTriggers(msg);
-
                 if (ircComm.TriggerHandlers != null)
                     ircComm.TriggerHandlers(msg);
+
+                meidoComm.FireTrigger(msg);
             }
 
             if (msg.Channel != null)
@@ -121,9 +128,15 @@ namespace MeidoBot
         }
 
 
-        void ChannelAction(object sender, IrcEventArgs e)
+        void ChannelAction(object sender, ActionEventArgs e)
         {
             if (ircComm.ChannelActionHandlers != null)
+                ircComm.ChannelActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
+        }
+
+        void QueryAction(object sender, ActionEventArgs e)
+        {
+            if (ircComm.QueryActionHandlers != null)
                 ircComm.ChannelActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
         }
 
@@ -145,65 +158,71 @@ namespace MeidoBot
         // Special trigger handling.
         // -------------------------
 
-
-        void SpecialTriggers(IIrcMessage msg)
+        void RegisterSpecialTriggers()
         {
-            if (msg.Trigger == "h" || msg.Trigger == "help")
-                msg.Reply( Help(msg.MessageArray) );
-
-            else if (msg.Trigger == "auth")
-                msg.Reply( Auth(msg.Nick, msg.MessageArray) );
-
-            else if (msg.Trigger == "disconnect" && meidoComm.AuthLevel(msg.Nick) == 10)
-            {
-                // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
-                // been given no new messages will arrive.
-                irc.Disconnect();
-                plugins.StopPlugins();
-            }
-            
-            else if (msg.Trigger == "part" && msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) == 10)
-                irc.RfcPart(msg.MessageArray[1]);
+            meidoComm.RegisterTrigger("h", Help);
+            meidoComm.RegisterTrigger("help", Help);
+            meidoComm.RegisterTrigger("auth", Auth);
+            meidoComm.RegisterTrigger("part", Part);
+            meidoComm.RegisterTrigger("disconnect", Disconnect);
         }
 
-
         // Help trigger.
-        string Help(string[] message)
+        void Help(IIrcMessage msg)
         {
-            if (message.Length == 1)
+            string subject = null;
+            if (msg.MessageArray.Length > 1)
+                subject = string.Join(" ", msg.MessageArray, 1, msg.MessageArray.Length - 1);
+
+            if (string.IsNullOrWhiteSpace(subject))
             {
                 string[] keys = plugins.GetHelpSubjects();
                 var subjects = string.Join(", ", keys);
 
-                return "Help is available on - " + subjects;
+                msg.Reply("Help is available on - " + subjects);
             }
             else
             {
-                string help = plugins.GetHelp( string.Join(" ", message, 1, message.Length - 1) );
+                string help = plugins.GetHelp(subject);
 
                 if (help != null)
-                    return help;
+                    msg.Reply(help);
                 else
-                    return "No help available.";
+                    msg.Reply("No help available.");
             }
         }
 
-
         // Auth trigger.
-        string Auth(string nick, string[] message)
+        void Auth(IIrcMessage msg)
         {
-            if (message.Length > 1)
+            if (msg.MessageArray.Length > 1)
             {
-                if (meidoComm.Auth(nick, message[1]))
-                    return "You've successfully authenticated.";
+                if (meidoComm.Auth(nick, msg.MessageArray[1]))
+                    msg.Reply("You've successfully authenticated.");
             }
 
-            return "Your current Authentication Level is " + meidoComm.AuthLevel(nick);
+            msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(nick));
+        }
+
+        // Part trigger.
+        void Part(IIrcMessage msg)
+        {
+            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) == 10)
+                irc.RfcPart(msg.MessageArray[1]);
+        }
+
+        // Disconnect trigger.
+        void Disconnect(IIrcMessage msg)
+        {
+            if (meidoComm.AuthLevel(msg.Nick) == 10)
+                Dispose();
         }
 
 
         public void Dispose()
         {
+            // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
+            // been given no new messages will arrive.
             irc.Disconnect();
             plugins.StopPlugins();
         }

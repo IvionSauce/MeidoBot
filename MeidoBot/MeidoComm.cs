@@ -11,6 +11,9 @@ namespace MeidoBot
 
         readonly LogFactory logFac;
 
+        readonly Dictionary<string, Trigger> triggers =
+            new Dictionary<string, Trigger>(StringComparer.Ordinal);
+
 
         readonly Dictionary<string, UserAuth> userAuths =
             new Dictionary<string, UserAuth>(StringComparer.OrdinalIgnoreCase)
@@ -32,6 +35,9 @@ namespace MeidoBot
 
         public ILog CreateLogger(IMeidoHook plugin)
         {
+            if (plugin == null)
+                throw new ArgumentNullException("plugin");
+
             string name;
             switch (plugin.Name)
             {
@@ -48,6 +54,32 @@ namespace MeidoBot
             }
 
             return logFac.CreateLogger(name);
+        }
+
+
+        public void RegisterTrigger(string trigger, Action<IIrcMessage> callback)
+        {
+            RegisterTrigger(trigger, callback, false);
+        }
+
+        public void RegisterTrigger(string trigger, Action<IIrcMessage> callback, bool needChannel)
+        {
+            if (trigger == null)
+                throw new ArgumentNullException("trigger");
+            else if (callback == null)
+                throw new ArgumentNullException("callback");
+
+            triggers[trigger] = new Trigger(callback, needChannel);
+        }
+
+        public void FireTrigger(IrcMessage msg)
+        {
+            Trigger tr;
+            if (triggers.TryGetValue(msg.Trigger, out tr))
+            {
+                if (msg.Channel != null || !tr.NeedsChannel)
+                    tr.Call(msg);
+            }
         }
 
 
@@ -75,6 +107,19 @@ namespace MeidoBot
                     return user.Level;
             }
             return 0;
+        }
+    }
+
+
+    class Trigger
+    {
+        public readonly Action<IIrcMessage> Call;
+        public readonly bool NeedsChannel;
+
+        public Trigger(Action<IIrcMessage> call, bool needChannel)
+        {
+            Call = call;
+            NeedsChannel = needChannel;
         }
     }
 
