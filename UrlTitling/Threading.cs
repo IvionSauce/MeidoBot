@@ -204,8 +204,8 @@ class ChannelThread
             if (result.PrintTitle)
                 irc.SendMessage(Channel, result.Title);
 
-            log.Message("{0} -- {1}", result.Requested, result.Title);
             log.Message(result.Messages);
+            log.Message("{0} -- {1}", result.Requested, result.Title);
         }
         else
         {
