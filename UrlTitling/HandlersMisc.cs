@@ -30,7 +30,7 @@ namespace WebIrc
                 const int MaxChars = 192;
                 string summary;
                 if (p.Length <= MaxChars)
-                    summary = p.Substring(0, p.Length - 1);
+                    summary = p;
                 else
                     summary = p.Substring(0, MaxChars) + "[...]";
                 
