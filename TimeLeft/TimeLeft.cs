@@ -28,7 +28,7 @@ public class TimeLeft : IMeidoHook
     }
     public string Version
     {
-        get { return "0.30"; }
+        get { return "0.31"; }
     }
     
     public Dictionary<string,string> Help

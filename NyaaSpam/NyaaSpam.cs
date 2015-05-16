@@ -22,7 +22,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.68"; }
+        get { return "0.70"; }
     }
 
     public Dictionary<string,string> Help

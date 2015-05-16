@@ -19,7 +19,7 @@ public class WebSearches : IMeidoHook
     }
     public string Version
     {
-        get { return "0.20"; }
+        get { return "0.21"; }
     }
     
     public Dictionary<string,string> Help

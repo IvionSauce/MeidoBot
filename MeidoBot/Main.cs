@@ -10,7 +10,7 @@ namespace MeidoBot
     // Ugly shit, will need to be refactored... someday.
     static class Program
     {
-        public static readonly string Version = "0.89.0";
+        public static readonly string Version = "0.89.2";
 
         static void Main(string[] args)
         {
