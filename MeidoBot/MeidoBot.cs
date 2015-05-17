@@ -137,7 +137,7 @@ namespace MeidoBot
         void QueryAction(object sender, ActionEventArgs e)
         {
             if (ircComm.QueryActionHandlers != null)
-                ircComm.ChannelActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
+                ircComm.QueryActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
         }
 
 
