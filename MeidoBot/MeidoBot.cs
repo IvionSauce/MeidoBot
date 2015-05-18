@@ -24,23 +24,26 @@ namespace MeidoBot
         readonly string[] channels;
 
 
-        public Meido(string server, int port, string nick, string[] channels, string prefix)
+        public Meido(MeidoConfig config)
         {
+            if (config == null)
+                throw new ArgumentNullException("config");
+
             // We need these parameters for events, store them in fields.
-            this.nick = nick;
-            this.channels = channels;
+            this.nick = config.Nickname;
+            this.channels = config.Channels.ToArray();
 
             // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc);
 
             // Initialize the MeidoComm with the log factory for this server/instance.
-            var logFac = new LogFactory(server);
+            var logFac = new LogFactory(config.ServerAddress);
             meidoComm = new MeidoComm(logFac);
             // Set aside some logging for ourself.
             log = logFac.CreateLogger("MEIDO");
 
             // Setup plugins and load them.
-            plugins = new PluginManager(prefix);
+            plugins = new PluginManager(config.TriggerPrefix);
             LoadPlugins();
             // Register non-plugin triggers.
             RegisterSpecialTriggers();
@@ -63,7 +66,7 @@ namespace MeidoBot
             irc.OnQueryAction += new ActionEventHandler(QueryAction);
 
             // and connect to the server.
-            Connect(server, port);
+            Connect(config.ServerAddress, config.Port);
         }
 
 

@@ -31,6 +31,8 @@
     <Compile Include="MeidoComm.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="MeidoConfig.cs" />
+    <Compile Include="Parsing.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
