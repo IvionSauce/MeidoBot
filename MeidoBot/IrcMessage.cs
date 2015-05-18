@@ -43,7 +43,9 @@ namespace MeidoBot
         }
         
         
-        // Returns trigger without the prefix. Will be null if message didn't start with a prefix.
+        // Returns trigger without the prefix.
+        // Will be null if message didn't start with a prefix.
+        // Will also be null if prefix occurs at least twice, to escape trigger calling.
         // Will be empty if the prefix was called without a subsequent trigger.
         // In case of a query message it will contain the first word, even if it didn't start with the prefix.
         string ParseTrigger(string prefix)
@@ -52,7 +54,6 @@ namespace MeidoBot
             if (type == ReceiveType.ChannelAction || type == ReceiveType.QueryAction)
                 return null;
 
-            // If message starts with prefix.
             if (Message.StartsWith(prefix, StringComparison.Ordinal))
             {
                 string trigger = MessageArray[0].Substring(prefix.Length);

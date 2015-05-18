@@ -6,7 +6,7 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    public class LogFactory
+    class LogFactory
     {
         public string Server { get; private set; }
 
@@ -17,14 +17,14 @@ namespace MeidoBot
         }
 
 
-        public Logger CreateLogger(string pluginName)
+        public Logger CreateLogger(string name)
         {
-            return new Logger(Server, pluginName, Logger.Verbosity.Verbose);
+            return new Logger(Server, name, Logger.Verbosity.Verbose);
         }
     }
 
 
-    public class Logger : ILog
+    class Logger : ILog
     {
         public enum Verbosity
         {
@@ -37,9 +37,9 @@ namespace MeidoBot
         readonly Verbosity verbosity;
 
 
-        internal Logger(string server, string pluginName, Verbosity verb)
+        internal Logger(string server, string name, Verbosity verb)
         {
-            msgPrefix = string.Format("[{0}] {1}", server, pluginName);
+            msgPrefix = string.Format("[{0}] {1}", server, name);
             verbosity = verb;
         }
 

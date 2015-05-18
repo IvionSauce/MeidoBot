@@ -41,7 +41,6 @@ namespace MeidoBot
             container.ComposeParts(this);
 
             // Count the number of plugins loaded and make it availabe in the Count property.
-            // Also share the prefix with them.
             int count = 0;
             foreach (var plugin in pluginContainer)
                 count++;
@@ -49,11 +48,6 @@ namespace MeidoBot
             Count = count;
         }
 
-        public void StopPlugins()
-        {
-            foreach (var plugin in pluginContainer)
-                plugin.Stop();
-        }
 
         public string[] GetDescriptions()
         {
@@ -68,6 +62,7 @@ namespace MeidoBot
 
             return descriptions;
         }
+
 
         public string[] GetHelpSubjects()
         {
@@ -94,6 +89,13 @@ namespace MeidoBot
                     return help;
 
             return null;
+        }
+
+
+        public void StopPlugins()
+        {
+            foreach (var plugin in pluginContainer)
+                plugin.Stop();
         }
     }
 }
