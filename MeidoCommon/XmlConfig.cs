@@ -10,31 +10,9 @@ namespace MeidoCommon
     {
         public XElement Config { get; private set; }
         
-        public XmlConfig(string file, ILog log)
+        public XmlConfig(string path, ILog log)
         {
-            try
-            {
-                Config = XElement.Load(file);
-                log.Message("-> Loaded config from " + file);
-            }
-            catch (FileNotFoundException)
-            {
-                Config = DefaultConfig();
-                Config.Save(file);
-                log.Message("-> Created default config at " + file);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                log.Error("Directory not found: " + file);
-                log.Message("-> Loading default config.");
-                Config = DefaultConfig();
-            }
-            catch (XmlException ex)
-            {
-                log.Error("XML Exception in loading {0}. ({1})", file, ex.Message);
-                log.Message("-> Loading default config.");
-                Config = DefaultConfig();
-            }
+            Config = GetOrCreateConfig(path, DefaultConfig(), log);
             
             try
             {
@@ -44,7 +22,7 @@ namespace MeidoCommon
             {
                 if (ex is FormatException || ex is NullReferenceException)
                 {
-                    log.Error("Error(s) in loading values from {0}. ({1})", file, ex.Message);
+                    log.Error("Error(s) in loading values from {0} ({1})", path, ex.Message);
                     log.Message("-> Loading values from default config.");
                     Config = DefaultConfig();
                     LoadConfig();
@@ -52,8 +30,39 @@ namespace MeidoCommon
                 else
                     throw;
             }
-            // Dereference the XML tree, it's not needed after this point and it's just taking up space.
-            Config = null;
+        }
+
+        public static XElement GetOrCreateConfig(string path, XElement defaultConfig, ILog log)
+        {
+            try
+            {
+                var config = XElement.Load(path);
+                log.Message("-> Loaded config from " + path);
+                return config;
+            }
+            catch (FileNotFoundException)
+            {
+                try
+                {
+                    defaultConfig.Save(path);
+                    log.Message("-> Created default config at " + path);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    log.Error("Failed to create default config at " + path);
+                }
+            }
+            catch (DirectoryNotFoundException)
+            {
+                log.Error("Directory not found: " + path);
+            }
+            catch (XmlException ex)
+            {
+                log.Error("XML Exception in loading {0} ({1})", path, ex.Message);
+            }
+
+            log.Message("-> Loading default config.");
+            return defaultConfig;
         }
         
         public abstract void LoadConfig();
