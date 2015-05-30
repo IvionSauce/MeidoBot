@@ -20,9 +20,10 @@ namespace IvionWebSoft
             try
             {
                 using (WebResponse response = req.GetResponse())
+                using (Stream stream = response.GetResponseStream())
                 {
-                    var stream = ReadFragment(response.GetResponseStream(), peekSize);
-                    return new BinaryPeek(response.ResponseUri, response.ContentType, response.ContentLength, stream);
+                    var ms = new MemoryStream( stream.ReadFragment(peekSize) );
+                    return new BinaryPeek(response.ResponseUri, response.ContentType, response.ContentLength, ms);
                 }
             }
             catch (WebException ex)
@@ -45,25 +46,6 @@ namespace IvionWebSoft
             }
             
             return req;
-        }
-
-        // Read a fragment of the stream into a memorystream.
-        static MemoryStream ReadFragment(Stream stream, int fragmentSize)
-        {            
-            var buffer = new byte[fragmentSize];
-            var ms = new MemoryStream();
-            
-            while (ms.Length < fragmentSize)
-            {
-                int read = stream.Read(buffer, 0, buffer.Length);
-                if (read <= 0)
-                    break;
-                
-                ms.Write(buffer, 0, read);
-            }
-            
-            ms.Position = 0;
-            return ms;
         }
 
 
