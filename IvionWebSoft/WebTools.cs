@@ -170,11 +170,8 @@ namespace IvionWebSoft
             foreach (string word in words)
             {
                 if (StringIgnore.Contains(word))
-                {
                     totalWords--;
-                    continue;
-                }
-                if (url.Contains(word, StringComparison.OrdinalIgnoreCase))
+                else if (url.Contains(word, StringComparison.OrdinalIgnoreCase))
                     foundWords++;
             }
 
@@ -185,53 +182,5 @@ namespace IvionWebSoft
             else
                 return foundWords / (double)totalWords;
         }
-
-        /* public double Similarity2(string url, string title)
-        {
-            if (url == null)
-                throw new ArgumentNullException("url");
-            else if (title == null)
-                throw new ArgumentNullException("title");
-
-            var word = new StringBuilder();
-            int totalWords = 0;
-            int foundWords = 0;
-            foreach (char c in title)
-            {
-                if (char.IsWhiteSpace(c) || CharIgnore.Contains(c))
-                {
-                    if (word.Length > 0)
-                    {
-                        totalWords++;
-                        if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
-                            foundWords++;
-
-                        word.Clear();
-                    }
-                }
-                else if (c > maxCharCode)
-                {
-                    if (word.Length > 0)
-                    {
-                        totalWords++;
-                        if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
-                            foundWords++;
-
-                        word.Clear();
-                    }
-                    totalWords++;
-                    if (url.IndexOf(c) >= 0)
-                        foundWords++;
-                }
-                else
-                    word.Append(c);
-            }
-            // Clean up final word.
-            totalWords++;
-            if (url.Contains(word.ToString(), StringComparison.OrdinalIgnoreCase))
-                foundWords++;
-
-            return foundWords / (double)totalWords;
-        } */
     }
 }
