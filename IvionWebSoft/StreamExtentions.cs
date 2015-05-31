@@ -44,6 +44,11 @@ namespace IvionWebSoft
         }
 
 
+        public static byte[] ReadFully(this Stream stream)
+        {
+            return ReadFully(stream, -1);
+        }
+
         // http://www.yoda.arachsys.com/csharp/readbinary.html
         public static byte[] ReadFully(this Stream stream, int chunkSize)
         {

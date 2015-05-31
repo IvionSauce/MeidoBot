@@ -13,6 +13,8 @@ namespace IvionWebSoft
         }
         
         public WebString(Uri uri, Exception ex) : base(uri, ex) {}
+
+        public WebString(WebResource resource) : base(resource) {}
     }
 
 

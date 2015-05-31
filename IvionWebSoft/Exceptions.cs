@@ -4,7 +4,7 @@ using System.Net;
 namespace IvionWebSoft
 {
     [Serializable()]
-    public class UrlNotHtmlException : WebException
+    public class UrlNotHtmlException : Exception
     {
         public UrlNotHtmlException() : base() {}
         public UrlNotHtmlException(string message) : base(message) {}
