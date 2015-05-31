@@ -62,7 +62,7 @@ namespace MeidoBot
             var portStr = (string)config.Element("port");
             // Allow port to have the default of 6667.
             if (string.IsNullOrEmpty(portStr))
-                return 6667;
+                return MeidoConfig.DefaultPort;
 
             int port;
             if (int.TryParse(portStr, out port))

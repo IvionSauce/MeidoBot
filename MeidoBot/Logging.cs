@@ -9,17 +9,40 @@ namespace MeidoBot
     class LogFactory
     {
         public string Server { get; private set; }
+        public Logger.Verbosity Verbosity { get; set; }
 
 
         public LogFactory (string server)
         {
             Server = server;
+            Verbosity = Logger.Verbosity.Verbose;
         }
 
 
+        public Logger CreateLogger(IMeidoHook plugin)
+        {
+            string name;
+            switch (plugin.Name)
+            {
+            case "":
+            case null:
+                name = "Unknown";
+                break;
+            case "MEIDO":
+            case "AUTH":
+                name = "_" + plugin.Name;
+                break;
+            default:
+                name = plugin.Name;
+                break;
+            }
+
+            return CreateLogger(name);
+        }
+
         public Logger CreateLogger(string name)
         {
-            return new Logger(Server, name, Logger.Verbosity.Verbose);
+            return new Logger(Server, name, Verbosity);
         }
     }
 

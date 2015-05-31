@@ -13,17 +13,17 @@ namespace MeidoBot
         public readonly List<string> Channels;
         public readonly string TriggerPrefix;
 
-        const int defaultPort = 6667;
+        public const int DefaultPort = 6667;
 
 
         public MeidoConfig(string nickname, string address, string triggerPrefix) :
-        this(nickname, address, defaultPort, new string[0], triggerPrefix) {}
+        this(nickname, address, DefaultPort, new string[0], triggerPrefix) {}
 
         public MeidoConfig(string nickname, string address, int port, string triggerPrefix) :
         this(nickname, address, port, new string[0], triggerPrefix) {}
 
         public MeidoConfig(string nickname, string address, IEnumerable<string> channels, string triggerPrefix) :
-        this(nickname, address, defaultPort, channels, triggerPrefix) {}
+        this(nickname, address, DefaultPort, channels, triggerPrefix) {}
 
         // So much argument checking, it's almost sickening...
         public MeidoConfig(string nickname, string address, int port,
