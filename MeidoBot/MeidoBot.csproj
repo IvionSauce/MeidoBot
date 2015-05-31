@@ -33,6 +33,7 @@
     <Compile Include="Logging.cs" />
     <Compile Include="MeidoConfig.cs" />
     <Compile Include="Parsing.cs" />
+    <Compile Include="Authentication.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

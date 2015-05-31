@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Collections.Generic;
 using Meebey.SmartIrc4net;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -9,7 +10,7 @@ namespace MeidoBot
 {
     class Meido : IDisposable
     {
-        readonly IrcClient irc = new Meebey.SmartIrc4net.IrcClient();
+        readonly IrcClient irc = new IrcClient();
         readonly PluginManager plugins;
         readonly Logger log;
 
@@ -21,7 +22,7 @@ namespace MeidoBot
         readonly MeidoComm meidoComm;
 
         readonly string nick;
-        readonly string[] channels;
+        readonly List<string> channels;
 
 
         public Meido(MeidoConfig config)
@@ -31,7 +32,7 @@ namespace MeidoBot
 
             // We need these parameters for events, store them in fields.
             this.nick = config.Nickname;
-            this.channels = config.Channels.ToArray();
+            this.channels = config.Channels;
 
             // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc);
@@ -47,17 +48,13 @@ namespace MeidoBot
             LoadPlugins();
             // Register non-plugin triggers.
             RegisterSpecialTriggers();
-            
-            // Setting some SmartIrc4Net options.
-            irc.CtcpVersion = "MeidoBot " + Program.Version;
-            irc.ActiveChannelSyncing = true;
-            irc.AutoJoinOnInvite = true;
-            irc.AutoReconnect = true;
-            irc.AutoRejoin = true;
-            irc.Encoding = Encoding.UTF8;
+
+            // Setting some SmartIrc4Net options/properties.
+            SetProperties();
 
             // Set event handlers...
             irc.OnConnected += new EventHandler(OnConnected);
+            irc.OnInvite += new InviteEventHandler(OnInvited);
 
             irc.OnChannelMessage += new IrcEventHandler(OnMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnMessage);
@@ -79,6 +76,17 @@ namespace MeidoBot
             log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
             foreach (string s in plugins.GetDescriptions())
                 log.Message("- " + s);
+        }
+
+
+        void SetProperties()
+        {
+            irc.CtcpVersion = "MeidoBot " + Program.Version;
+            irc.ActiveChannelSyncing = true;
+            irc.AutoJoinOnInvite = true;
+            irc.AutoReconnect = true;
+            irc.AutoRejoin = true;
+            irc.Encoding = Encoding.UTF8;
         }
         
 
@@ -107,8 +115,19 @@ namespace MeidoBot
 
             log.Message("Connected as {0} to {1}", irc.Nickname, irc.Address);
 
-            irc.RfcJoin(channels);
+            irc.RfcJoin(channels.ToArray());
             irc.Listen();
+        }
+
+
+        void OnInvited(object sender, InviteEventArgs e)
+        {
+            if (!channels.Contains(e.Channel))
+            {
+                channels.Add(e.Channel);
+                irc.SendMessage(SendType.Notice, e.Who,
+                    "If you want your channel on the auto-join list, please contact the owner.");
+            }
         }
 
 
@@ -200,7 +219,7 @@ namespace MeidoBot
         {
             if (msg.MessageArray.Length > 1)
             {
-                if (meidoComm.Auth(nick, msg.MessageArray[1]))
+                if (meidoComm.Auth(msg.Nick, msg.MessageArray[1]))
                     msg.Reply("You've successfully authenticated.");
             }
 
