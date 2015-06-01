@@ -35,9 +35,7 @@ namespace IvionWebSoft
         /// 
         /// <param name="url">URL pointing to thread.</param>
         public static ChanPost GetPost(string url)
-        {
-            url.ThrowIfNullOrWhiteSpace("url");
-            
+        {            
             var boardPost = Extract(url);
             if (boardPost.Item3 > 0)
                 return GetPost(boardPost.Item1, boardPost.Item2, boardPost.Item3);
@@ -51,25 +49,20 @@ namespace IvionWebSoft
         }
 
 
+        /// <summary>
+        /// Extract board, thread number and optional post number from URL.
+        /// </summary>
+        /// <returns>Tuple containing: board, thread number and post number (optional, is -1 if not found)</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL.</param>
         public static Tuple<string, int, int> Extract(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
-            string board = string.Empty;
-            int threadNo = -1;
-            int postNo = -1;
-
-            var match = chanUrlRegexp.Match(url);
-            if (match.Success)
-            {
-                board = match.Groups[1].Value;
-                threadNo = int.Parse(match.Groups[2].Value);
-                
-                if (match.Groups[3].Success)
-                    postNo = int.Parse(match.Groups[3].Value);
-            }
-            
-            return new Tuple<string, int, int>(board, threadNo, postNo);
+            return ChanTools.Extract(chanUrlRegexp, url);
         }
 
 
@@ -159,9 +152,7 @@ namespace IvionWebSoft
         /// 
         /// <param name="url">URL pointing to thread.</param>
         public static ChanPost GetPost(string url)
-        {
-            url.ThrowIfNullOrWhiteSpace("url");
-            
+        {            
             var boardPost = Extract(url);
             if (boardPost.Item3 > 0)
                 return GetPost(boardPost.Item1, boardPost.Item3);
@@ -175,25 +166,20 @@ namespace IvionWebSoft
         }
 
 
+        /// <summary>
+        /// Extract board, thread number and optional post number from URL.
+        /// </summary>
+        /// <returns>Tuple containing: board, thread number and post number (optional, is -1 if not found)</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL.</param>
         public static Tuple<string, int, int> Extract(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
-            string board = string.Empty;
-            int threadNo = -1;
-            int postNo = -1;
-
-            var match = archiveUrlRegexp.Match(url);
-            if (match.Success)
-            {
-                board = match.Groups[1].Value;
-                threadNo = int.Parse(match.Groups[2].Value);
-                
-                if (match.Groups[3].Success)
-                    postNo = int.Parse(match.Groups[3].Value);
-            }
-            
-            return new Tuple<string, int, int>(board, threadNo, postNo);
+            return ChanTools.Extract(archiveUrlRegexp, url);
         }
 
 
@@ -322,6 +308,26 @@ namespace IvionWebSoft
                 return name;
             else
                 return string.Empty;
+        }
+
+
+        internal static Tuple<string, int, int> Extract(Regex urlRegexp, string url)
+        {
+            string board = string.Empty;
+            int threadNo = -1;
+            int postNo = -1;
+
+            var match = urlRegexp.Match(url);
+            if (match.Success)
+            {
+                board = match.Groups[1].Value;
+                threadNo = int.Parse(match.Groups[2].Value);
+
+                if (match.Groups[3].Success)
+                    postNo = int.Parse(match.Groups[3].Value);
+            }
+
+            return new Tuple<string, int, int>(board, threadNo, postNo);
         }
 
 

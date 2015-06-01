@@ -15,16 +15,6 @@ namespace IvionWebSoft
     /// </summary>
     static class BooruTools
     {
-        public enum Source
-        {
-            Danbooru,
-            Gelbooru
-        }
-
-        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
-        static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
-
-
         /// <summary>
         /// Extracts the post number from an URL.
         /// </summary>
@@ -35,23 +25,9 @@ namespace IvionWebSoft
         /// 
         /// <param name="url">URL</param>
         /// <param name="source">Source</param>
-        public static int ExtractPostNo(string url, Source source)
+        internal static int ExtractPostNo(Regex urlRegexp, string url)
         {
-            url.ThrowIfNullOrWhiteSpace("url");
-
-            GroupCollection groups;
-            switch(source)
-            {
-            case Source.Danbooru:
-                groups = danboUrlRegexp.Match(url).Groups;
-                break;
-            case Source.Gelbooru:
-                groups = gelboUrlRegexp.Match(url).Groups;
-                break;
-            default:
-                throw new InvalidEnumArgumentException();
-            }
-            
+            var groups = urlRegexp.Match(url).Groups;
             if (groups[1].Success)
                 return int.Parse(groups[1].Value);
             else
@@ -65,6 +41,9 @@ namespace IvionWebSoft
     /// </summary>
     public static class DanboTools
     {
+        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
+
+
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
@@ -76,7 +55,7 @@ namespace IvionWebSoft
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
-            int postNo = BooruTools.ExtractPostNo(url, BooruTools.Source.Danbooru);
+            int postNo = BooruTools.ExtractPostNo(danboUrlRegexp, url);
             if (postNo > 0)
                 return GetPostInfo(postNo);
             else
@@ -182,11 +161,14 @@ namespace IvionWebSoft
 
     public static class GelboTools
     {
+        static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
+
+
         public static BooruPost GetPostInfo(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
             
-            int postNo = BooruTools.ExtractPostNo(url, BooruTools.Source.Gelbooru);
+            int postNo = BooruTools.ExtractPostNo(gelboUrlRegexp, url);
             if (postNo > 0)
                 return GetPostInfo(postNo);
             else
