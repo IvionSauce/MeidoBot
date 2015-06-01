@@ -49,6 +49,9 @@ namespace IvionWebSoft
 
         public WebResource(WebResource resource)
         {
+            if (resource == null)
+                throw new ArgumentNullException("resource");
+
             Location = resource.Location;
             Success = resource.Success;
             Exception = resource.Exception;

@@ -142,17 +142,21 @@ namespace IvionWebSoft
                 return;
 
             const string sourceStart = "_(";
+            const string sourceEnd= ")";
             for (int i = 0; i < charTags.Length; i++)
             {
                 string charTag = charTags[i];
-                int sourceIndex = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
 
-                if (sourceIndex > 0)
+                int sourceOpenIdx = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
+                if (sourceOpenIdx > 0)
                 {
+                    int sourceCloseIdx = charTag.IndexOf(sourceEnd, sourceOpenIdx, StringComparison.Ordinal);
+                    if (sourceCloseIdx < 0)
+                        sourceCloseIdx = charTag.Length - 1;
+
                     // Plus 2 to skip past the "_(" part of the source.
-                    int start = sourceIndex + 2;
-                    // Plus 3 for the previously skipped "_(" and to slice off the ")" at the end.
-                    int len = charTag.Length - (sourceIndex + 3);
+                    int start = sourceOpenIdx + 2;
+                    int len = sourceCloseIdx - start;
                     string source = charTag.Substring(start, len);
 
                     foreach (string srcTag in copyrightTags)
@@ -165,7 +169,8 @@ namespace IvionWebSoft
                         if (srcTag.Contains(source, StringComparison.Ordinal) ||
                             source.StartsWith(srcTag, StringComparison.Ordinal))
                         {
-                            charTags[i] = charTag.Substring(0, sourceIndex);
+                            len = (sourceCloseIdx - sourceOpenIdx) + 1;
+                            charTags[i] = charTag.Remove(sourceOpenIdx, len);
                         }
                     } // foreach
                 } // if
