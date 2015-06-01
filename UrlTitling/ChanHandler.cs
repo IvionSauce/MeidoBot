@@ -36,25 +36,7 @@ namespace WebIrc
             
             if (post.Success)
             {
-                string topic = null;
-
-                // Prefer subject as topic, if the post has one and if it isn't too similar to the URL. This is now an
-                // issue because 4chan puts the subject into the URL.
-                if (!string.IsNullOrEmpty(post.Subject))
-                {
-                    double similarity = WebToIrc.UrlTitle.Similarity(req.Url, post.Subject);
-                    if (similarity < 0.9d)
-                        topic = post.Subject;
-                }
-
-                // Else reform the message into a topic.
-                if (topic == null && !string.IsNullOrEmpty(post.Comment))
-                {
-                    topic = ChanTools.RemoveSpoilerTags(post.Comment);
-                    topic = ChanTools.RemovePostQuotations(topic);
-                    topic = ShortenPost(topic);
-                }
-                
+                string topic = ConstructTopic(post, req.Url);
                 if (topic == null)
                 {
                     req.AddMessage("Post contained neither subject or comment.");
@@ -67,6 +49,29 @@ namespace WebIrc
             else
                 return req.CreateResult(false);
         }
+
+        string ConstructTopic(ChanPost post, string url)
+        {
+            // Prefer subject as topic, if the post has one and if it isn't too similar to the URL. This is now an
+            // issue because 4chan puts the subject into the URL.
+            if (!string.IsNullOrEmpty(post.Subject))
+            {
+                double similarity = WebToIrc.UrlTitle.Similarity(url, post.Subject);
+                if (similarity < 0.9d)
+                    return post.Subject;
+            }
+
+            // Else reform the message into a topic.
+            if (!string.IsNullOrEmpty(post.Comment))
+            {
+                string topic = ChanTools.RemoveSpoilerTags(post.Comment);
+                topic = ChanTools.RemovePostQuotations(topic);
+                return ShortenPost(topic);
+            }
+
+            return null;
+        }
+
 
         public static bool Supports(TitlingRequest req)
         {
