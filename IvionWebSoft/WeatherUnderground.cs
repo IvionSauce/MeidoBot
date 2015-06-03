@@ -33,7 +33,7 @@ namespace IvionWebSoft
             const string format = ".json";
             var currentQuery = string.Concat(wuQuery, query, format);
 
-            WebString queryResult = MinimalWeb.SimpleGet(currentQuery);
+            var queryResult = WebString.Download(currentQuery);
             if (!queryResult.Success)
                 return new WeatherConditions(queryResult);
 

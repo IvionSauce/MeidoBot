@@ -78,7 +78,7 @@ namespace IvionWebSoft
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
             
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
-            WebString json = MinimalWeb.SimpleGet(jsonReq);
+            var json = WebString.Download(jsonReq);
             if (!json.Success)
                 return new BooruPost(json);
             
@@ -185,7 +185,7 @@ namespace IvionWebSoft
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
 
             var xmlReq = string.Format("http://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
-            WebString xml = MinimalWeb.SimpleGet(xmlReq);
+            var xml = WebString.Download(xmlReq);
             if (!xml.Success)
                 return new BooruPost(xml);
 

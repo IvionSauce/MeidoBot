@@ -1,23 +1,8 @@
 using System;
 
+
 namespace IvionWebSoft
 {
-    public class WebString : WebResource
-    {
-        public string Document { get; private set; }
-        
-        
-        public WebString(Uri uri, string doc) : base(uri)
-        {
-            Document = doc;
-        }
-        
-        public WebString(Uri uri, Exception ex) : base(uri, ex) {}
-
-        public WebString(WebResource resource) : base(resource) {}
-    }
-
-
     public abstract class WebResource
     {
         public Uri Location { get; private set; }

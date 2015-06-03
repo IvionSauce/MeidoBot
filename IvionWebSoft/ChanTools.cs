@@ -92,7 +92,7 @@ namespace IvionWebSoft
                 throw new ArgumentOutOfRangeException("post", "Cannot be 0 or negative.");
 
             var jsonReq = string.Format("http://a.4cdn.org/{0}/res/{1}.json", board, threadNo);
-            WebString json = MinimalWeb.SimpleGet(jsonReq);
+            var json = WebString.Download(jsonReq);
             if (!json.Success)
                 return new ChanPost(json);
             
@@ -201,7 +201,7 @@ namespace IvionWebSoft
                 throw new ArgumentOutOfRangeException("post", "Cannot be 0 or negative.");
             
             var jsonReq = string.Format("http://archive.moe/_/api/chan/post/?board={0}&num={1}", board, postNo);
-            WebString json = MinimalWeb.SimpleGet(jsonReq);
+            var json = WebString.Download(jsonReq);
             if (!json.Success)
                 return new ChanPost(json);
             
