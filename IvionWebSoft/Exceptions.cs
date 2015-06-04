@@ -4,13 +4,13 @@ using System.Net;
 namespace IvionWebSoft
 {
     [Serializable()]
-    public class UrlNotHtmlException : Exception
+    public class NotHtmlException : Exception
     {
-        public UrlNotHtmlException() : base() {}
-        public UrlNotHtmlException(string message) : base(message) {}
-        public UrlNotHtmlException(string message, Exception inner) : base(message, inner) {}
+        public NotHtmlException() : base() {}
+        public NotHtmlException(string message) : base(message) {}
+        public NotHtmlException(string message, Exception inner) : base(message, inner) {}
         
-        protected UrlNotHtmlException (System.Runtime.Serialization.SerializationInfo info,
+        protected NotHtmlException (System.Runtime.Serialization.SerializationInfo info,
                                        System.Runtime.Serialization.StreamingContext context) {}
     }
 
