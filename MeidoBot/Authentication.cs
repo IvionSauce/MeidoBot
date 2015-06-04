@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 using MeidoCommon;
+using Meebey.SmartIrc4net;
 
 
 namespace MeidoBot
 {
     class UserAuthManager
     {
+        readonly IrcClient irc;
         readonly Logger log;
 
         readonly Dictionary<string, UserAuth> auths =
@@ -28,16 +30,22 @@ namespace MeidoBot
             this.log = log;
             XElement authConfig = XmlConfig.GetOrCreateConfig(path, defaultConfig, log);
 
-            var entries = authConfig.Elements("entry");
-            foreach (XElement entry in entries)
+            foreach (XElement entry in authConfig.Elements("entry"))
+                ParseEntry(entry);
+        }
+
+        void ParseEntry(XElement entry)
+        {
+            var pass = (string)entry.Element("pass");
+            int level = ParseLevel(entry.Element("level"));
+
+            foreach (XElement xnick in entry.Elements("nick"))
             {
-                var nick = (string)entry.Element("nick");
+                var nick = (string)xnick;
 
                 if (!string.IsNullOrWhiteSpace(nick))
                 {
-                    var pass = (string)entry.Element("pass");
-                    int level = ParseLevel(entry.Element("level"));
-
+                    log.Verbose("Registering user '{0}' with level {1}.", nick, level);
                     auths[nick] = new UserAuth(pass, level);
                 }
             }
@@ -73,8 +81,16 @@ namespace MeidoBot
             UserAuth user;
             if (auths.TryGetValue(nick, out user))
             {
-                if (user.IsAuthenticated)
+                if (user.HasPassword && user.IsAuthenticated)
+                {
                     return user.Level;
+                }
+                else
+                {
+                    var ircUser = irc.GetIrcUser(nick);
+                    if (ircUser.IsRegistered)
+                        return user.Level;
+                }
             }
             return 0;
         }
@@ -84,6 +100,7 @@ namespace MeidoBot
     class UserAuth
     {
         public readonly int Level;
+        public readonly bool HasPassword;
 
         readonly string password;
 
@@ -115,7 +132,10 @@ namespace MeidoBot
             if (string.IsNullOrWhiteSpace(pass))
                 password = string.Empty;
             else
+            {
                 password = pass;
+                HasPassword = true;
+            }
 
             const int maxLvl = 10;
             if (lvl > maxLvl)
@@ -129,7 +149,7 @@ namespace MeidoBot
 
         public bool Authenticate(string pass)
         {
-            if (password.Equals(pass, StringComparison.Ordinal))
+            if (HasPassword && password.Equals(pass, StringComparison.Ordinal))
             {
                 lock (_authLock)
                 {
@@ -139,10 +159,8 @@ namespace MeidoBot
                 }
             }
             else
-            {
-                authenticated = false;
                 return false;
-            }
         }
+
     }
 }
