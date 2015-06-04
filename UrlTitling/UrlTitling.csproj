@@ -41,14 +41,14 @@
     <Compile Include="Config.cs" />
     <Compile Include="ControlList.cs" />
     <Compile Include="Threading.cs" />
-    <Compile Include="BooruHandler.cs" />
-    <Compile Include="ChanHandler.cs" />
-    <Compile Include="HandlersMisc.cs" />
-    <Compile Include="Request.cs" />
-    <Compile Include="TitleConstruct.cs" />
-    <Compile Include="UrlExtractor.cs" />
-    <Compile Include="WebToIrc.cs" />
-    <Compile Include="WikipediaHandler.cs" />
+    <Compile Include="WebIrc\BooruHandler.cs" />
+    <Compile Include="WebIrc\ChanHandler.cs" />
+    <Compile Include="WebIrc\HandlersMisc.cs" />
+    <Compile Include="WebIrc\Request.cs" />
+    <Compile Include="WebIrc\TitleConstruct.cs" />
+    <Compile Include="WebIrc\UrlExtractor.cs" />
+    <Compile Include="WebIrc\WebToIrc.cs" />
+    <Compile Include="WebIrc\WikipediaHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
@@ -67,5 +67,8 @@
       <Project>{19588E23-5B8A-4E85-BD1A-8EE461812AC3}</Project>
       <Name>MinimalistParsers</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="WebIrc\" />
   </ItemGroup>
 </Project>
