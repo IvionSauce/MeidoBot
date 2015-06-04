@@ -44,11 +44,12 @@
     <Compile Include="WebIrc\BooruHandler.cs" />
     <Compile Include="WebIrc\ChanHandler.cs" />
     <Compile Include="WebIrc\HandlersMisc.cs" />
-    <Compile Include="WebIrc\Request.cs" />
     <Compile Include="WebIrc\TitleConstruct.cs" />
     <Compile Include="WebIrc\UrlExtractor.cs" />
     <Compile Include="WebIrc\WebToIrc.cs" />
     <Compile Include="WebIrc\WikipediaHandler.cs" />
+    <Compile Include="WebIrc\TitlingResult.cs" />
+    <Compile Include="WebIrc\TitlingRequest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
