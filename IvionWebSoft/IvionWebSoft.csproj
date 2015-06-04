@@ -60,6 +60,7 @@
     <Compile Include="WebResources\WebBytes.cs" />
     <Compile Include="WebResources\WebString.cs" />
     <Compile Include="WebResources\WebResource.cs" />
+    <Compile Include="StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebResources\" />
