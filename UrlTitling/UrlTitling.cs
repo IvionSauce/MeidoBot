@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Threading;
-using IvionWebSoft;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -55,11 +53,11 @@ public class UrlTitler : IMeidoHook
         // For handling messages/actions that can potentially containg URL(s).
         irc.AddChannelMessageHandler(UrlHandler);
         irc.AddChannelActionHandler(UrlHandler);
+
         // Trigger handling.
         meido.RegisterTrigger("disable", Disable, true);
         meido.RegisterTrigger("enable", Enable, true);
         meido.RegisterTrigger("reload_bw", ReloadBW);
-        //meido.RegisterTrigger("dump", Dump);
     }
 
     void SetupBWLists(Config conf, ILog log)
@@ -118,19 +116,4 @@ public class UrlTitler : IMeidoHook
         manager.Whitelist.ReloadFile();
         e.Reply("Black- and whitelist have been reloaded.");
     }
-
-    /*public void Dump(IIrcMessage e)
-    {
-        if (e.MessageArray.Length > 1)
-        {
-            var encHelper = new HtmlEncodingHelper();
-            var resource = encHelper.GetWebString(e.MessageArray[1]);
-            if (resource.Success)
-            {
-                string path = Path.Combine(Path.GetTempPath(), "dump.html");
-                File.WriteAllText(path, resource.Document);
-            }
-        }
-    } */
-
 }
