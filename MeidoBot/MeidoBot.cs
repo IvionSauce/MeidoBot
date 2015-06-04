@@ -223,13 +223,13 @@ namespace MeidoBot
                     msg.Reply("You've successfully authenticated.");
             }
 
-            msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(nick));
+            msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(msg.Nick));
         }
 
         // Part trigger.
         void Part(IIrcMessage msg)
         {
-            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) == 10)
+            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) >= 9)
                 irc.RfcPart(msg.MessageArray[1]);
         }
 
