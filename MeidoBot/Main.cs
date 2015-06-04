@@ -9,7 +9,7 @@ namespace MeidoBot
 {
     static class Program
     {
-        public static readonly string Version = "0.89.2";
+        public static readonly string Version = "0.89.4";
 
         const string ExampleConfig = @"
 <config>
