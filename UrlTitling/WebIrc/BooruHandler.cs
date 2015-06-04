@@ -88,7 +88,7 @@ namespace WebIrc
         
         public TitlingResult PostToIrc(TitlingRequest req)
         {
-            BooruPost postInfo = DanboTools.GetPostInfo(req.Url);
+            DanboPost postInfo = DanboTools.GetPostInfo(req.Url);
             req.Resource = postInfo;
             
             if (postInfo.Success)
@@ -174,7 +174,7 @@ namespace WebIrc
 
             if (postInfo.Success)
             {
-                string warning = ConstructWarning(postInfo.AllTags);
+                string warning = ConstructWarning(postInfo.Tags);
                 if (!string.IsNullOrEmpty(warning))
                 {
                     FormatMessage(req.ConstructedTitle, postInfo.Rated, warning, postInfo.PostNo);
