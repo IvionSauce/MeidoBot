@@ -46,14 +46,14 @@ namespace IvionWebSoft
             if (observation == null && results == null && error == null)
             {
                 var ex = new JsonParseException("Server returned neither result or error.");
-                return new WeatherConditions(queryResult, ex);
+                return new WeatherConditions(queryResult.Location, ex);
             }
             else if (error == null)
             {
                 // Only one result.
                 if (observation != null)
                 {
-                    return new WeatherConditions(queryResult, observation);
+                    return new WeatherConditions(queryResult.Location, observation);
                 }
                 // Multiple results, return the first result.
                 else
@@ -67,7 +67,7 @@ namespace IvionWebSoft
             {
                 var errorMsg = (string)error["description"];
                 var ex = new JsonErrorException(errorMsg);
-                return new WeatherConditions(queryResult, ex);
+                return new WeatherConditions(queryResult.Location, ex);
             }
         }
     }
@@ -96,9 +96,9 @@ namespace IvionWebSoft
 
         public WeatherConditions(WebResource resource) : base(resource) {}
 
-        public WeatherConditions(WebResource resource, Exception ex) : base(resource.Location, ex) {}
+        public WeatherConditions(Uri uri, Exception ex) : base(uri, ex) {}
 
-        public WeatherConditions(WebResource resource, JToken observation) : base(resource)
+        internal WeatherConditions(Uri uri, JToken observation) : base(uri)
         {
             WeatherLocation = (string)observation["display_location"]["full"];
             Description = (string)observation["weather"];
