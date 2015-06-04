@@ -44,13 +44,13 @@ namespace IvionWebSoft
         {
             // Try to match <meta http-equiv="Refresh" content="0;URL=http://www.e2046.com/product/18034">
             new Regex(
-                @"(?i)(?<=<meta http-equiv=[""']?Refresh[""']? +content=[""']0; ?URL=)" +
-                @"[^<>""']+(?=[""'] */?>)"),
+                @"(?i)(?<=<meta http-equiv=[""']?Refresh[""']? +content=""0; ?URL='?)" +
+                @"[^<>""']+(?='?"" */?>)"),
             
             // Same as above, but with http-equiv and content switched around.
             new Regex(
-                @"(?i)(?<=<meta content=[""']0; ?URL=)" +
-                @"[^<>""']+(?=[""'] +http-equiv=[""']?Refresh[""']? */?>)")
+                @"(?i)(?<=<meta content=""0; ?URL='?)" +
+                @"[^<>""']+(?='?"" +http-equiv=[""']?Refresh[""']? */?>)")
         };
         
         
