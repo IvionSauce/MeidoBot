@@ -3,12 +3,12 @@ using System.IO;
 
 namespace MinimalistParsers
 {
-    public static class Dispatch
+    public static class MediaDispatch
     {
         static Func<Stream, MediaProperties>[] mediaDispatch;
 
 
-        static Dispatch()
+        static MediaDispatch()
         {
             mediaDispatch = new Func<Stream, MediaProperties>[]
             {

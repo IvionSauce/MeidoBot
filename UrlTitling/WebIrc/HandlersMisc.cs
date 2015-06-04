@@ -23,7 +23,7 @@ namespace WebIrc
             if (!wb.Success)
                 return req.CreateResult(false);
 
-            var media = Dispatch.Parse(wb.Data);
+            var media = MediaDispatch.Parse(wb.Data);
 
             string type;
             switch (media.Type)

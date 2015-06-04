@@ -28,10 +28,10 @@
     <Compile Include="Png.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Types.cs" />
-    <Compile Include="Dispatch.cs" />
     <Compile Include="Ebml.cs" />
     <Compile Include="Gif.cs" />
     <Compile Include="StreamChunk.cs" />
+    <Compile Include="MediaDispatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Core" />
