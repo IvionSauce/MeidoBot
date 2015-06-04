@@ -25,9 +25,11 @@ namespace MeidoBot
             );
 
 
-        public UserAuthManager(string path, Logger log)
+        public UserAuthManager(string path, IrcClient irc, Logger log)
         {
+            this.irc = irc;
             this.log = log;
+
             XElement authConfig = XmlConfig.GetOrCreateConfig(path, defaultConfig, log);
 
             foreach (XElement entry in authConfig.Elements("entry"))
