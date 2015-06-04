@@ -77,16 +77,17 @@ namespace MeidoBot
 
         public string GetHelp(string subject)
         {
-            string helpSubject;
-            if (subject.StartsWith(Prefix))
+            string helpSubject = subject.Trim();
+
+            if (helpSubject.StartsWith(Prefix))
                 helpSubject = subject.Substring(Prefix.Length);
-            else
-                helpSubject = subject;
 
             string help;
             foreach (var plugin in pluginContainer)
+            {
                 if (plugin.Help.TryGetValue(helpSubject, out help))
                     return help;
+            }
 
             return null;
         }
