@@ -46,7 +46,6 @@
   <ItemGroup>
     <Compile Include="BooruTools.cs" />
     <Compile Include="ChanTools.cs" />
-    <Compile Include="WebResources.cs" />
     <Compile Include="WebTools.cs" />
     <Compile Include="GoogleTools.cs" />
     <Compile Include="Exceptions.cs" />
@@ -55,10 +54,14 @@
     <Compile Include="WikipediaArticle.cs" />
     <Compile Include="HtmlTagExtract.cs" />
     <Compile Include="StreamExtentions.cs" />
-    <Compile Include="WebBytes.cs" />
     <Compile Include="MetaRefreshFollower.cs" />
-    <Compile Include="HtmlPage.cs" />
-    <Compile Include="WebString.cs" />
     <Compile Include="EncHelp.cs" />
+    <Compile Include="WebResources\HtmlPage.cs" />
+    <Compile Include="WebResources\WebBytes.cs" />
+    <Compile Include="WebResources\WebString.cs" />
+    <Compile Include="WebResources\WebResource.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="WebResources\" />
   </ItemGroup>
 </Project>
