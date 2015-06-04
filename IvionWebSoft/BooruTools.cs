@@ -35,9 +35,6 @@ namespace IvionWebSoft
     }
 
 
-    /// <summary>
-    /// Collection of tools dealing with Danbooru.
-    /// </summary>
     public static class DanboTools
     {
         static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
@@ -50,7 +47,7 @@ namespace IvionWebSoft
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// <param name="url">URL pointing to a post.</param>
-        public static BooruPost GetPostInfo(string url)
+        public static DanboPost GetPostInfo(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
 
@@ -60,7 +57,7 @@ namespace IvionWebSoft
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
-                return new BooruPost(ex);
+                return new DanboPost(null, ex);
             }
         }
 
@@ -71,7 +68,7 @@ namespace IvionWebSoft
         /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
         /// <param name="postNo">Post number.</param>
-        public static BooruPost GetPostInfo(int postNo)
+        public static DanboPost GetPostInfo(int postNo)
         {
             if (postNo < 1)
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
@@ -79,25 +76,18 @@ namespace IvionWebSoft
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
             var json = WebString.Download(jsonReq);
             if (!json.Success)
-                return new BooruPost(json);
+                return new DanboPost(json.Location, json.Exception);
             
             dynamic postJson = JsonConvert.DeserializeObject(json.Document);
             string copyrights = postJson.tag_string_copyright;
             string characters = postJson.tag_string_character;
             string artists = postJson.tag_string_artist;
-            string other = postJson.tag_string_general;
+            string general = postJson.tag_string_general;
             string all = postJson.tag_string;
             string rating = postJson.rating;
             
-            var postInfo = new BooruPost(json, postNo,
-                                         copyrights,
-                                         characters,
-                                         artists,
-                                         other,
-                                         all,
-                                         rating);
-            
-            return postInfo;
+            return new DanboPost(json.Location, postNo,
+                copyrights, characters, artists, general, all, rating);
         }
 
         
@@ -173,7 +163,7 @@ namespace IvionWebSoft
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Post No. from URL.");
-                return new BooruPost(ex);
+                return new BooruPost(null, ex);
             }
         }
 
@@ -186,95 +176,13 @@ namespace IvionWebSoft
             var xmlReq = string.Format("http://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
             var xml = WebString.Download(xmlReq);
             if (!xml.Success)
-                return new BooruPost(xml);
+                return new BooruPost(xml.Location, xml.Exception);
 
             var postXml = XElement.Parse(xml.Document).Element("post");
             string tags = postXml.Attribute("tags").Value;
             string rated = postXml.Attribute("rating").Value;
 
-            var postInfo = new BooruPost(xml,
-                                         postNo,
-                                         tags,
-                                         rated);
-            return postInfo;
-        }
-    }
-
-
-    /// <summary>
-    /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
-    /// check the Exception property.
-    /// </summary>
-    public class BooruPost : WebResource
-    {
-        public enum Rating
-        {
-            Unknown,
-            Safe,
-            Questionable,
-            Explicit
-        }
-        
-        public int PostNo { get; private set; }
-        public string[] CopyrightTags { get; private set; }
-        public string[] CharacterTags { get; private set; }
-        public string[] ArtistTags { get; private set; }
-        public string[] GeneralTags { get; private set; }
-        public string[] AllTags { get; private set; }
-        public Rating Rated { get; private set; }
-
-        
-        public BooruPost(WebResource resource) : base(resource) {}
-
-        public BooruPost(Exception ex) : base(ex) {}
-
-        // Smaller subset for less feature-rich booru's (Gelbooru).
-        public BooruPost(WebResource resource,
-                         int postNo,
-                         string all,
-                         string rated) : base(resource)
-        {
-            PostNo = postNo;
-            AllTags = Split(all);
-            Rated = RatingStringToEnum(rated);
-        }
-
-        // Full set for Danbooru.
-        public BooruPost(WebResource resource,
-                         int postNo,
-                         string copyrights,
-                         string characters,
-                         string artists,
-                         string others,
-                         string all,
-                         string rated) : this(resource, postNo, all, rated)
-        {
-            CopyrightTags = Split(copyrights);
-            CharacterTags = Split(characters);
-            ArtistTags = Split(artists);
-            GeneralTags = Split(others);
-        }
-
-
-        static string[] Split(string tags)
-        {
-            return tags.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-        }
-
-
-        static Rating RatingStringToEnum(string rating)
-        {
-            switch(rating)
-            {
-            case "s":
-                return Rating.Safe;
-            case "q":
-                return Rating.Questionable;
-            case "e":
-                return Rating.Explicit;
-            default:
-                return Rating.Unknown;
-            }
+            return new BooruPost(xml.Location, postNo, tags, rated);
         }
     }
 }

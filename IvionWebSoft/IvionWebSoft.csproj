@@ -61,6 +61,7 @@
     <Compile Include="WebResources\WebString.cs" />
     <Compile Include="WebResources\WebResource.cs" />
     <Compile Include="StringExtensions.cs" />
+    <Compile Include="WebResources\BooruPost.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebResources\" />
