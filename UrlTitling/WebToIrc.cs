@@ -1,10 +1,5 @@
 using System;
-using System.Text;
-using System.Collections.Generic;
-// For dealing with SSL/TLS.
 using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using IvionWebSoft;
 
 
@@ -12,7 +7,6 @@ namespace WebIrc
 {
     /// <summary>
     /// Takes an URL and returns an IRC-printable title.
-    /// This class is NOT threadsafe.
     /// </summary>
     public class WebToIrc
     {
@@ -22,6 +16,7 @@ namespace WebIrc
         public ChanHandler Chan { get; private set; }
         public DanboHandler Danbo { get; private set; }
         public GelboHandler Gelbo { get; private set; }
+        public WikipediaHandler Wiki { get; private set; }
 
         public CookieContainer Cookies
         {
@@ -36,8 +31,6 @@ namespace WebIrc
 
         static WebToIrc()
         {
-            // State we want to use our ACCEPT ALL implementation.
-            ServicePointManager.ServerCertificateValidationCallback = TrustAllCertificates;
             UrlTitle = new UrlTitleComparer();
         }
         public WebToIrc()
@@ -45,6 +38,7 @@ namespace WebIrc
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
+            Wiki = new WikipediaHandler();
 
             urlFollower.Cookies = new CookieContainer();
             urlFollower.FetchSizeNonHtml = 64*1024;
@@ -120,7 +114,7 @@ namespace WebIrc
             }
             else if (ParseMedia && result.Bytes.Success)
             {
-                return BinaryHandler.BinaryToIrc(request, result.Bytes);
+                return MiscHandlers.BinaryToIrc(request, result.Bytes);
             }
             else
             {
@@ -149,7 +143,7 @@ namespace WebIrc
             // Wikipedia handling.
             else if (request.Url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
             {
-                return MiscHandlers.WikipediaSummarize(request, page.Content);
+                return Wiki.WikipediaSummarize(request, page.Content);
             }
             // Other URLs.
             else
@@ -184,25 +178,6 @@ namespace WebIrc
                 return req.CreateResult(true);
             else
                 return req.CreateResult(false);
-        }
-
-
-        // Implement an ACCEPT ALL Certificate Policy (for SSL).
-        // What we're going to do is not security sensitive. SSL or not, we don't care,
-        // we just want to get the HTML file and get out - we're not sending any sensitive data.
-        static bool TrustAllCertificates(object sender, X509Certificate cert, X509Chain chain,
-                                         SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        }
-    }
-
-
-    static class ExtensionMethods
-    {
-        public static bool Contains(this string source, string value, StringComparison comp)
-        {
-            return source.IndexOf(value, comp) >= 0;
         }
     }
 }

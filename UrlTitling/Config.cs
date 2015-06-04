@@ -19,8 +19,11 @@ class WebToIrcConfig
     public HashSet<string> WarningTags { get; set; }
     
     public int? MaxLines { get; set; }
-    public int? MaxCharacters { get; set; }
+    public int? ChanMaxChars { get; set; }
     public string ChanContSym { get; set; }
+
+    public int? WikiMaxChars { get; set; }
+    public string WikiContSym { get; set; }
 }
 
 
@@ -89,11 +92,22 @@ class Config : XmlConfig
 
         // Max Characters (for shortening the post).
         webIrc.Chan.TopicMaxChars =
-            specific.MaxCharacters ?? global.MaxCharacters ?? 128;
+            specific.ChanMaxChars ?? global.ChanMaxChars ?? 128;
 
         // Continuation Symbol.
         webIrc.Chan.ContinuationSymbol =
             specific.ChanContSym ?? global.ChanContSym ?? string.Empty;
+
+        // --- Wikipedia ---
+        // -----------------
+
+        // Max Characters.
+        webIrc.Wiki.MaxCharacters = 
+            specific.WikiMaxChars ?? global.WikiMaxChars ?? 192;
+
+        // Continuation Symbol.
+        webIrc.Wiki.ContinuationSymbol = 
+            specific.WikiContSym ?? global.WikiContSym ?? string.Empty;
         
         return webIrc;
     }
@@ -153,6 +167,9 @@ class Config : XmlConfig
         
         foreach (XElement chan in Config.Elements("chan-foolz"))
             LoadChan(chan);
+
+        foreach (XElement wiki in Config.Elements("wikipedia"))
+            LoadWiki(wiki);
     }
 
     void LoadDanbo(XElement danbo)
@@ -176,16 +193,29 @@ class Config : XmlConfig
         }
     }
 
+
     void LoadChan(XElement chan)
     {
-        if (!chan.HasElements)
-            return;
-        
-        var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(chan) );
-        
-        settings.MaxLines = (int?)chan.Element("max-lines");
-        settings.MaxCharacters = (int?)chan.Element("max-characters");
-        settings.ChanContSym = (string)chan.Element("continuation-symbol");
+        if (chan.HasElements)
+        {
+            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(chan) );
+            
+            settings.MaxLines = (int?)chan.Element("max-lines");
+            settings.ChanMaxChars = (int?)chan.Element("max-characters");
+            settings.ChanContSym = (string)chan.Element("continuation-symbol");
+        }
+    }
+
+
+    void LoadWiki(XElement wiki)
+    {
+        if (wiki.HasElements)
+        {
+            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(wiki) );
+
+            settings.WikiMaxChars = (int?)wiki.Element("max-characters");
+            settings.WikiContSym = (string)wiki.Element("continuation-symbol");
+        }
     }
 
 
@@ -199,61 +229,71 @@ class Config : XmlConfig
     }
 
     
-    public override XElement DefaultConfig ()
+    public override XElement DefaultConfig()
     {
-        var config = 
-            new XElement("config",
-                         new XElement("threshold", 1.0d, new XAttribute("channel", "_all")),
-                         new XElement("blacklist-location", "conf/blacklist"),
-                         new XElement("whitelist-location", "conf/whitelist"),
-                         
-                         new XComment("For 'danbooru' and 'chan-foolz' you can have channel specific options.\n" +
-                         "Just create another one with appropriate value in the `channel` attribute."),
-                         
-                         new XElement("danbooru", new XAttribute("channel", "_all"),
-                            new XElement("max-tags-displayed", 5, new XComment("Limits each tag category " +
-                                                               "(characters, copyrights and artists) to this number")),
-                            new XElement("continuation-symbol", "[...]", new XComment("What to print to indicate " +
-                                                                      "that there are more tags than displayed")),
-                            new XElement("colourize", true),
-                            new XElement("warning-tags",
-                                new XElement("tag", "spoilers"),
+        var config =
+            new XElement ("config",
+                new XElement ("threshold", 1.0d, new XAttribute ("channel", "_all")),
+                new XElement ("blacklist-location", "conf/blacklist"),
+                new XElement ("whitelist-location", "conf/whitelist"),
 
-                                new XElement("tag", "guro"),
-                                new XElement("tag", "death"),
-                                new XElement("tag", "poop"),
-                                new XElement("tag", "scat"),
-                                new XElement("tag", "vomit"),
-                                new XElement("tag", "vomiting"),
-                                new XElement("tag", "pee"),
-                                new XElement("tag", "peeing"),
+                new XComment ("For elements with the `channel` attribute you can have channel specific options.\n" +
+                "Just create another one with appropriate value in the `channel` attribute."),
 
-                                new XElement("tag", "futanari"),
-                                new XElement("tag", "yaoi"),
-                                new XElement("tag", "bestiality"),
-                                new XElement("tag", "furry"),
-                                new XElement("tag", "rape"),
-                                new XElement("tag", "loli"),
-                                new XElement("tag", "shota"),
-                                new XElement("tag", "urethral_insertion")
-                                )
-                            ),
-                         
-                         new XElement("chan-foolz", new XAttribute("channel", "_all"),
-                            new XElement("max-lines", 2),
-                            new XElement("max-characters", 128),
-                            new XElement("continuation-symbol", "…")
-                            ),
-                         
-                         new XElement("cookies",
-                            new XElement("cookie",
-                                new XElement("name", ""),
-                                new XElement("content", ""),
-                                new XElement("path", ""),
-                                new XElement("host", "")
-                                )
-                            )
-                         );
+                new XElement ("danbooru", new XAttribute ("channel", "_all"),
+
+                    new XComment ("Limits each tag category (characters, copyrights and artists) to this number"),
+                    new XElement ("max-tags-displayed", 5),
+
+                    new XComment ("What to print to indicate that there are more tags than displayed"),
+                    new XElement ("continuation-symbol", "[...]"),
+
+
+                    new XElement ("colourize", true),
+                    new XElement ("warning-tags",
+                        new XElement ("tag", "spoilers"),
+
+                        new XElement ("tag", "guro"),
+                        new XElement ("tag", "death"),
+                        new XElement ("tag", "poop"),
+                        new XElement ("tag", "scat"),
+                        new XElement ("tag", "vomit"),
+                        new XElement ("tag", "vomiting"),
+                        new XElement ("tag", "pee"),
+                        new XElement ("tag", "peeing"),
+
+                        new XElement ("tag", "futanari"),
+                        new XElement ("tag", "yaoi"),
+                        new XElement ("tag", "bestiality"),
+                        new XElement ("tag", "furry"),
+                        new XElement ("tag", "rape"),
+                        new XElement ("tag", "loli"),
+                        new XElement ("tag", "shota"),
+                        new XElement ("tag", "urethral_insertion")
+                    )
+                ),
+
+                new XElement ("chan-foolz", new XAttribute ("channel", "_all"),
+                    new XElement ("max-lines", 2),
+                    new XElement ("max-characters", 128),
+                    new XElement ("continuation-symbol", "…")
+                ),
+
+                new XElement ("wikipedia", new XAttribute ("channel", "_all"),
+                    new XElement ("max-characters", 192),
+                    new XElement ("continuation-symbol", "[...]")
+                ),
+
+                new XElement ("cookies",
+                    new XElement ("cookie",
+                        new XElement ("name", ""),
+                        new XElement ("content", ""),
+                        new XElement ("path", ""),
+                        new XElement ("host", "")
+                    )
+                )
+            );
+
         return config;
     }
 }

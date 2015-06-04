@@ -76,6 +76,7 @@ namespace MeidoBot
             {
             case Parsing.Results.Success:
                 Console.WriteLine("Starting MeidoBot {0}\n", Version);
+                Ssl.EnableTrustAll();
                 new Meido(meidoConfig);
                 return;
                 

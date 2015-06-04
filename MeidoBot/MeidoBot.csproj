@@ -34,6 +34,7 @@
     <Compile Include="MeidoConfig.cs" />
     <Compile Include="Parsing.cs" />
     <Compile Include="Authentication.cs" />
+    <Compile Include="Ssl.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -48,5 +49,6 @@
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
+    <Reference Include="System" />
   </ItemGroup>
 </Project>

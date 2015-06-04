@@ -1,62 +1,12 @@
 using System;
 using IvionWebSoft;
+using MinimalistParsers;
 
 
 namespace WebIrc
 {
     public static class MiscHandlers
     {
-        public static TitlingResult WikipediaSummarize(TitlingRequest req, string htmlDoc)
-        {
-            WikipediaArticle article = WikipediaTools.Parse(htmlDoc);
-            
-            // The paragraph to be summarized.
-            string p = null;
-
-            // Check if the URL has an anchor to a specific section in the article.
-            int anchorIndex = req.Url.IndexOf("#", StringComparison.OrdinalIgnoreCase);
-            if (anchorIndex >= 0 && (anchorIndex + 1) < req.Url.Length)
-            {
-                var anchorId = req.Url.Substring(anchorIndex + 1);
-                p = GetFirstParagraph(article, anchorId);
-            }
-            // If no anchor or if we couldn't extract a paragraph for the specific anchor,
-            // get first paragraph of the article.
-            if (p == null && article.SummaryParagraphs.Length > 0)
-                p = article.SummaryParagraphs[0];
-
-            if (!string.IsNullOrWhiteSpace(p))
-            {
-                const int MaxChars = 192;
-                string summary;
-                if (p.Length <= MaxChars)
-                    summary = p;
-                else
-                    summary = p.Substring(0, MaxChars) + "[...]";
-                
-                req.ConstructedTitle.SetFormat("[ {0} ]", summary);
-            }
-            return req.CreateResult(true);
-        }
-
-        static string GetFirstParagraph(WikipediaArticle article, string anchorId)
-        {
-            int sectionIndex = article.IndexOf(anchorId);
-            if (sectionIndex >= 0)
-            {
-                while (sectionIndex < article.SectionCount)
-                {
-                    var section = article[sectionIndex];
-                    if (section.Paragraphs.Length > 0)
-                        return section.Paragraphs[0];
-                    else
-                        sectionIndex++;
-                }
-            }
-            return null;
-        }
-
-
         public static TitlingResult YoutubeWithDuration(TitlingRequest req, string htmlDoc)
         {
             // If duration can be found, change the html info to include that.
@@ -64,6 +14,59 @@ namespace WebIrc
             req.ConstructedTitle.SetHtmlTitle().AppendTime(ytTime);
 
             return req.CreateResult(true);
+        }
+
+
+        public static TitlingResult BinaryToIrc(TitlingRequest req, WebBytes wb)
+        {
+            req.Resource = wb;
+            if (!wb.Success)
+                return req.CreateResult(false);
+
+            var media = Dispatch.Parse(wb.Data);
+
+            string type;
+            switch (media.Type)
+            {
+            case MediaType.Jpeg:
+                type = "JPEG";
+                break;
+            case MediaType.Png:
+                type = "PNG";
+                break;
+            case MediaType.Gif:
+                type = "GIF";
+                break;
+            case MediaType.Matroska:
+                type = "Matroska";
+                break;
+            case MediaType.Webm:
+                type = "WebM";
+                break;
+            default:
+                type = wb.ContentType;
+                req.AddMessage("Binary format not supported.");
+                break;
+            }
+
+            FormatBinaryInfo(req.ConstructedTitle, type, media, wb.ContentLength);
+            return req.CreateResult(true);
+        }
+
+        static void FormatBinaryInfo(TitleConstruct title, string content, MediaProperties media, long length)
+        {
+            if (media.Dimensions.Width > 0 && media.Dimensions.Height > 0)
+            {
+                title.SetFormat("[ {0}: {1}x{2} ]", content, media.Dimensions.Width, media.Dimensions.Height);
+                title.AppendTime(media.Duration);
+
+                if (media.HasAudio)
+                    title.Append('♫');
+
+                title.AppendSize(length);
+            }
+            else
+                title.SetFormat("[ {0} ]", content).AppendSize(length);
         }
     }
 }
