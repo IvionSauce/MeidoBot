@@ -20,7 +20,15 @@ namespace MinimalistParsers
         }
 
 
-        public static MediaProperties GetMediaInfo(Stream stream)
+        public static MediaProperties Parse(byte[] data)
+        {
+            if (data == null)
+                throw new ArgumentNullException("data");
+
+            return Parse(new MemoryStream(data));
+        }
+
+        public static MediaProperties Parse(Stream stream)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");

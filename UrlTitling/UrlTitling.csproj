@@ -38,17 +38,17 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="UrlTitling.cs" />
-    <Compile Include="WebToIrc.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ControlList.cs" />
-    <Compile Include="ChanHandler.cs" />
-    <Compile Include="BooruHandler.cs" />
     <Compile Include="Threading.cs" />
-    <Compile Include="Request.cs" />
     <Compile Include="BinaryHandler.cs" />
+    <Compile Include="BooruHandler.cs" />
+    <Compile Include="ChanHandler.cs" />
     <Compile Include="HandlersMisc.cs" />
+    <Compile Include="Request.cs" />
     <Compile Include="TitleConstruct.cs" />
     <Compile Include="UrlExtractor.cs" />
+    <Compile Include="WebToIrc.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

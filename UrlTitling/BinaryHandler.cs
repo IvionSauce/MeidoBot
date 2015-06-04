@@ -10,19 +10,13 @@ namespace WebIrc
 {
     public static class BinaryHandler
     {
-        const int FetchSize = 65536;
-
-
-        public static TitlingResult BinaryToIrc(TitlingRequest req)
+        public static TitlingResult BinaryToIrc(TitlingRequest req, WebBytes wb)
         {
-            MediaInfo media;
-            using (BinaryPeek peek = MinimalWeb.Peek(req.Uri, FetchSize))
-            {
-                media = GetInfo(peek);
-            }
-            req.Resource = media;
-            if (!media.Success)
+            req.Resource = wb;
+            if (!wb.Success)
                 return req.CreateResult(false);
+
+            var media = Dispatch.Parse(wb.Data);
                 
             string type;
             switch (media.Type)
@@ -43,16 +37,16 @@ namespace WebIrc
                 type = "WebM";
                 break;
             default:
-                type = media.ContentType;
+                type = wb.ContentType;
                 req.AddMessage("Binary format not supported.");
                 break;
             }
             
-            FormatBinaryInfo(req.ConstructedTitle, type, media);
+            FormatBinaryInfo(req.ConstructedTitle, type, media, wb.ContentLength);
             return req.CreateResult(true);
         }
 
-        static void FormatBinaryInfo(TitleConstruct title, string content, MediaInfo media)
+        static void FormatBinaryInfo(TitleConstruct title, string content, MediaProperties media, long length)
         {
             if (media.Dimensions.Width > 0 && media.Dimensions.Height > 0)
             {
@@ -62,49 +56,10 @@ namespace WebIrc
                 if (media.HasAudio)
                     title.Append('♫');
 
-                title.AppendSize(media.ContentLength);
+                title.AppendSize(length);
             }
             else
-                title.SetFormat("[ {0} ]", content).AppendSize(media.ContentLength);
-        }
-
-
-        static MediaInfo GetInfo(BinaryPeek peek)
-        {
-            if (peek.Success)
-            {
-                MediaProperties props = Dispatch.GetMediaInfo(peek.Peek);
-                return new MediaInfo(peek, props);
-            }
-            else
-                return new MediaInfo(peek);
+                title.SetFormat("[ {0} ]", content).AppendSize(length);
         }
     }
-
-
-    class MediaInfo : WebResource
-    {
-        public MediaType Type { get; private set; }
-        public Dimensions Dimensions { get; private set; }
-        public TimeSpan Duration { get; private set; }
-        public bool HasAudio { get; private set; }
-
-        public string ContentType { get; private set; }
-        public long ContentLength { get; private set; }
-
-
-        public MediaInfo(WebResource resource) : base(resource) {}
-
-        public MediaInfo(BinaryPeek peek, MediaProperties props) : base(peek.Location)
-        {
-            Type = props.Type;
-            Dimensions = props.Dimensions;
-            Duration = props.Duration;
-            HasAudio = props.HasAudio;
-
-            ContentType = peek.ContentType;
-            ContentLength = peek.ContentLength;
-        }
-    }
-
 }

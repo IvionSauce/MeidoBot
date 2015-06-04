@@ -23,11 +23,15 @@ namespace WebIrc
         public DanboHandler Danbo { get; private set; }
         public GelboHandler Gelbo { get; private set; }
 
-        public CookieContainer Cookies { get; private set; }
+        public CookieContainer Cookies
+        {
+            get { return urlFollower.Cookies; }
+        }
+
 
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
-        readonly HtmlEncodingHelper htmlEncHelper = new HtmlEncodingHelper();
+        readonly MetaRefreshFollower urlFollower = new MetaRefreshFollower();
 
 
         static WebToIrc()
@@ -42,7 +46,8 @@ namespace WebIrc
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
 
-            Cookies = new CookieContainer();
+            urlFollower.Cookies = new CookieContainer();
+            urlFollower.FetchSizeNonHtml = 64*1024;
         }
 
 
@@ -89,11 +94,6 @@ namespace WebIrc
             // importantly this relieves the individual handlers of checking for those conditions.
 
 
-            // If FTP jump immediately to binary handler
-            if (request.Uri.Scheme == Uri.UriSchemeFtp)
-                return BinaryHandler.BinaryToIrc(request);
-
-
             // Danbooru handling.
             if (request.Url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
             {
@@ -111,46 +111,58 @@ namespace WebIrc
                 return Chan.ThreadTopicToIrc(request);
             }
 
+            var result = urlFollower.Load(request.Uri);
+            request.Resource = result.Page;
 
-            // ----- Above: Don't Need HTML and/or Title -----
-            // -----------------------------------------------
-            string htmlContent = GetHtmlContent(request);
-            if (htmlContent == null)
+            if (result.IsHtml)
             {
-                // Binary/media handling.
-                if (ParseMedia && request.Resource.Exception is UrlNotHtmlException)
-                {
-                    return BinaryHandler.BinaryToIrc(request);
-                }
-
+                return HandleHtml(request, result.Page);
+            }
+            else if (ParseMedia && result.Bytes.Success)
+            {
+                return BinaryHandler.BinaryToIrc(request, result.Bytes);
+            }
+            else
+            {
                 return request.CreateResult(false);
             }
+        }
 
-            string htmlTitle = WebTools.GetTitle(htmlContent);
+
+        TitlingResult HandleHtml(TitlingRequest request, HtmlPage page)
+        {
+            ReportCharsets(request, page);
+
+            string htmlTitle = WebTools.GetTitle(page.Content);
             if (string.IsNullOrWhiteSpace(htmlTitle))
             {
                 request.AddMessage("No <title> found, or title element was empty/whitespace.");
                 return request.CreateResult(false);
             }
-
             request.ConstructedTitle.HtmlTitle = htmlTitle;
-            // -----------------------------------------
-            // ----- Below: Need HTML and/or Title -----
-
 
             // Youtube handling.
             if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
             {
-                return MiscHandlers.YoutubeWithDuration(request, htmlContent);
+                return MiscHandlers.YoutubeWithDuration(request, page.Content);
             }
             // Wikipedia handling.
             else if (request.Url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
             {
-                return MiscHandlers.WikipediaSummarize(request, htmlContent);
+                return MiscHandlers.WikipediaSummarize(request, page.Content);
             }
             // Other URLs.
             else
                 return GenericHandler(request);
+        }
+
+        static void ReportCharsets(TitlingRequest req, HtmlPage page)
+        {
+            var encInfo = string.Format("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
+                page.HeadersCharset, page.EncHeaders,
+                page.HtmlCharset, page.EncHtml);
+
+            req.AddMessage(encInfo);
         }
 
 
@@ -172,33 +184,6 @@ namespace WebIrc
                 return req.CreateResult(true);
             else
                 return req.CreateResult(false);
-        }
-
-
-        string GetHtmlContent(TitlingRequest req)
-        {
-            var webStr = htmlEncHelper.GetWebString(req.Uri, Cookies);
-
-            // Mono/.NET can be very strict concerning cookies.
-            if (!webStr.Success && webStr.Exception.InnerException is CookieException)
-            {
-                webStr = htmlEncHelper.GetWebString(req.Uri);
-                req.AddMessage("CookieException was caught! Page requested without cookies.");
-            }
-
-            req.Resource = webStr;
-
-            if (webStr.Success)
-            {
-                var encInfo = string.Format("(HTTP) \"{0}\" -> {1} ; (HTML) \"{2}\" -> {3}",
-                                            htmlEncHelper.HeadersCharset, htmlEncHelper.EncHeaders,
-                                            htmlEncHelper.HtmlCharset, htmlEncHelper.EncHtml);
-                req.AddMessage(encInfo);
-
-                return webStr.Document;
-            }
-            else
-                return null;
         }
 
 

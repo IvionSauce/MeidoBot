@@ -59,7 +59,7 @@ public class UrlTitler : IMeidoHook
         meido.RegisterTrigger("disable", Disable, true);
         meido.RegisterTrigger("enable", Enable, true);
         meido.RegisterTrigger("reload_bw", ReloadBW);
-        meido.RegisterTrigger("dump", Dump);
+        //meido.RegisterTrigger("dump", Dump);
     }
 
     void SetupBWLists(Config conf, ILog log)
@@ -119,7 +119,7 @@ public class UrlTitler : IMeidoHook
         e.Reply("Black- and whitelist have been reloaded.");
     }
 
-    public void Dump(IIrcMessage e)
+    /*public void Dump(IIrcMessage e)
     {
         if (e.MessageArray.Length > 1)
         {
@@ -131,6 +131,6 @@ public class UrlTitler : IMeidoHook
                 File.WriteAllText(path, resource.Document);
             }
         }
-    }
+    } */
 
 }
