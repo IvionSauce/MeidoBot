@@ -76,7 +76,7 @@ namespace IvionWebSoft
             var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
             var json = WebString.Download(jsonReq);
             if (!json.Success)
-                return new DanboPost(json.Location, json.Exception);
+                return new DanboPost(json);
             
             dynamic postJson = JsonConvert.DeserializeObject(json.Document);
             string copyrights = postJson.tag_string_copyright;
@@ -176,7 +176,7 @@ namespace IvionWebSoft
             var xmlReq = string.Format("http://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
             var xml = WebString.Download(xmlReq);
             if (!xml.Success)
-                return new BooruPost(xml.Location, xml.Exception);
+                return new BooruPost(xml);
 
             var postXml = XElement.Parse(xml.Document).Element("post");
             string tags = postXml.Attribute("tags").Value;

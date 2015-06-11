@@ -10,7 +10,10 @@ namespace IvionWebSoft
         public string[] GeneralTags { get; private set; }
 
 
+        internal DanboPost(WebResource resource) : base(resource) {}
+
         public DanboPost(Uri uri, Exception ex) : base(uri, ex) {}
+
 
         public DanboPost(Uri uri,
             int postNo,
@@ -44,7 +47,10 @@ namespace IvionWebSoft
         public Rating Rated { get; private set; }
 
 
+        internal BooruPost(WebResource resource) : base(resource) {}
+
         public BooruPost(Uri uri, Exception ex) : base(uri, ex) {}
+
 
         public BooruPost(Uri uri, int postNo, string tags, string rated) : base(uri)
         {
