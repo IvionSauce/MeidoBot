@@ -77,6 +77,11 @@ namespace MeidoBot
             UserAuth user;
             if (auths.TryGetValue(nick, out user))
             {
+                /* Ideally I'd want a Authentication system that could leverage the NickServ registration already
+                 * in place on many IRC servers. Sadly SmartIrc4Net's IrcUser.IsRegistered doesn't update the
+                 * registered status on nick change, when a nick that was indeed registered with NickServ changes to a
+                 * nick that isn't registered it still reports that it is. This is of course an unworkable basis for
+                 * an Authentication system. (It did detect the changes on a part/join) */
                 if (user.IsAuthenticated)
                     return user.Level;
             }
