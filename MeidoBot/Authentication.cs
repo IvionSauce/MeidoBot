@@ -36,14 +36,20 @@ namespace MeidoBot
 
         void ParseEntry(XElement entry)
         {
-            var nick = (string)entry.Element("nick");
             var pass = (string)entry.Element("pass");
             int level = ParseLevel(entry.Element("level"));
 
-            if (!string.IsNullOrWhiteSpace(nick) && !string.IsNullOrWhiteSpace(pass))
+            foreach (XElement xnick in entry.Elements("nick"))
             {
-                log.Verbose("Registering user '{0}' with level {1}.", nick, level);
-                auths[nick] = new UserAuth(pass, level);
+                var nick = (string)xnick;
+
+                if (!string.IsNullOrWhiteSpace(nick) && !string.IsNullOrWhiteSpace(pass))
+                {
+                    var user = new UserAuth(pass, level);
+
+                    log.Verbose("Registering user '{0}' with level {1}.", nick, user.Level);
+                    auths[nick] = user;
+                }
             }
         }
 
@@ -123,7 +129,7 @@ namespace MeidoBot
             else
                 password = pass;
 
-            const int maxLvl = 10;
+            const int maxLvl = 3;
             if (lvl > maxLvl)
                 Level = maxLvl;
             else if (lvl < 0)
