@@ -229,14 +229,14 @@ namespace MeidoBot
         // Part trigger.
         void Part(IIrcMessage msg)
         {
-            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) >= 9)
+            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) >= 2)
                 irc.RfcPart(msg.MessageArray[1]);
         }
 
         // Disconnect trigger.
         void Disconnect(IIrcMessage msg)
         {
-            if (meidoComm.AuthLevel(msg.Nick) == 10)
+            if (meidoComm.AuthLevel(msg.Nick) == 3)
                 Dispose();
         }
 

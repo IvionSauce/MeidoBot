@@ -119,7 +119,7 @@ public class IrcChainey : IMeidoHook
 
     public void Remove(IIrcMessage e)
     {
-        if (meido.AuthLevel(e.Nick) >= 9)
+        if (meido.AuthLevel(e.Nick) >= 2)
         {
             var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
             chainey.Remove(toRemove);
