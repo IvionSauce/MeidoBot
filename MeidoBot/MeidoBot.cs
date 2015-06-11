@@ -39,7 +39,7 @@ namespace MeidoBot
 
             // Initialize the MeidoComm with the log factory for this server/instance.
             var logFac = new LogFactory(config.ServerAddress);
-            meidoComm = new MeidoComm(irc, logFac);
+            meidoComm = new MeidoComm(logFac);
             // Set aside some logging for ourself.
             log = logFac.CreateLogger("MEIDO");
 

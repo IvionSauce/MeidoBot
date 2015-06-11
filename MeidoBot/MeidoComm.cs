@@ -18,7 +18,7 @@ namespace MeidoBot
             new Dictionary<string, Trigger>(StringComparer.Ordinal);
 
 
-        public MeidoComm(IrcClient irc, LogFactory factory)
+        public MeidoComm(LogFactory factory)
         {
             logFac = factory;
 
@@ -26,7 +26,7 @@ namespace MeidoBot
             DataDir = "data";
 
             string authPath = System.IO.Path.Combine(ConfDir, "Auth.xml");
-            userAuths = new UserAuthManager(authPath, irc, logFac.CreateLogger("AUTH"));
+            userAuths = new UserAuthManager(authPath, logFac.CreateLogger("AUTH"));
         }
 
 
