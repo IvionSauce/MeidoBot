@@ -4,9 +4,22 @@ namespace IvionWebSoft
 {
     public class DanboPost : BooruPost
     {
+        /// <summary>
+        /// Copyright and/or franchise tags. Will be empty if no copyright tags.
+        /// </summary>
         public string[] CopyrightTags { get; private set; }
+        /// <summary>
+        /// Character tags. Will be empty if no character tags.
+        /// </summary>
         public string[] CharacterTags { get; private set; }
+        /// <summary>
+        /// Artist tags. Will be empty if no artist tags.
+        /// </summary>
         public string[] ArtistTags { get; private set; }
+        /// <summary>
+        /// General tags, ie not copyright, character or artist tags.
+        /// Will be empty if no general tags.
+        /// </summary>
         public string[] GeneralTags { get; private set; }
 
 
@@ -17,17 +30,17 @@ namespace IvionWebSoft
 
         public DanboPost(Uri uri,
             int postNo,
-            string copyrights,
-            string characters,
-            string artists,
-            string general,
-            string all,
-            string rated) : base(uri, postNo, all, rated)
+            string copyrightTags,
+            string characterTags,
+            string artistTags,
+            string generalTags,
+            string allTags,
+            string rated) : base(uri, postNo, allTags, rated)
         {
-            CopyrightTags = Split(copyrights);
-            CharacterTags = Split(characters);
-            ArtistTags = Split(artists);
-            GeneralTags = Split(general);
+            CopyrightTags = Split(copyrightTags);
+            CharacterTags = Split(characterTags);
+            ArtistTags = Split(artistTags);
+            GeneralTags = Split(generalTags);
         }
     }
 
@@ -42,8 +55,17 @@ namespace IvionWebSoft
             Explicit
         }
 
+        /// <summary>
+        /// Post number.
+        /// </summary>
         public int PostNo { get; private set; }
+        /// <summary>
+        /// All tags. Will be empty if no tags.
+        /// </summary>
         public string[] Tags { get; private set; }
+        /// <summary>
+        /// Rating of the post.
+        /// </summary>
         public Rating Rated { get; private set; }
 
 
