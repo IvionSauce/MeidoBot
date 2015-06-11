@@ -32,14 +32,14 @@ namespace IvionWebSoft
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// 
-        /// <param name="url">URL pointing to thread.</param>
+        /// <param name="url">URL pointing to a thread and/or post.</param>
         public static ChanPost GetPost(string url)
         {            
             var boardPost = Extract(url);
             if (boardPost.Item3 > 0)
                 return GetPost(boardPost.Item1, boardPost.Item2, boardPost.Item3);
             else if (boardPost.Item2 > 0)
-                return GetThreadOP(boardPost.Item1, boardPost.Item2);
+                return GetThreadPost(boardPost.Item1, boardPost.Item2);
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
@@ -51,12 +51,13 @@ namespace IvionWebSoft
         /// <summary>
         /// Extract board, thread number and optional post number from URL.
         /// </summary>
-        /// <returns>Tuple containing: board, thread number and post number (optional, is -1 if not found)</returns>
+        /// <returns>Tuple containing: board, thread number and post number (last is optional).
+        /// If unable to extract the default return will be (string.Empty, -1, -1).</returns>
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// 
-        /// <param name="url">URL.</param>
+        /// <param name="url">URL pointing to a thread and/or post.</param>
         public static Tuple<string, int, int> Extract(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
@@ -65,10 +66,22 @@ namespace IvionWebSoft
         }
 
 
-        public static ChanPost GetThreadOP(string board, int threadNo)
+        /// <summary>
+        /// Get opening post associated with thread number.
+        /// </summary>
+        /// <returns><see cref="ChanPost">ChanPost</see> detailing the post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if threadNo &lt= 0.</exception>
+        /// 
+        /// <param name="board">Board where thread/post is located.</param>
+        /// <param name="threadNo">Thread number.</param>
+        public static ChanPost GetThreadPost(string board, int threadNo)
         {
             return GetPost(board, threadNo, threadNo);
         }
+
 
         /// <summary>
         /// Get post associated with post number.
@@ -77,11 +90,11 @@ namespace IvionWebSoft
         /// 
         /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
         /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if thread and/or post &lt= 0.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if threadNo and/or postNo &lt= 0.</exception>
         /// 
         /// <param name="board">Board where thread/post is located.</param>
-        /// <param name="thread">Thread number.</param>
-        /// <param name="post">Post number.</param>
+        /// <param name="threadNo">Thread number.</param>
+        /// <param name="postNo">Post number.</param>
         public static ChanPost GetPost(string board, int threadNo, int postNo)
         {
             board.ThrowIfNullOrWhiteSpace("board");
@@ -124,7 +137,6 @@ namespace IvionWebSoft
 
         static string Fix4chanPost(string post)
         {
-            // Turn <br>'s into newlines.
             string fixedPost = post.Replace("<br>", "\n");
             
             fixedPost = fixPostRegexp.Replace(fixedPost, "");
@@ -149,7 +161,7 @@ namespace IvionWebSoft
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// 
-        /// <param name="url">URL pointing to thread.</param>
+        /// <param name="url">URL pointing to a thread and/or post.</param>
         public static ChanPost GetPost(string url)
         {            
             var boardPost = Extract(url);
@@ -168,12 +180,13 @@ namespace IvionWebSoft
         /// <summary>
         /// Extract board, thread number and optional post number from URL.
         /// </summary>
-        /// <returns>Tuple containing: board, thread number and post number (optional, is -1 if not found)</returns>
+        /// <returns>Tuple containing: board, thread number and post number (last is optional).
+        /// If unable to extract the default return will be (string.Empty, -1, -1).</returns>
         /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
         /// 
-        /// <param name="url">URL.</param>
+        /// <param name="url">URL pointing to a thread and/or post.</param>
         public static Tuple<string, int, int> Extract(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
@@ -189,10 +202,10 @@ namespace IvionWebSoft
         /// 
         /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
         /// <exception cref="ArgumentException">Thrown if board is empty or whitespace.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if thread post &lt= 0.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo &lt= 0.</exception>
         /// 
         /// <param name="board">Board where post is located.</param>
-        /// <param name="post">Post number.</param>
+        /// <param name="postNo">Post number.</param>
         public static ChanPost GetPost(string board, int postNo)
         {
             board.ThrowIfNullOrWhiteSpace("board");
@@ -296,7 +309,13 @@ namespace IvionWebSoft
             {"s4s", "Shit 4chan Says"}
         };
 
-        
+
+        /// <summary>
+        /// Gets the full name of the board.
+        /// </summary>
+        /// <returns>Full board name. If unknown, return string.Empty.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if board is null.</exception>
+        /// <param name="board">Short board designation.</param>
         static public string GetBoardName(string board)
         {
             if (board == null)
@@ -307,6 +326,51 @@ namespace IvionWebSoft
                 return name;
             else
                 return string.Empty;
+        }
+
+
+        /// <summary>
+        /// Removes post quotations.
+        /// </summary>
+        /// <returns>Post without the post quotations.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
+        /// <param name="post">Content of a post.</param>
+        public static string RemovePostQuotations(string post)
+        {
+            if (post == null)
+                throw new ArgumentNullException("post");
+
+            return quotRegexp.Replace(post, string.Empty);
+        }
+
+        
+        /// <summary>
+        /// Removes spoiler tags.
+        /// </summary>
+        /// <returns>Post without spoiler tags.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
+        /// <param name="post">Content of a post.</param>
+        public static string RemoveSpoilerTags(string post)
+        {
+            return ReplaceSpoilerTags(post, string.Empty, string.Empty);
+        }
+        
+        /// <summary>
+        /// Replaces spoiler tags.
+        /// </summary>
+        /// <returns>Post with spoiler tags replaced.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
+        /// 
+        /// <param name="post">Content of a post.</param>
+        /// <param name="beginReplacement">What to replace the opening spoiler tag with.</param>
+        /// <param name="endReplacement">What to replace the closing spoiler tag with.</param>
+        public static string ReplaceSpoilerTags(string post, string beginReplacement, string endReplacement)
+        {
+            if (post == null)
+                throw new ArgumentNullException("post");
+            
+            return spoilerRegexp.Replace(post, string.Concat(beginReplacement, "$2", endReplacement));
         }
 
 
@@ -327,45 +391,6 @@ namespace IvionWebSoft
             }
 
             return new Tuple<string, int, int>(board, threadNo, postNo);
-        }
-
-
-        public static string RemovePostQuotations(string post)
-        {
-            if (post == null)
-                throw new ArgumentNullException("post");
-
-            return quotRegexp.Replace(post, string.Empty);
-        }
-
-        
-        /// <summary>
-        /// Removes spoiler tags.
-        /// </summary>
-        /// <returns>String content of the post without spoiler tags.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
-        /// <param name="post">String content of a post.</param>
-        public static string RemoveSpoilerTags(string post)
-        {
-            return ReplaceSpoilerTags(post, string.Empty, string.Empty);
-        }
-        
-        /// <summary>
-        /// Replaces spoiler tags.
-        /// </summary>
-        /// <returns>String content of the post with spoiler tags replaced.</returns>
-        /// 
-        /// <exception cref="ArgumentNullException">Thrown if post is null.</exception>
-        /// 
-        /// <param name="post">String content of a post.</param>
-        /// <param name="beginReplacement">What to replace the opening spoiler tag with.</param>
-        /// <param name="endReplacement">What to replace the closing spoiler tag with.</param>
-        public static string ReplaceSpoilerTags(string post, string beginReplacement, string endReplacement)
-        {
-            if (post == null)
-                throw new ArgumentNullException("post");
-            
-            return spoilerRegexp.Replace(post, string.Concat(beginReplacement, "$2", endReplacement));
         }
     }
 }
