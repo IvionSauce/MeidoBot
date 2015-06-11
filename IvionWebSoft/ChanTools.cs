@@ -43,7 +43,7 @@ namespace IvionWebSoft
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
-                return new ChanPost(ex);
+                return new ChanPost(null, ex);
             }
         }
 
@@ -116,7 +116,7 @@ namespace IvionWebSoft
                 }
             }
 
-            return new ChanPost(json,
+            return new ChanPost(json.Location,
                                 board, ChanTools.GetBoardName(board),
                                 threadNo, postNo,
                                 subject, comment);
@@ -160,7 +160,7 @@ namespace IvionWebSoft
             else
             {
                 var ex = new FormatException("Unable to extract (valid) Board and/or Thread No. from URL.");
-                return new ChanPost(ex);
+                return new ChanPost(null, ex);
             }
         }
 
@@ -209,7 +209,7 @@ namespace IvionWebSoft
             string subject = postJson.title;
             string comment = postJson.comment_sanitized;
             
-            return new ChanPost(json,
+            return new ChanPost(json.Location,
                                 board, ChanTools.GetBoardName(board),
                                 threadNo, postNo,
                                 subject, comment);
@@ -368,57 +368,4 @@ namespace IvionWebSoft
             return spoilerRegexp.Replace(post, string.Concat(beginReplacement, "$2", endReplacement));
         }
     }
-
-
-    /// <summary>
-    /// Contains a Success bool which tells you if the request succeeded. If an expected exception occurred you can
-    /// check the Exception property.
-    /// </summary>
-    public class ChanPost : WebResource
-    {
-        /// <summary>
-        /// Short board designation, without the slashes.
-        /// </summary>
-        public string Board { get; private set; }
-        /// <summary>
-        /// Full board name.
-        /// </summary>
-        public string BoardName { get; private set; }
-        /// <summary>
-        /// Thread number.
-        /// </summary>
-        public int ThreadNo { get; private set; }
-        /// <summary>
-        /// Post number.
-        /// </summary>
-        public int PostNo { get; private set; }
-        /// <summary>
-        /// Subject of the post. Will be empty if no subject.
-        /// </summary>
-        public string Subject { get; private set; }
-        /// <summary>
-        /// Comment/message of the post. Will be empty if no comment.
-        /// </summary>
-        public string Comment { get; private set; }
-
-        
-        public ChanPost(WebResource resource) : base(resource) {}
-
-        public ChanPost(Exception ex) : base(ex) {}
-        
-        public ChanPost(WebResource resource,
-                        string board, string boardName,
-                        int threadNo, int postNo,
-                        string subject, string comment) : base(resource)
-        {            
-            Board = board;
-            BoardName = boardName;
-            ThreadNo = threadNo;
-            PostNo = postNo;
-            // Make sure subject and comment are not null.
-            Subject = subject ?? string.Empty;
-            Comment = comment ?? string.Empty;
-        }
-    }
-
 }
