@@ -48,6 +48,8 @@ namespace MeidoBot
         {
             if (trigger == null)
                 throw new ArgumentNullException("trigger");
+            else if (trigger == string.Empty)
+                throw new ArgumentException("Cannot be an empty string.", "trigger");
             else if (callback == null)
                 throw new ArgumentNullException("callback");
 
