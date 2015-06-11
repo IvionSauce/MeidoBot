@@ -11,7 +11,7 @@ namespace IvionWebSoft
         public Encoding UsedEncoding { get; private set; }
 
 
-        public WebString(WebResource resource) : base(resource) {}
+        WebString(WebResource resource) : base(resource) {}
 
         public WebString(Uri uri, Exception ex) : base(uri, ex) {}
 
@@ -24,6 +24,17 @@ namespace IvionWebSoft
             Document = doc;
         }
 
+        public WebString(Uri uri, byte[] docData, Encoding encToUse) : base(uri)
+        {
+            if (docData == null)
+                throw new ArgumentNullException("docData");
+            else if (encToUse == null)
+                throw new ArgumentNullException("encToUse");
+
+            Document = encToUse.GetString(docData);
+            UsedEncoding = encToUse;
+        }
+
         WebString(Uri uri, string doc, Encoding enc) : base(uri)
         {
             Document = doc;
@@ -31,17 +42,13 @@ namespace IvionWebSoft
         }
 
 
-        public WebString(Uri uri, byte[] docData, Encoding enc) : base(uri)
+        public static WebString Create(WebRequest request, Encoding fallbackEnc)
         {
-            if (docData == null)
-                throw new ArgumentNullException("docData");
-            else if (enc == null)
-                throw new ArgumentNullException ("enc");
+            if (request == null)
+                throw new ArgumentNullException("request");
 
-            Document = enc.GetString(docData);
-            UsedEncoding = enc;
+            return Create(WebBytes.Create(request), fallbackEnc);
         }
-
 
         public static WebString Create(WebBytes wb, Encoding fallbackEnc)
         {
@@ -60,40 +67,51 @@ namespace IvionWebSoft
         }
 
 
-        public static WebString Download(string url)
+        public static WebString Download(string address)
         {
-            if (url == null)
-                throw new ArgumentNullException("url");
+            return Download(address, null);
+        }
+
+        public static WebString Download(Uri address)
+        {
+            return Download(address, null);
+        }
+
+        public static WebString Download(string address, Encoding encToUse)
+        {
+            if (address == null)
+                throw new ArgumentNullException("address");
 
             Uri uri;
             try
             {
-                uri = new Uri(url);
+                uri = new Uri(address);
             }
             catch (UriFormatException ex)
             {
                 return new WebString(null, ex);
             }
 
-            return Download(uri);
+            return Download(uri, encToUse);
         }
 
-        public static WebString Download(Uri uri)
+        public static WebString Download(Uri address, Encoding encToUse)
         {
-            if (uri == null)
-                throw new ArgumentNullException("uri");
-            else if (!uri.IsAbsoluteUri)
+            if (address == null)
+                throw new ArgumentNullException("address");
+            else if (!address.IsAbsoluteUri)
                 throw new ArgumentException("Uri must be absolute.");
 
             var wc = new WebClient();
+            wc.Encoding = encToUse ?? Encoding.UTF8;
             try
             {
-                var document = wc.DownloadString(uri);
-                return new WebString(uri, document, wc.Encoding);
+                var document = wc.DownloadString(address);
+                return new WebString(address, document, wc.Encoding);
             }
             catch (WebException ex)
             {
-                return new WebString(uri, ex);
+                return new WebString(address, ex);
             }
             finally
             {
