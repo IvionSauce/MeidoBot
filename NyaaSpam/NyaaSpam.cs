@@ -12,6 +12,8 @@ public class NyaaSpam : IMeidoHook
     readonly IIrcComm irc;
     readonly IMeidoComm meido;
 
+    readonly Config conf;
+
     readonly NyaaPatterns nyaa;
     readonly NyaaFeedReader feedReader;
 
@@ -22,7 +24,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.70"; }
+        get { return "0.71"; }
     }
 
     public Dictionary<string,string> Help
@@ -62,17 +64,18 @@ public class NyaaSpam : IMeidoHook
         {}
 
         var log = meido.CreateLogger(this);
-        var conf = new Config(Path.Combine(meido.ConfDir, "NyaaSpam.xml"), log);
+        conf = new Config(Path.Combine(meido.ConfDir, "NyaaSpam.xml"), log);
+
         feedReader = new NyaaFeedReader(ircComm, log, conf, nyaa);
         feedReader.Start();
 
         irc = ircComm;
-        meido.RegisterTrigger("nyaa", Handler, true);
+        meido.RegisterTrigger("nyaa", Nyaa, true);
     }
 
-    public void Handler(IIrcMessage e)
+    public void Nyaa(IIrcMessage e)
     {
-        if (meido.AuthLevel(e.Nick) > 0)
+        if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
         {
             if (e.MessageArray.Length == 1)
                 return;
@@ -126,7 +129,7 @@ public class NyaaSpam : IMeidoHook
             }
         }
         else
-            e.Reply("Access denied, please contact my owner for information and/or clearance.");
+            e.Reply("Access denied, please contact my owner for information.");
     }
 
 
