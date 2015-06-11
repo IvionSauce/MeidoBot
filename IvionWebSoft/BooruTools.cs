@@ -9,21 +9,8 @@ using Newtonsoft.Json;
 
 namespace IvionWebSoft
 {
-    /// <summary>
-    /// Generic tools for use with Booru's.
-    /// </summary>
     static class BooruTools
     {
-        /// <summary>
-        /// Extracts the post number from an URL.
-        /// </summary>
-        /// <returns>The post number. Returns -1 if number couldn't be found.</returns>
-        /// 
-        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
-        /// 
-        /// <param name="url">URL</param>
-        /// <param name="source">Source</param>
         internal static int ExtractPostNo(Regex urlRegexp, string url)
         {
             var groups = urlRegexp.Match(url).Groups;
@@ -43,9 +30,11 @@ namespace IvionWebSoft
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
-        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
+        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
+        /// 
         /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
         /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
         /// <param name="url">URL pointing to a post.</param>
         public static DanboPost GetPostInfo(string url)
         {
@@ -65,7 +54,7 @@ namespace IvionWebSoft
         /// <summary>
         /// Get info of a Danbooru post.
         /// </summary>
-        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
+        /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
         /// <param name="postNo">Post number.</param>
         public static DanboPost GetPostInfo(int postNo)
@@ -95,7 +84,9 @@ namespace IvionWebSoft
         /// Cleans up the character tags. Removes the "_(source)" part of the tags.
         /// Modifies charTags in place.
         /// </summary>
+        /// 
         /// <exception cref="ArgumentNullException">Thrown if charTags or copyrightTags is null.</exception>
+        /// 
         /// <param name="charTags">A tag array of character tags.</param>
         /// <param name="copyrightTags">A tag array of copyright tags.</param>
         public static void CleanupCharacterTags(string[] charTags, string[] copyrightTags)
@@ -153,6 +144,15 @@ namespace IvionWebSoft
         static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
 
 
+        /// <summary>
+        /// Get info of a Gelbooru post.
+        /// </summary>
+        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
+        /// 
+        /// <exception cref="ArgumentNullException">Thrown if url is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if url is empty or whitespace.</exception>
+        /// 
+        /// <param name="url">URL pointing to a post.</param>
         public static BooruPost GetPostInfo(string url)
         {
             url.ThrowIfNullOrWhiteSpace("url");
@@ -168,6 +168,12 @@ namespace IvionWebSoft
         }
 
 
+        /// <summary>
+        /// Get info of a Gelbooru post.
+        /// </summary>
+        /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
+        /// <param name="postNo">Post number.</param>
         public static BooruPost GetPostInfo(int postNo)
         {
             if (postNo < 1)
