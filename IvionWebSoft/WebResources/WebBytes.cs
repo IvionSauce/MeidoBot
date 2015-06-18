@@ -23,22 +23,22 @@ namespace IvionWebSoft
             if (response == null)
                 throw new ArgumentNullException("response");
 
-            ContentIsHtml = IsHtml(response.ContentType);
-
-            var stream = response.GetResponseStream();
-            if (ContentIsHtml)
-                Data = Read(stream, maxBytesHtml);
-            else
-                Data = Read(stream, maxBytesOther);
-
             ContentType = response.ContentType;
             ContentLength = response.ContentLength;
+
+            ContentIsHtml = IsHtml(ContentType);
 
             var httpResp = response as HttpWebResponse;
             if (httpResp != null)
             {
                 CharacterSet = httpResp.CharacterSet;
             }
+
+            var stream = response.GetResponseStream();
+            if (ContentIsHtml)
+                Data = Read(stream, maxBytesHtml);
+            else
+                Data = Read(stream, maxBytesOther);
         }
 
         static byte[] Read(Stream stream, int amountToRead)

@@ -37,7 +37,7 @@ namespace IvionWebSoft
         public Encoding EncHtml { get; private set; }
 
 
-        public HtmlPage(WebResource resource) : base(resource) {}
+        HtmlPage(WebResource resource) : base(resource) {}
 
         public HtmlPage(Uri uri, Exception ex) : base(uri, ex) {}
 
