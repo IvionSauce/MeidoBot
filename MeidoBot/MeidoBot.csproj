@@ -35,6 +35,7 @@
     <Compile Include="Parsing.cs" />
     <Compile Include="Authentication.cs" />
     <Compile Include="Ssl.cs" />
+    <Compile Include="MessageTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -47,7 +48,7 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System" />
-    <Reference Include="Meebey">
+    <Reference Include="Meebey.SmartIrc4net">
       <HintPath>Meebey.SmartIrc4net.dll</HintPath>
     </Reference>
   </ItemGroup>
