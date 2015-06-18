@@ -22,13 +22,13 @@ namespace MeidoBot
         public string Trigger { get; private set; }
         public string ReturnTo { get; private set; }
         
-        readonly IrcClient irc;
+        readonly IrcComm irc;
         readonly ReceiveType type;
         
         
-        public IrcMessage(Meebey.SmartIrc4net.IrcMessageData messageData, string prefix)
+        public IrcMessage(IrcMessageData messageData, string prefix)
         {
-            irc = messageData.Irc;
+            irc = new IrcComm(messageData.Irc);
             type = messageData.Type;
             
             Message = messageData.Message;
@@ -78,7 +78,7 @@ namespace MeidoBot
 
         public void SendNotice(string message)
         {
-            irc.SendMessage(SendType.Notice, Nick, message);
+            irc.SendNotice(Nick, message);
         }
         
         
@@ -93,11 +93,11 @@ namespace MeidoBot
             {
             case ReceiveType.ChannelMessage:
             case ReceiveType.ChannelAction:
-                irc.SendMessage(SendType.Message, Channel, string.Concat(Nick, ": ", message));
+                irc.SendMessage(Channel, string.Concat(Nick, ": ", message));
                 return;
             case ReceiveType.QueryMessage:
             case ReceiveType.QueryAction:
-                irc.SendMessage(SendType.Message, Nick, message);
+                irc.SendMessage(Nick, message);
                 return;
             default:
                 throw new InvalidOperationException("Unexpected ReceiveType.");
