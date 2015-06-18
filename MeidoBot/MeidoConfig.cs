@@ -9,7 +9,7 @@ namespace MeidoBot
     {
         public readonly string Nickname;
         public readonly string ServerAddress;
-        public readonly int Port;
+        public readonly int ServerPort;
         public readonly List<string> Channels;
         public readonly string TriggerPrefix;
 
@@ -49,7 +49,7 @@ namespace MeidoBot
 
             Nickname = nickname.Trim();
             ServerAddress = address.Trim();
-            Port = port;
+            ServerPort = port;
             Channels = channels.ToList();
             TriggerPrefix = triggerPrefix;
 

@@ -63,7 +63,7 @@ namespace MeidoBot
             irc.OnQueryAction += new ActionEventHandler(QueryAction);
 
             // and connect to the server.
-            Connect(config.ServerAddress, config.Port);
+            Connect(config.ServerAddress, config.ServerPort);
         }
 
 
