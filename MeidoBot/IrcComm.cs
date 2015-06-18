@@ -16,7 +16,6 @@ namespace MeidoBot
         }
 
 
-        readonly IrcClient irc;
         public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
         public Action<IIrcMessage> ChannelActionHandlers { get; private set; }
 
@@ -24,6 +23,8 @@ namespace MeidoBot
         public Action<IIrcMessage> QueryActionHandlers { get; private set; }
 
         public Action<IIrcMessage> TriggerHandlers { get; private set; }
+
+        readonly IrcClient irc;
         
         
         public IrcComm(IrcClient ircClient)
@@ -63,7 +64,24 @@ namespace MeidoBot
         
         public void SendMessage(string target, string message)
         {
-            irc.SendMessage(SendType.Message, target, message);
+           /* :$nick!$ident@$host PRIVMSG $target :$message\r\n
+            * ^     ^      ^     ^^^^^^^^^       ^^        ^^^^
+            * 
+            * nick+ident+host+target+message + 16 <= 512 */
+
+            var user = irc.GetIrcUser(irc.Nickname);
+            // Count all the non-message characters.
+            int count =
+                irc.Nickname.Length +
+                user.Ident.Length +
+                user.Host.Length +
+                target.Length + 16;
+
+            int maxByteCount = 512 - count;
+            var messages = MessageTools.Split(message, maxByteCount);
+
+            foreach (string msg in messages)
+                irc.SendMessage(SendType.Message, target, msg);
         }
         
         
@@ -85,7 +103,24 @@ namespace MeidoBot
         
         public void SendNotice(string target, string message)
         {
-            irc.SendMessage(SendType.Notice, target, message);
+           /* :$nick!$ident@$host NOTICE $target :$message\r\n
+            * ^     ^      ^     ^^^^^^^^       ^^        ^^^^
+            * 
+            * nick+ident+host+target+message + 15 <= 512 */
+
+            var user = irc.GetIrcUser(irc.Nickname);
+            // Count all the non-message characters.
+            int count =
+                irc.Nickname.Length +
+                user.Ident.Length +
+                user.Host.Length +
+                target.Length + 15;
+
+            int maxByteCount = 512 - count;
+            var messages = MessageTools.Split(message, maxByteCount);
+
+            foreach (string msg in messages)
+                irc.SendMessage(SendType.Notice, target, msg);
         }
         
         
