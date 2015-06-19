@@ -40,14 +40,14 @@ namespace MinimalistParsers
                 stream.Position = 0;
                 MediaProperties props = f(stream);
 
-                if (PropSucces(props))
+                if (PropSuccess(props))
                     return props;
             }
 
             return new MediaProperties();
         }
 
-        static bool PropSucces(MediaProperties props)
+        static bool PropSuccess(MediaProperties props)
         {
             if (props.Type == MediaType.NotSupported)
                 return false;
