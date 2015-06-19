@@ -85,9 +85,13 @@ namespace IvionWebSoft
             string metaRefresh = HtmlTagExtract.GetMetaRefresh(page.Document);
             if (metaRefresh != null)
             {
-                if (Uri.TryCreate(metaRefresh, UriKind.Absolute, out refreshUrl))
+                // Relative refresh URL.
+                // Try this one first, because creating an absolute URL out of a relative one starting with a '/' can
+                // lead to it being interpreted as a file:/// URI.
+                if (Uri.TryCreate(page.Location, metaRefresh, out refreshUrl))
                     return true;
-                else if (Uri.TryCreate(page.Location, metaRefresh, out refreshUrl))
+                // Absolute refresh URL.
+                else if (Uri.TryCreate(metaRefresh, UriKind.Absolute, out refreshUrl))
                     return true;
             }
 
