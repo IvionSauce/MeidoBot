@@ -71,14 +71,14 @@ namespace MeidoBot
 
             var user = irc.GetIrcUser(irc.Nickname);
             // Count all the non-message characters.
-            int count =
+            int count = 16 +
                 irc.Nickname.Length +
                 user.Ident.Length +
                 user.Host.Length +
-                target.Length + 16;
+                target.Length;
 
-            int maxByteCount = 512 - count;
-            var messages = MessageTools.Split(message, maxByteCount);
+            int maxMsgLength = 512 - count;
+            var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
                 irc.SendMessage(SendType.Message, target, msg);
@@ -110,14 +110,14 @@ namespace MeidoBot
 
             var user = irc.GetIrcUser(irc.Nickname);
             // Count all the non-message characters.
-            int count =
+            int count = 15 +
                 irc.Nickname.Length +
                 user.Ident.Length +
                 user.Host.Length +
-                target.Length + 15;
+                target.Length;
 
-            int maxByteCount = 512 - count;
-            var messages = MessageTools.Split(message, maxByteCount);
+            int maxMsgLength = 512 - count;
+            var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
                 irc.SendMessage(SendType.Notice, target, msg);

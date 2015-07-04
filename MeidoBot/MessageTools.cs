@@ -8,16 +8,16 @@ namespace MeidoBot
     static class MessageTools
     {
         // It should be noted that the 512 character limit for IRC messages means 512 bytes/octets. This is why we
-        // need to look up how much bytes a certain character takes in UTF-8 (the encoding we use to send the messages).
+        // need to look up how much bytes a certain character needs in UTF-8 (the encoding we use to send the messages).
 
-        public static List<string> Split(string message, int maxBytes)
+        public static List<string> Split(string message, int maxByteCount)
         {
             var splitMessages = new List<string>();
 
             int start = 0;
             while (start < message.Length)
             {
-                var shortMsg = Shorten(message, start, maxBytes);
+                var shortMsg = Shorten(message, start, maxByteCount);
                 splitMessages.Add(shortMsg);
                 start += shortMsg.Length;
             }
@@ -26,7 +26,7 @@ namespace MeidoBot
         }
 
 
-        public static string Shorten(string message, int start, int maxBytes)
+        public static string Shorten(string message, int start, int maxByteCount)
         {
             var tmpMsg = new StringBuilder();
 
@@ -36,7 +36,7 @@ namespace MeidoBot
                 char currentChar = message[i];
                 int width = Utf8Width(currentChar);
 
-                if ( (byteCount + width) <= maxBytes)
+                if ( (byteCount + width) <= maxByteCount)
                 {
                     tmpMsg.Append(currentChar);
                     byteCount += width;

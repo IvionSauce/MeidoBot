@@ -29,13 +29,12 @@ class WebToIrcConfig
 
 class Config : XmlConfig
 {
-    // Global and/or static settings.
+    // Global settings.
     public string BlacklistLocation { get; set; }
     public string WhitelistLocation { get; set; }
     public CookieCollection CookieColl { get; set; }
     
     // Channel specific settings, or at least the possibility thereof.
-    // { channel : SettingsClass }
     public Dictionary<string, WebToIrcConfig> WebIrcSettings { get; private set; }
     
     
@@ -233,14 +232,16 @@ class Config : XmlConfig
     {
         var config =
             new XElement ("config",
-                new XElement ("threshold", 1.0d, new XAttribute ("channel", "_all")),
                 new XElement ("blacklist-location", "conf/blacklist"),
                 new XElement ("whitelist-location", "conf/whitelist"),
 
                 new XComment ("For elements with the `channel` attribute you can have channel specific options.\n" +
                 "Just create another one with appropriate value in the `channel` attribute."),
 
+                new XElement ("threshold", 1.0d, new XAttribute ("channel", "_all")),
+
                 new XElement ("danbooru", new XAttribute ("channel", "_all"),
+                    new XElement ("colourize", true),
 
                     new XComment ("Limits each tag category (characters, copyrights and artists) to this number"),
                     new XElement ("max-tags-displayed", 5),
@@ -249,7 +250,6 @@ class Config : XmlConfig
                     new XElement ("continuation-symbol", "[...]"),
 
 
-                    new XElement ("colourize", true),
                     new XElement ("warning-tags",
                         new XElement ("tag", "spoilers"),
 
