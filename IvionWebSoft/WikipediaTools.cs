@@ -11,7 +11,11 @@ namespace IvionWebSoft
             new Regex(@"(?i)<h1 id=""firstHeading"" class=""firstHeading"" lang=""([^""]+)"">" +
                       @"<span dir=""auto"">([^>]+)</span></h1>");
 
-        static readonly Regex tableRegexp = new Regex(@"(?i)(?s)<td[^>]*>.+?</td>");
+        // Regexp that matches pesky parts of the html document that get in my way.
+        // It sure is ugly, let's hope not many other exceptions show up...
+        static readonly Regex removeRegexp = new Regex(
+            @"(?i)<td[^>]*>.*|" +
+            @"<span id=""coordinates"">.*");
 
         static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=</p>)");
 
@@ -43,8 +47,8 @@ namespace IvionWebSoft
             if (htmlDoc == null)
                 throw new ArgumentNullException("htmlDoc");
 
-            var withTablesRemoved = tableRegexp.Replace(htmlDoc, string.Empty);
-            var sectionMatches = sectionRegexp.Matches(withTablesRemoved);
+            var cleanedDoc = removeRegexp.Replace(htmlDoc, string.Empty);
+            var sectionMatches = sectionRegexp.Matches(cleanedDoc);
 
             var sections = new WikipediaSection[sectionMatches.Count];
 
@@ -56,10 +60,10 @@ namespace IvionWebSoft
                 if (i + 1 < sectionMatches.Count)
                     nextIndex = sectionMatches[i + 1].Index;
                 else
-                    nextIndex = withTablesRemoved.Length;
+                    nextIndex = cleanedDoc.Length;
 
                 int length = nextIndex - match.Index;
-                var paragraphs = GetParagraphs(withTablesRemoved, match.Index, length);
+                var paragraphs = GetParagraphs(cleanedDoc, match.Index, length);
 
                 var htmlId = match.Groups[1].Value;
                 var title = match.Groups[2].Value;
@@ -67,7 +71,7 @@ namespace IvionWebSoft
                 sections[i] = new WikipediaSection(title, htmlId, paragraphs);
             }
 
-            var summary = GetSummaryParagraphs(withTablesRemoved, sectionMatches);
+            var summary = GetSummaryParagraphs(cleanedDoc, sectionMatches);
             return new WikipediaArticle(GetTitle(htmlDoc), summary, sections);
         }
 
