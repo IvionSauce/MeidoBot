@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.IO;
+using System.Collections.Generic;
 using IvionSoft;
 using IvionWebSoft;
 // Using directives for plugin use.
@@ -32,6 +33,10 @@ public class IrcWeather : IMeidoHook
     readonly IIrcComm irc;
     readonly WeatherUnderground weather;
 
+    readonly string storagePath;
+    readonly Storage<string> defaultLocations;
+
+
     public void Stop()
     {}
 
@@ -39,21 +44,38 @@ public class IrcWeather : IMeidoHook
     [ImportingConstructor]
     public IrcWeather(IIrcComm irc, IMeidoComm meido)
     {
-        var conf = new Config(
-            System.IO.Path.Combine(meido.ConfDir, "WebSearches.xml"), meido.CreateLogger(this));
+        storagePath = Path.Combine(meido.DataDir, "_weatherunderground.xml");
+        try
+        {
+            defaultLocations = Storage<string>.Deserialize(storagePath);
+        }
+        catch (FileNotFoundException)
+        {
+            defaultLocations = new Storage<string>();
+        }
+
+
+        var conf = new Config(Path.Combine(meido.ConfDir, "WeatherUnderground.xml"), meido.CreateLogger(this));
 
         if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
             weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
 
         this.irc = irc;
         meido.RegisterTrigger("w", WeatherSearch);
+        meido.RegisterTrigger("W", SetWeatherLocation);
     }
 
     void WeatherSearch(IIrcMessage e)
     {
-        if (e.MessageArray.Length > 1 && weather != null)
+        string queryTerms;
+        if (e.MessageArray.Length > 1)
+            queryTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+        else
+            queryTerms = defaultLocations.Get(e.Nick);
+
+
+        if (weather != null && !string.IsNullOrWhiteSpace(queryTerms))
         {
-            var queryTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             var cond = weather.GetConditions(queryTerms);
 
             if (cond.Success)
@@ -81,6 +103,19 @@ public class IrcWeather : IMeidoHook
             }
             else
                 e.Reply(cond.Exception.Message);
+        }
+    }
+
+
+    void SetWeatherLocation(IIrcMessage e)
+    {
+        if (e.MessageArray.Length > 1)
+        {
+            var location = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+            defaultLocations.Set(e.Nick, location);
+            defaultLocations.Serialize(storagePath);
+
+            e.Reply("Your default location has been set to '{0}'.", location);
         }
     }
 }
