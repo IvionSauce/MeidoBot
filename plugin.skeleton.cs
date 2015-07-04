@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using MeidoCommon;
 using System.ComponentModel.Composition;
 
+// IMeidoHook wants you to implement `Name`, `Version`, `Help` and the `Stop` method.
 [Export(typeof(IMeidoHook))]
 public class MyClass : IMeidoHook
 {
-    readonly IIrcComm irc;
-
-    public string Prefix { get; set; }
-
     public string Name
     {
         get { return "MyClass"; }
@@ -25,20 +22,23 @@ public class MyClass : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"trigger", "trigger does x"}
+                {"example", "example [args] - does something."}
             };
         }
     }
 
+    public void Stop()
+    {}
+
     [ImportingConstructor]
-    public MyClass(IIrcComm ircComm)
+    public MyClass(IIrcComm irc, IMeidoComm meido)
     {
-        irc = ircComm;
-        irc.AddChannelMessageHandler(HandleChannelMessage);
+        meido.RegisterTrigger("example", ExampleTrigger);
     }
 
-    public void HandleChannelMessage(IIrcMessage ircMessage)
+    public void ExampleTrigger(IIrcMessage ircMessage)
     {
-        // Do something
+        // Do something, like:
+        ircMessage.Reply("Example trigger triggered.");
     }
 }
