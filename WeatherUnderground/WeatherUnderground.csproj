@@ -5,37 +5,41 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}</ProjectGuid>
+    <ProjectGuid>{E3D4A39E-C3C6-4F08-8E77-6FCACA0AC891}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>WebSearches</RootNamespace>
-    <AssemblyName>WebSearches</AssemblyName>
+    <RootNamespace>WeatherUnderground</RootNamespace>
+    <AssemblyName>WeatherUnderground</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
-    <Optimize>True</Optimize>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Config.cs" />
+    <Compile Include="IrcWeather.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Compile Include="WebSearches.cs" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
       <Project>{C38EB78F-07A7-4279-BC29-F2645394C402}</Project>
@@ -44,6 +48,10 @@
     <ProjectReference Include="..\IvionWebSoft\IvionWebSoft.csproj">
       <Project>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</Project>
       <Name>IvionWebSoft</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
+      <Project>{E5A36F53-3202-453E-BA3D-550D81F2BE25}</Project>
+      <Name>IvionSoft</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

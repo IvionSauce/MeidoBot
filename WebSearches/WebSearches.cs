@@ -9,9 +9,6 @@ using System.ComponentModel.Composition;
 public class WebSearches : IMeidoHook
 {
     readonly IIrcComm irc;
-
-    readonly WeatherUnderground weather;
-
     
     public string Name
     {
@@ -19,7 +16,7 @@ public class WebSearches : IMeidoHook
     }
     public string Version
     {
-        get { return "0.21"; }
+        get { return "0.22"; }
     }
     
     public Dictionary<string,string> Help
@@ -28,8 +25,7 @@ public class WebSearches : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms."},
-                {"w", "w <location> - Reports weather conditions at location. (Powered by WeatherUnderground)"}
+                {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms."}
             };
         }
     }
@@ -41,14 +37,8 @@ public class WebSearches : IMeidoHook
     [ImportingConstructor]
     public WebSearches(IIrcComm ircComm, IMeidoComm meido)
     {
-        var conf = new Config(Path.Combine(meido.ConfDir, "WebSearches.xml"), meido.CreateLogger(this));
-
-        if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
-            weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
-
         irc = ircComm;
         meido.RegisterTrigger("g", GoogleSearch);
-        meido.RegisterTrigger("w", WeatherSearch);
     }
 
 
@@ -77,41 +67,4 @@ public class WebSearches : IMeidoHook
             } // if
         } // if
     }
-
-
-    void WeatherSearch(IIrcMessage e)
-    {
-        if (e.MessageArray.Length > 1 && weather != null)
-        {
-            var queryTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-            var cond = weather.GetConditions(queryTerms);
-
-            if (cond.Success)
-            {
-                // Only put Wind Gust in if it has a sensible value, ie higher than the normal Wind Speed.
-                string wind;
-                if (cond.WindGustInKph <= cond.WindSpeedInKph || cond.WindGustInMph <= cond.WindSpeedInMph)
-                {
-                    wind = string.Format("{0} km/h ({1} mph)", cond.WindSpeedInKph, cond.WindSpeedInMph);
-                }
-                else
-                {
-                    wind = string.Format("{0} -> {1} km/h ({2} -> {3} mph)", cond.WindSpeedInKph, cond.WindGustInKph,
-                                         cond.WindSpeedInMph, cond.WindGustInMph);
-                }
-
-                var report = string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
-                                           "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
-                                           cond.WeatherLocation, cond.Description,
-                                           cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
-                                           cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
-                                           cond.WindDirection, wind);
-
-                irc.SendMessage(e.ReturnTo, report);
-            }
-            else
-                e.Reply(cond.Exception.Message);
-        }
-    }
-
 }
