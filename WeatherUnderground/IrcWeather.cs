@@ -55,13 +55,18 @@ public class IrcWeather : IMeidoHook
         }
 
 
-        var conf = new Config(Path.Combine(meido.ConfDir, "WeatherUnderground.xml"), meido.CreateLogger(this));
+        var log = meido.CreateLogger(this);
+        var conf = new Config(Path.Combine(meido.ConfDir, "WeatherUnderground.xml"), log);
 
         if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
+        {
             weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
+            meido.RegisterTrigger("w", WeatherSearch);
+        }
+        else
+            log.Message("Weather querying disabled due to missing API key.");
 
         this.irc = irc;
-        meido.RegisterTrigger("w", WeatherSearch);
         meido.RegisterTrigger("W", SetWeatherLocation);
     }
 
@@ -74,7 +79,7 @@ public class IrcWeather : IMeidoHook
             queryTerms = defaultLocations.Get(e.Nick);
 
 
-        if (weather != null && !string.IsNullOrWhiteSpace(queryTerms))
+        if (!string.IsNullOrWhiteSpace(queryTerms))
         {
             var cond = weather.GetConditions(queryTerms);
 
