@@ -64,20 +64,9 @@ namespace MeidoBot
         
         public void SendMessage(string target, string message)
         {
-           /* :$nick!$ident@$host PRIVMSG $target :$message\r\n
-            * ^     ^      ^     ^^^^^^^^^       ^^        ^^^^
-            * 
-            * nick+ident+host+target+message + 16 <= 512 */
+            const string command = "PRIVMSG";
 
-            var user = irc.GetIrcUser(irc.Nickname);
-            // Count all the non-message characters.
-            int count = 16 +
-                irc.Nickname.Length +
-                user.Ident.Length +
-                user.Host.Length +
-                target.Length;
-
-            int maxMsgLength = 512 - count;
+            int maxMsgLength = 512 - CountNonMessageCharacters(command.Length, target.Length);
             var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
@@ -103,20 +92,9 @@ namespace MeidoBot
         
         public void SendNotice(string target, string message)
         {
-           /* :$nick!$ident@$host NOTICE $target :$message\r\n
-            * ^     ^      ^     ^^^^^^^^       ^^        ^^^^
-            * 
-            * nick+ident+host+target+message + 15 <= 512 */
+            const string command = "NOTICE";
 
-            var user = irc.GetIrcUser(irc.Nickname);
-            // Count all the non-message characters.
-            int count = 15 +
-                irc.Nickname.Length +
-                user.Ident.Length +
-                user.Host.Length +
-                target.Length;
-
-            int maxMsgLength = 512 - count;
+            int maxMsgLength = 512 - CountNonMessageCharacters(command.Length, target.Length);
             var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
@@ -137,6 +115,43 @@ namespace MeidoBot
         public bool IsJoined(string channel, string nick)
         {
             return irc.IsJoined(channel, nick);
+        }
+
+
+        int CountNonMessageCharacters(int commandLength, int targetLength)
+        {
+           /* :$nick!$ident@$host $command $target :$message\r\n
+            * ^     ^      ^     ^        ^       ^^        ^ ^
+            * 
+            * nick+ident+host+command+target+message + 9 <= 512 */
+
+            int count = 9 +
+                irc.Nickname.Length +
+                commandLength +
+                targetLength;
+
+            // Will return null if it can't find the specified nick. Since we're requesting our own nick it would lead
+            // us to believe that if we get null back there's something wrong. Most likely there's a connection error.
+            var user = irc.GetIrcUser(irc.Nickname);
+            if (user != null)
+            {
+                // If we can, allow the server to inform us about our Ident and Hostname. The former is the Username
+                // which may or may not be prefixed. The latter might differ because our Hostname might be too long or
+                // our Hostname is a Vhost of some kind.
+                // Because of these variants it is preferable to ask the server rather than work it out ourselves.
+                count += user.Ident.Length + user.Host.Length;
+            }
+            // Nevertheless fall back to sane defaults, even though we're most likely no longer connected.
+            else
+            {
+                const int maxHostnameLength = 63;
+
+                // `Username+1` because the Ident is often the Username prefixed with a certain symbol (example: ~).
+                // Assume max length for Hostname to be on the safe side.
+                count += 1 + irc.Username.Length + maxHostnameLength;
+            }
+
+            return count;
         }
     }
 }
