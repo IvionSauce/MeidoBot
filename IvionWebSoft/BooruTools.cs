@@ -99,43 +99,91 @@ namespace IvionWebSoft
             // Return early if there's nothing to be done.
             if (charTags.Length == 0 || copyrightTags.Length == 0)
                 return;
-
-            const string sourceStart = "_(";
-            const string sourceEnd= ")";
+            
             for (int i = 0; i < charTags.Length; i++)
             {
                 string charTag = charTags[i];
 
-                int sourceOpenIdx = charTag.IndexOf(sourceStart, StringComparison.Ordinal);
-                if (sourceOpenIdx > 0)
+                int sourceOpenIdx, sourceCloseIdx;
+                if ( TryFindSourceIndices(charTag, out sourceOpenIdx, out sourceCloseIdx) )
                 {
-                    int sourceCloseIdx = charTag.IndexOf(sourceEnd, sourceOpenIdx, StringComparison.Ordinal);
-                    if (sourceCloseIdx < 0)
-                        sourceCloseIdx = charTag.Length - 1;
+                    string source = ExtractSource(charTag, sourceOpenIdx, sourceCloseIdx);
 
-                    // Plus 2 to skip past the "_(" part of the source.
-                    int start = sourceOpenIdx + 2;
-                    int len = sourceCloseIdx - start;
-                    string source = charTag.Substring(start, len);
-
-                    foreach (string srcTag in copyrightTags)
+                    if (RemoveSource(source, copyrightTags))
                     {
-                        // Slice off the source if a copyright tag contains it. Examples:
-                        // _(kantai_collection) is in kantai_collection
-                        // _(jojo) is in jojo_no_kimyou_na_bouken
-                        // But also check if the source starts with a copyright tag, this is less common. Examples:
-                        // _(gundam_bf) starts with gundam
-                        if (srcTag.Contains(source, StringComparison.Ordinal) ||
-                            source.StartsWith(srcTag, StringComparison.Ordinal))
-                        {
-                            len = (sourceCloseIdx - sourceOpenIdx) + 1;
-                            charTags[i] = charTag.Remove(sourceOpenIdx, len);
-                        }
-                    } // foreach
-                } // if
+                        int len = (sourceCloseIdx - sourceOpenIdx) + 1;
+                        charTags[i] = charTag.Remove(sourceOpenIdx, len);
+                    }
+                }
             } // for
         }
 
+        static bool TryFindSourceIndices(string charTag, out int start, out int end)
+        {
+            start = FindSourceStart(charTag);
+            if (start < 0)
+            {
+                end = -1;
+                return false;
+            }
+            else
+            {
+                end = FindSourceEnd(charTag, start);
+                return true;
+            }
+        }
+
+        static int FindSourceStart(string charTag)
+        {
+            const string sourceStart = "_(";
+            return charTag.IndexOf(sourceStart, StringComparison.Ordinal);
+        }
+
+        static int FindSourceEnd(string charTag, int sourceStart)
+        {
+            const string sourceEnd= ")";
+            int end = charTag.IndexOf(sourceEnd, sourceStart, StringComparison.Ordinal);
+
+            if (end > sourceStart)
+                return end;
+            else
+                return charTag.Length - 1;
+        }
+
+        static string ExtractSource(string charTag, int sourceStart, int sourceEnd)
+        {
+            // Plus 2 to skip past the "_(" part of the source.
+            int start = sourceStart + 2;
+            int len = sourceEnd - start;
+
+            return charTag.Substring(start, len);
+        }
+
+        static bool RemoveSource(string source, string[] copyrightTags)
+        {
+            foreach (string copyTag in copyrightTags)
+            {
+                if (RemoveSource(source, copyTag))
+                    return true;
+            }
+
+            return false;
+        }
+
+        static bool RemoveSource(string source, string copyrightTag)
+        {
+            // Slice off the source if a copyright tag contains it. Examples:
+            // _(kantai_collection) is in kantai_collection
+            // _(jojo) is in jojo_no_kimyou_na_bouken
+            // But also check if the source starts with a copyright tag, this is less common. Examples:
+            // _(gundam_bf) starts with gundam
+            if (copyrightTag.Contains(source, StringComparison.Ordinal))
+                return true;
+            if (source.StartsWith(copyrightTag, StringComparison.Ordinal))
+                return true;
+
+            return false;
+        }
     }
 
 
