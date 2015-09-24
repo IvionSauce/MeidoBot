@@ -4,6 +4,14 @@ using System.Net;
 
 namespace IvionWebSoft
 {
+    public enum UriLimit
+    {
+        None,
+        SameHost,
+        SameScheme
+    }
+
+
     public class MetaRefreshFollower
     {
         public int MaxSizeHtml { get; set; }
@@ -13,16 +21,21 @@ namespace IvionWebSoft
         public string UserAgent { get; set; }
         public CookieContainer Cookies { get; set; }
 
+        UriLimit MetaRefreshLimitation { get; set; }
+
 
         public MetaRefreshFollower()
         {
-            // Standard maximum is 1MB.
+            // Default maximum is 1MB.
             MaxSizeHtml = 1048576;
+            // Don't download non-HTML by default
             FetchSizeNonHtml = 0;
 
-            // Standard is 30 seconds.
+            // Default is 30 seconds.
             Timeout = 30000;
             UserAgent = "Mozilla/5.0 IvionWebSoft/1.0";
+            // By default limit Refresh URI's to the same scheme as the request.
+            MetaRefreshLimitation = UriLimit.SameScheme;
         }
 
 
@@ -43,7 +56,9 @@ namespace IvionWebSoft
                 // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
                 const int MaxRedirects = 10;
                 Uri refreshUrl;
-                if (redirects < MaxRedirects && TryGetMetaRefresh(page, out refreshUrl))
+                if (redirects < MaxRedirects &&
+                    TryGetMetaRefresh(page, out refreshUrl) &&
+                    VerifyRefresh(page.Location, refreshUrl))
                 {
                     // If during the redirects we get a different page/HTML string, refrain from following more
                     // redirects. It probably means we've arrived, but only more real world testing will tell us
@@ -101,6 +116,28 @@ namespace IvionWebSoft
             }
 
             refreshUrl = null;
+            return false;
+        }
+
+
+        bool VerifyRefresh(Uri current, Uri refresh)
+        {
+            switch (MetaRefreshLimitation)
+            {
+            case UriLimit.None:
+                return true;
+
+            case UriLimit.SameHost:
+                if (refresh.Host == current.Host)
+                    return true;
+                break;
+
+            case UriLimit.SameScheme:
+                if (refresh.Scheme == current.Scheme)
+                    return true;
+                break;
+            }
+
             return false;
         }
     }
