@@ -125,6 +125,8 @@ namespace WebIrc
 
         TitlingResult HandleHtml(TitlingRequest request, HtmlPage page)
         {
+            const int maxTitleLength = 1024;
+
             ReportCharsets(request, page);
 
             string htmlTitle = WebTools.GetTitle(page.Content);
@@ -133,6 +135,12 @@ namespace WebIrc
                 request.AddMessage("No <title> found, or title element was empty/whitespace.");
                 return request.CreateResult(false);
             }
+            else if (htmlTitle.Length > maxTitleLength)
+            {
+                request.AddMessage("HMTL title length was in excess of 1024 characters, assuming spam.");
+                return request.CreateResult(false);
+            }
+            // If defined and not of ridiculous length make it available to ConstructedTitle.
             request.ConstructedTitle.HtmlTitle = htmlTitle;
 
             // Youtube handling.
