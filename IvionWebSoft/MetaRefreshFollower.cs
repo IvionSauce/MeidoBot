@@ -6,6 +6,7 @@ namespace IvionWebSoft
 {
     public class MetaRefreshFollower
     {
+        public int MaxSizeHtml { get; set; }
         public int FetchSizeNonHtml { get; set; }
 
         public int Timeout { get; set; }
@@ -15,7 +16,11 @@ namespace IvionWebSoft
 
         public MetaRefreshFollower()
         {
+            // Standard maximum is 1MB.
+            MaxSizeHtml = 1048576;
             FetchSizeNonHtml = 0;
+
+            // Standard is 30 seconds.
             Timeout = 30000;
             UserAgent = "Mozilla/5.0 IvionWebSoft/1.0";
         }
@@ -29,7 +34,7 @@ namespace IvionWebSoft
         FollowerResult Load(Uri uri, bool useCookies, int redirects, string previousPage)
         {
             var req = SetupRequest(uri, useCookies);
-            var wb = WebBytes.ReadHtmlOrPeek(req, FetchSizeNonHtml);
+            var wb = WebBytes.Create(req, MaxSizeHtml, FetchSizeNonHtml);
 
             if (wb.ContentIsHtml)
             {
