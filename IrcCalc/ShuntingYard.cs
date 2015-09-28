@@ -26,6 +26,56 @@ namespace Calculation
         };
 
 
+        public static double Calculate(TokenizedExpression expr)
+        {
+            if (expr == null)
+                throw new ArgumentNullException("expr");
+            else if (!expr.Success)
+                throw new ArgumentException("Expression must be succesfully parsed.");
+
+            var opStack = new Stack<string>();
+            var output = new Stack<double>();
+
+            foreach (string token in expr.Expression)
+            {
+                if (operators.ContainsKey(token))
+                {
+                    // First check is to make sure it doesn't try to peek if the opStack is exhausted.
+                    while ( opStack.Count != 0 && ToPopStack(token, opStack.Peek()) )
+                        DoCalculation(output, opStack.Pop());
+
+                    opStack.Push(token);
+                }
+
+                else if (token == "(")
+                    opStack.Push(token);
+
+                else if (token == ")")
+                {
+                    // Keep consuming operators from the opStack until left parenthesis is encountered.
+                    while (opStack.Peek() != "(")
+                        DoCalculation(output, opStack.Pop());
+
+                    // Operator at the top of the stack is now "(", pop and discard it.
+                    opStack.Pop();
+                }
+                // If not an operator or parenthesis, the remaining option is token being a number. Convert and push
+                // onto the output stack.
+                else
+                {
+                    var number = double.Parse(token);
+                    output.Push(number);
+                }
+            }
+            // If there are still operators on the opStack, consume them until stack is exhausted.
+            while (opStack.Count != 0)
+                DoCalculation(output, opStack.Pop());
+
+            // There should be only 1 value left, the final result. Pop and return that.
+            return output.Pop();
+        }
+
+
         static int GetPrecedence(string op)
         {
             Tuple<int,Associativity> opInfo;
@@ -75,55 +125,6 @@ namespace Calculation
                 return true;
             else
                 return false;
-        }
-
-        public static double Calculate(TokenizedExpression expr)
-        {
-            if (expr == null)
-                throw new ArgumentNullException("expr");
-            else if (!expr.Success)
-                throw new ArgumentException("Expression must be succesfully parsed.");
-
-            var opStack = new Stack<string>();
-            var output = new Stack<double>();
-
-            foreach (string token in expr.Expression)
-            {
-                if (operators.ContainsKey(token))
-                {
-                    // First check is to make sure it doesn't try to peek if the opStack is exhausted.
-                    while ( opStack.Count != 0 && ToPopStack(token, opStack.Peek()) )
-                        DoCalculation(output, opStack.Pop());
-
-                    opStack.Push(token);
-                }
-
-                else if (token == "(")
-                    opStack.Push(token);
-
-                else if (token == ")")
-                {
-                    // Keep consuming operators from the opStack until left parenthesis is encountered.
-                    while (opStack.Peek() != "(")
-                        DoCalculation(output, opStack.Pop());
-
-                    // Operator at the top of the stack is now "(", pop and discard it.
-                    opStack.Pop();
-                }
-                // If not an operator or parenthesis, the remaining option is token being a number. Convert and push
-                // onto the output stack.
-                else
-                {
-                    var number = double.Parse(token);
-                    output.Push(number);
-                }
-            }
-            // If there are still operators on the opStack, consume them until stack is exhausted.
-            while (opStack.Count != 0)
-                DoCalculation(output, opStack.Pop());
-
-            // There should be only 1 value left, the final result. Pop and return that.
-            return output.Pop();
         }
 
         // Does calculation, conform the passed operator, on the output stack and pushes the result back on the stack.
