@@ -3,18 +3,6 @@ using System.Collections.Generic;
 
 namespace Calculation
 {
-    [Serializable()]
-    public class MalformedExpressionException : Exception
-    {
-        public MalformedExpressionException () : base() {}
-        public MalformedExpressionException (string message) : base(message) {}
-        public MalformedExpressionException (string message, Exception inner) : base(message, inner) {}
-
-        protected MalformedExpressionException (System.Runtime.Serialization.SerializationInfo info,
-                                                System.Runtime.Serialization.StreamingContext context) {}
-    }
-
-
     public class Tokenizer
     {
         [Flags]
@@ -42,7 +30,7 @@ namespace Calculation
         int parenBalance;
 
 
-        public string[] Tokenize(string expr)
+        public TokenizedExpression Tokenize(string expr)
         {
             // Initialize new list to store store our tokenized expression in.
             exprList = new List<string>();
@@ -54,21 +42,38 @@ namespace Calculation
             decimalPoint = false;
             parenBalance = 0;
 
-            foreach (char c in expr)
+            for (int i = 0; i < expr.Length; i++)
             {
+                char c = expr[i];
+
                 // ----------------------
                 // ----- [1] Number -----
                 // ----------------------
-                if (char.IsDigit(c) || c == '.')
+                if (char.IsDigit(c))
                 {
                     if (allowedTokens.HasFlag(TokenTypes.Number))
                     {
-                        AddCharToNum(c);
+                        tmpNum.Add(c);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number | TokenTypes.Operator | TokenTypes.R_Paren;
                     }
                     else
-                        throw new MalformedExpressionException("Unexpected number.");
+                        return new TokenizedExpression("Unexpected number: " + c, i);
+                }
+                if (c == '.')
+                {
+                    if (allowedTokens.HasFlag(TokenTypes.Number))
+                    {
+                        if (decimalPoint)
+                            return new TokenizedExpression("More than one decimal point detected", i);
+
+                        decimalPoint = true;
+                        tmpNum.Add(c);
+                        // Set the allowed tokens for the next character.
+                        allowedTokens = TokenTypes.Number | TokenTypes.Operator | TokenTypes.R_Paren;
+                    }
+                    else
+                        return new TokenizedExpression("Unexpected decimal point", i);
                 }
 
                 // ---------------------------
@@ -89,7 +94,7 @@ namespace Calculation
                         allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
                     }
                     else
-                        throw new MalformedExpressionException("Unexpected left parenthesis.");
+                        return new TokenizedExpression("Unexpected left parenthesis", i);
                 }
 
                 // ---------------------------------
@@ -99,12 +104,15 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.R_Paren))
                     {
+                        if (parenBalance == 0)
+                            return new TokenizedExpression("Tried to close a subexpression before it was opened.", i);
+
                         AddRParenToExpr(c);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Operator | TokenTypes.R_Paren;
                     }
                     else
-                        throw new MalformedExpressionException("Unexpected right parenthesis.");
+                        return new TokenizedExpression("Unexpected right parenthesis", i);
                 }
 
                 // ------------------------
@@ -119,7 +127,7 @@ namespace Calculation
                         allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
                     }
                     else
-                        throw new MalformedExpressionException("Unexpected operator.");
+                        return new TokenizedExpression("Unexpected operator: " + c, i);
                 }
 
                 // ----- [6] Whitespace -----
@@ -130,12 +138,12 @@ namespace Calculation
                 // ----- [7] Unsupported Character -----
                 // Abort on unsupported character.
                 else
-                    throw new MalformedExpressionException("Unsupported character: " + c);
+                    return new TokenizedExpression("Unsupported character: " + c, i);
             }
 
             // Abort on unclosed subexpression(s) / too many left parentheses.
             if (parenBalance > 0)
-                throw new MalformedExpressionException("Unclosed subexpression(s) detected, amount: " + parenBalance);
+                return new TokenizedExpression("Unclosed subexpression(s) detected, amount: " + parenBalance);
 
             AddNumToExpr();
 
@@ -143,28 +151,9 @@ namespace Calculation
             // set the allowedTokens to include TokenType.Operator, which would not be set by the others. So check for
             // that to determine whether the expression has ended correctly.
             if (allowedTokens.HasFlag(TokenTypes.Operator))
-                return exprList.ToArray();
+                return new TokenizedExpression(exprList);
             else
-                throw new MalformedExpressionException("Expression did not end with a number or closing parenthesis.");
-        }
-
-
-        void AddCharToNum(char c)
-        {
-            if (c == '.')
-            {
-                // Abort on multiple decimal points in number token.
-                if (decimalPoint)
-                    throw new MalformedExpressionException("More than one decimal point detected.");
-
-                // If a number in the expression starts with a decimal point, prepend 0.
-                if (tmpNum.Count == 0)
-                    tmpNum.Add('0');
-
-                decimalPoint = true;
-            }
-
-            tmpNum.Add(c);
+                return new TokenizedExpression("Expression did not end with a number or closing parenthesis.");
         }
 
 
@@ -178,10 +167,6 @@ namespace Calculation
 
         void AddRParenToExpr(char token)
         {
-            // Abort on a subexpression being closed before it was opened / unexpected right parenthesis.
-            if (parenBalance == 0)
-                throw new MalformedExpressionException("Tried to close a subexpression before it was opened.");
-
             // Because a left parenthesis can follow a number, commit collected single digits as a number token.
             AddNumToExpr();
 
@@ -288,12 +273,17 @@ namespace Calculation
                 return false;
         }
 
-        public static double Calculate(string[] expression)
+        public static double Calculate(TokenizedExpression expr)
         {
+            if (expr == null)
+                throw new ArgumentNullException("expr");
+            else if (!expr.Success)
+                throw new ArgumentException("Expression must be succesfully parsed.");
+
             var opStack = new Stack<string>();
             var output = new Stack<double>();
 
-            foreach (string token in expression)
+            foreach (string token in expr.Expression)
             {
                 if (operators.ContainsKey(token))
                 {
@@ -381,22 +371,6 @@ namespace Calculation
             }
 
             output.Push(result);
-        }
-    }
-
-
-    class Test
-    {
-        static void Main(string[] args)
-        {
-        var calc = new Tokenizer();
-        string[] expr = calc.Tokenize(args[0]);
-        foreach (string s in expr)
-            Console.WriteLine(s);
-
-        double result = ShuntingYard.Calculate(expr);
-
-        Console.WriteLine("Result: " + result);
         }
     }
 }

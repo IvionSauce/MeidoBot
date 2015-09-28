@@ -3,7 +3,6 @@ using Calculation;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
 
 [Export(typeof(IMeidoHook))]
 public class Calc : IMeidoHook
@@ -43,22 +42,24 @@ public class Calc : IMeidoHook
     {
         if (e.MessageArray.Length > 1)
         {
-            var expr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-            string [] tokenizedExpr;
+            var exprStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
 
             var tokenizer = new Tokenizer();
-            try
-            {
-                tokenizedExpr = tokenizer.Tokenize(expr);
-            }
-            catch (MalformedExpressionException)
-            {
-                e.Reply("I am but a simple meido, please ask me something I can understand.");
-                return;
-            }
+            var expr = tokenizer.Tokenize(exprStr);
 
-            double result = ShuntingYard.Calculate(tokenizedExpr);
-            e.Reply( result.ToString() );
+            if (expr.Success)
+            {
+                double result = ShuntingYard.Calculate(expr);
+                e.Reply( result.ToString() );
+            }
+            else
+            {
+                string error = expr.ErrorMessage;
+                if (expr.ErrorPosition >= 0)
+                    error += " | Postion: " + expr.ErrorPosition;
+                
+                e.Reply(error);
+            }
         }
     }
 }

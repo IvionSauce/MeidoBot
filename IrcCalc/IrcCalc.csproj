@@ -37,6 +37,7 @@
   <ItemGroup>
     <Compile Include="Calculation.cs" />
     <Compile Include="IrcCalc.cs" />
+    <Compile Include="TokenizedExpression.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
