@@ -14,19 +14,26 @@ namespace Calculation
         public readonly int ErrorPosition;
 
 
-        public TokenizedExpression(IEnumerable<string> expr)
+        internal TokenizedExpression(IEnumerable<string> expr)
         {
             Success = true;
             Expression = new ReadOnlyCollection<string>( expr.ToArray() );
         }
 
-        public TokenizedExpression(string errorMsg) : this(errorMsg, -1) {}
+        internal TokenizedExpression(string errorMsg) : this(errorMsg, -1) {}
 
-        public TokenizedExpression(string errorMsg, int errorPos)
+        internal TokenizedExpression(string errorMsg, int errorPos)
         {
             Success = false;
             ErrorMessage = errorMsg;
             ErrorPosition = errorPos;
+        }
+
+
+        public static TokenizedExpression Parse(string expr)
+        {
+            var t = new Tokenizer();
+            return t.Tokenize(expr);
         }
     }
 }

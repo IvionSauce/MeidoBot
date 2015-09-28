@@ -43,9 +43,7 @@ public class Calc : IMeidoHook
         if (e.MessageArray.Length > 1)
         {
             var exprStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-
-            var tokenizer = new Tokenizer();
-            var expr = tokenizer.Tokenize(exprStr);
+            var expr = TokenizedExpression.Parse(exprStr);
 
             if (expr.Success)
             {
