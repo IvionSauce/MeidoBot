@@ -35,9 +35,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="Calculation.cs" />
     <Compile Include="IrcCalc.cs" />
     <Compile Include="TokenizedExpression.cs" />
+    <Compile Include="Tokenizer.cs" />
+    <Compile Include="ShuntingYard.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
