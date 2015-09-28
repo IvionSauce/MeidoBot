@@ -33,10 +33,12 @@ public class Calc : IMeidoHook
     {}
 
     [ImportingConstructor]
-    public Calc(IMeidoComm meido)
+    public Calc(IIrcComm irc, IMeidoComm meido)
     {
         meido.RegisterTrigger("calc", HandleTrigger);
+        irc.AddChannelMessageHandler(HandleMessage);
     }
+
 
     public void HandleTrigger(IIrcMessage e)
     {
@@ -57,6 +59,20 @@ public class Calc : IMeidoHook
                     error += " | Postion: " + expr.ErrorPosition;
                 
                 e.Reply(error);
+            }
+        }
+    }
+
+
+    public void HandleMessage(IIrcMessage e)
+    {
+        if (e.Trigger == null)
+        {
+            var expr = TokenizedExpression.Parse(e.Message);
+            if (expr.Success)
+            {
+                double result = ShuntingYard.Calculate(expr);
+                e.Reply( result.ToString() );
             }
         }
     }
