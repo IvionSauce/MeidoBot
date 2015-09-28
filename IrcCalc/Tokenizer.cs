@@ -61,7 +61,7 @@ namespace Calculation
                     else
                         return new TokenizedExpression("Unexpected number: " + c, i);
                 }
-                if (c == '.')
+                else if (c == '.')
                 {
                     if (allowedTokens.HasFlag(TokenTypes.Number))
                     {
