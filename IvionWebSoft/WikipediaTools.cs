@@ -27,6 +27,7 @@ namespace IvionWebSoft
          * Span tags
          * Hyperlink tags
          * Abbreviation tags
+         * Subscript tags
          * Image tags
          * Superscript elements (tags + content)
          * Small elements
@@ -36,6 +37,7 @@ namespace IvionWebSoft
                                                       @"<span[^>]*>|</span>|" +
                                                       @"<a [^>]*>|</a>|" +
                                                       @"<abbr[^>]*>|</abbr>|" +
+                                                      @"<sub[^>]*>|</sub>" +
                                                       @"<img [^>]*/>|" +
                                                       @"<sup[^>]*>.*?</sup>|" +
                                                       @"<small[^>]*>.*?</small>|" +
