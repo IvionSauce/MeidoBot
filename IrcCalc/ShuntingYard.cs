@@ -31,7 +31,7 @@ namespace Calculation
             if (expr == null)
                 throw new ArgumentNullException("expr");
             else if (!expr.Success)
-                throw new ArgumentException("Expression must be succesfully parsed.");
+                throw new ArgumentException("Expression must be successfully parsed.");
 
             var opStack = new Stack<string>();
             var output = new Stack<double>();

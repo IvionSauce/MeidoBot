@@ -37,10 +37,11 @@ public class Calc : IMeidoHook
     {
         meido.RegisterTrigger("calc", HandleTrigger);
         irc.AddChannelMessageHandler(HandleMessage);
+        irc.AddQueryMessageHandler(HandleMessage);
     }
 
 
-    public void HandleTrigger(IIrcMessage e)
+    public static void HandleTrigger(IIrcMessage e)
     {
         if (e.MessageArray.Length > 1)
         {
@@ -53,27 +54,35 @@ public class Calc : IMeidoHook
                 e.Reply( result.ToString() );
             }
             else
-            {
-                string error = expr.ErrorMessage;
-                if (expr.ErrorPosition >= 0)
-                    error += " | Postion: " + expr.ErrorPosition;
-                
-                e.Reply(error);
-            }
+                OutputError(e, expr);
         }
     }
 
 
-    public void HandleMessage(IIrcMessage e)
+    public static void HandleMessage(IIrcMessage e)
     {
         if (e.Trigger == null)
         {
             var expr = TokenizedExpression.Parse(e.Message);
-            if (expr.Success)
+            // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
+            // to be a calculation (not just a single number). A minimal calculation will involve at least 3 tokens:
+            // `number operator number`.
+            const int minTokenCount = 3;
+            if (expr.Success && expr.Expression.Count >= minTokenCount)
             {
                 double result = ShuntingYard.Calculate(expr);
                 e.Reply( result.ToString() );
             }
         }
+    }
+
+
+    static void OutputError(IIrcMessage e, TokenizedExpression expr)
+    {
+        string error = expr.ErrorMessage;
+        if (expr.ErrorPosition >= 0)
+            error += " | Postion: " + expr.ErrorPosition;
+
+        e.Reply(error);
     }
 }

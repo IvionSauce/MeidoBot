@@ -68,8 +68,7 @@ namespace Calculation
                         if (decimalPoint)
                             return new TokenizedExpression("More than one decimal point detected", i);
 
-                        decimalPoint = true;
-                        tmpNum.Add(c);
+                        AddDotToNum();
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number | TokenTypes.Operator | TokenTypes.R_Paren;
                     }
@@ -90,7 +89,7 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.L_Paren))
                     {
-                        AddLParenToExpr(c);
+                        AddLParenToExpr();
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
                     }
@@ -106,9 +105,9 @@ namespace Calculation
                     if (allowedTokens.HasFlag(TokenTypes.R_Paren))
                     {
                         if (parenBalance == 0)
-                            return new TokenizedExpression("Tried to close a subexpression before it was opened.", i);
+                            return new TokenizedExpression("Tried to close a subexpression before it was opened", i);
 
-                        AddRParenToExpr(c);
+                        AddRParenToExpr();
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Operator | TokenTypes.R_Paren;
                     }
@@ -158,24 +157,32 @@ namespace Calculation
         }
 
 
-        void AddLParenToExpr(char token)
+        void AddDotToNum()
         {
-            exprList.Add( token.ToString() );
+            if (tmpNum.Count == 0)
+                tmpNum.Add('0');
+
+            decimalPoint = true;
+            tmpNum.Add('.');
+        }
+
+
+        void AddLParenToExpr()
+        {
+            exprList.Add( "(" );
             // Record the opening of a subexpression to the parentheses balance.
             parenBalance++;
         }
 
-
-        void AddRParenToExpr(char token)
+        void AddRParenToExpr()
         {
             // Because a left parenthesis can follow a number, commit collected single digits as a number token.
             AddNumToExpr();
 
-            exprList.Add( token.ToString() );
+            exprList.Add( ")" );
             // Record the closing of a subexpression to the parentheses balance.
             parenBalance--;
         }
-
 
         void AddOperatorToExpr(char token)
         {
