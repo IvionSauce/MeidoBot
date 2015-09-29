@@ -180,7 +180,8 @@ namespace WebIrc
                 return req.CreateResult(false);
 
             double urlTitleSimilarity = UrlTitle.Similarity(req.Url, req.ConstructedTitle.HtmlTitle);
-            req.AddMessage("URL-Title Similarity: " + urlTitleSimilarity);
+            req.AddMessage(
+                string.Format("URL-Title Similarity: {0} [Threshold: {1}]", urlTitleSimilarity, Threshold));
 
             if (urlTitleSimilarity <= Threshold)
                 return req.CreateResult(true);
