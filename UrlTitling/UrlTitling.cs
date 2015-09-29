@@ -8,7 +8,10 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class UrlTitler : IMeidoHook
 {
+    readonly IMeidoComm meido;
+
     readonly ChannelThreadManager manager;
+    readonly QueryTriggers qTriggers;
 
 
     public string Name
@@ -27,7 +30,16 @@ public class UrlTitler : IMeidoHook
             return new Dictionary<string, string>()
             {
                 {"disable", "disable - Temporarily disable URL-Titling for you in current channel."},
-                {"enable", "enable - Re-enable (previously disabled) URL-Titling for you."}
+                {"enable", "enable - Re-enable (previously disabled) URL-Titling for you."},
+
+                {"reload_bw", "reload_bw - Reload black- and whitelist from disk. (Owner only)"},
+
+                {"query", "query <url...> - Query given URL(s) and return title or error."},
+                {"query-dbg", "query-dbg <url...> - Query given URL(s) and return title or error. " +
+                    "(Includes extra information)"},
+                
+                {"dump", "dump <url...> - Dumps HTML content of given URL(s) to a local file for inspection. " +
+                    "(Owner only)"}
             };
         }
     }
@@ -44,11 +56,11 @@ public class UrlTitler : IMeidoHook
         var log = meido.CreateLogger(this);
         var conf = new Config(Path.Combine(meido.ConfDir, "UrlTitling.xml"), log);
 
-        //WebToIrc.Cookies.Add(conf.CookieColl);
-
         // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(irc, log, conf);
         SetupBWLists(conf, log);
+
+        qTriggers = new QueryTriggers(conf);
 
         // For handling messages/actions that can potentially containg URL(s).
         irc.AddChannelMessageHandler(UrlHandler);
@@ -58,33 +70,32 @@ public class UrlTitler : IMeidoHook
         meido.RegisterTrigger("disable", Disable, true);
         meido.RegisterTrigger("enable", Enable, true);
         meido.RegisterTrigger("reload_bw", ReloadBW);
+
+        meido.RegisterTrigger("dump", Dump);
+        meido.RegisterTrigger("query", qTriggers.Query);
+        meido.RegisterTrigger("query-dbg", qTriggers.QueryDebug);
+
+        this.meido = meido;
     }
 
     void SetupBWLists(Config conf, ILog log)
     {
-        if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
+        try
         {
-            try
+            if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
             {
                 manager.Blacklist.LoadFromFile(conf.BlacklistLocation);
                 log.Message("-> Loaded blacklist from " + conf.BlacklistLocation);
             }
-            catch (FileNotFoundException)
-            {}
-            catch (DirectoryNotFoundException)
-            {}
-        }
-        if (!string.IsNullOrWhiteSpace(conf.WhitelistLocation))
-        {
-            try
+            if (!string.IsNullOrWhiteSpace(conf.WhitelistLocation))
             {
                 manager.Whitelist.LoadFromFile(conf.WhitelistLocation);
                 log.Message("-> Loaded whitelist from " + conf.WhitelistLocation);
             }
-            catch (FileNotFoundException)
-            {}
-            catch (DirectoryNotFoundException)
-            {}
+        }
+        catch (IOException)
+        {
+            // Ignore IO errors.
         }
     }
 
@@ -112,8 +123,19 @@ public class UrlTitler : IMeidoHook
 
     public void ReloadBW(IIrcMessage e)
     {
-        manager.Blacklist.ReloadFile();
-        manager.Whitelist.ReloadFile();
-        e.Reply("Black- and whitelist have been reloaded.");
+        if (meido.AuthLevel(e.Nick) == 3)
+        {
+            manager.Blacklist.ReloadFile();
+            manager.Whitelist.ReloadFile();
+            e.Reply("Black- and whitelist have been reloaded.");
+        }
+    }
+
+
+    public void Dump(IIrcMessage e)
+    {
+        // Only allow owner to dump (writing temp files).
+        if (meido.AuthLevel(e.Nick) == 3)
+            QueryTriggers.Dump(e);
     }
 }

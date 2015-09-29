@@ -50,6 +50,7 @@
     <Compile Include="WebIrc\WikipediaHandler.cs" />
     <Compile Include="WebIrc\TitlingResult.cs" />
     <Compile Include="WebIrc\TitlingRequest.cs" />
+    <Compile Include="QueryTriggers.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
