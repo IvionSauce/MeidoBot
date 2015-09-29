@@ -137,7 +137,7 @@ namespace WebIrc
             }
             else if (htmlTitle.Length > maxTitleLength)
             {
-                request.AddMessage("HMTL title length was in excess of 1024 characters, assuming spam.");
+                request.AddMessage("HTML title length was in excess of 1024 characters, assuming spam.");
                 return request.CreateResult(false);
             }
             // If defined and not of ridiculous length make it available to ConstructedTitle.
