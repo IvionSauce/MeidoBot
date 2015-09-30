@@ -36,6 +36,8 @@
     <Compile Include="Authentication.cs" />
     <Compile Include="Ssl.cs" />
     <Compile Include="MessageTools.cs" />
+    <Compile Include="Admin.cs" />
+    <Compile Include="MeidoManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

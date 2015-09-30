@@ -11,6 +11,8 @@ namespace MeidoBot
     class Meido : IDisposable
     {
         readonly IrcClient irc = new IrcClient();
+
+        readonly Admin admin;
         readonly PluginManager plugins;
         readonly Logger log;
 
@@ -21,8 +23,7 @@ namespace MeidoBot
         // running in it.
         readonly MeidoComm meidoComm;
 
-        readonly string nick;
-        readonly List<string> channels;
+        readonly MeidoConfig conf;
 
 
         public Meido(MeidoConfig config)
@@ -30,9 +31,8 @@ namespace MeidoBot
             if (config == null)
                 throw new ArgumentNullException("config");
 
-            // We need these parameters for events, store them in fields.
-            this.nick = config.Nickname;
-            this.channels = config.Channels;
+            // We need these parameters for events, store them.
+            conf = config;
 
             // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc);
@@ -46,7 +46,9 @@ namespace MeidoBot
             // Setup plugins and load them.
             plugins = new PluginManager(config.TriggerPrefix);
             LoadPlugins();
-            // Register non-plugin triggers.
+
+            // Setup non-plugin triggers and register them.
+            admin = new Admin(irc, meidoComm);
             RegisterSpecialTriggers();
 
             // Setting some SmartIrc4Net options/properties.
@@ -61,9 +63,6 @@ namespace MeidoBot
 
             irc.OnChannelAction += new ActionEventHandler(ChannelAction);
             irc.OnQueryAction += new ActionEventHandler(QueryAction);
-
-            // and connect to the server.
-            Connect(config.ServerAddress, config.ServerPort);
         }
 
 
@@ -88,14 +87,14 @@ namespace MeidoBot
             irc.AutoRejoin = true;
             irc.Encoding = Encoding.UTF8;
         }
-        
 
-        void Connect(string server, int port)
+
+        public void Connect()
         {
-            log.Message("Trying to connect to {0}:{1} ...", server, port);
+            log.Message("Trying to connect to {0}:{1} ...", conf.ServerAddress, conf.ServerPort);
             try
             {
-                irc.Connect(server, port);
+                irc.Connect(conf.ServerAddress, conf.ServerPort);
             }
             catch (CouldNotConnectException ex)
             {
@@ -111,11 +110,12 @@ namespace MeidoBot
         // Tell the server who we are and join channel(s).
         void OnConnected(object sender, EventArgs e)
         {
-            irc.Login(nick, "Meido Bot", 0, "MeidoBot");
-
+            irc.Login(conf.Nickname, "Meido Bot", 0, "MeidoBot");
             log.Message("Connected as {0} to {1}", irc.Nickname, irc.Address);
 
-            irc.RfcJoin(channels.ToArray());
+            log.Message("Joining channels: " + string.Join(" ", conf.Channels));
+            irc.RfcJoin(conf.Channels.ToArray());
+
             irc.Listen();
         }
 
@@ -124,9 +124,9 @@ namespace MeidoBot
         {
             log.Message("Received invite from {0} for {1}", e.Who, e.Channel);
 
-            if (!channels.Contains(e.Channel))
+            if (!conf.Channels.Contains(e.Channel))
             {
-                channels.Add(e.Channel);
+                conf.Channels.Add(e.Channel);
                 irc.SendMessage(SendType.Notice, e.Who,
                     "If you want your channel on the auto-join list, please contact the owner.");
             }
@@ -186,9 +186,9 @@ namespace MeidoBot
         {
             meidoComm.RegisterTrigger("h", Help);
             meidoComm.RegisterTrigger("help", Help);
-            meidoComm.RegisterTrigger("auth", Auth);
-            meidoComm.RegisterTrigger("part", Part);
-            meidoComm.RegisterTrigger("disconnect", Disconnect);
+
+            meidoComm.RegisterTrigger("auth", admin.AuthTrigger);
+            meidoComm.RegisterTrigger("admin", admin.AdminTrigger);
         }
 
         // Help trigger.
@@ -214,32 +214,6 @@ namespace MeidoBot
                 else
                     msg.Reply("No help available.");
             }
-        }
-
-        // Auth trigger.
-        void Auth(IIrcMessage msg)
-        {
-            if (msg.MessageArray.Length > 1)
-            {
-                if (meidoComm.Auth(msg.Nick, msg.MessageArray[1]))
-                    msg.Reply("You've successfully authenticated.");
-            }
-
-            msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(msg.Nick));
-        }
-
-        // Part trigger.
-        void Part(IIrcMessage msg)
-        {
-            if (msg.MessageArray.Length == 2 && meidoComm.AuthLevel(msg.Nick) >= 2)
-                irc.RfcPart(msg.MessageArray[1]);
-        }
-
-        // Disconnect trigger.
-        void Disconnect(IIrcMessage msg)
-        {
-            if (meidoComm.AuthLevel(msg.Nick) == 3)
-                Dispose();
         }
 
 
