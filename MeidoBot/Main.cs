@@ -74,23 +74,23 @@ namespace MeidoBot
 
             switch (result)
             {
-            case Parsing.Results.Success:
+            case Parsing.Result.Success:
                 Console.WriteLine("Starting MeidoBot {0}\n", Version);
                 Ssl.EnableTrustAll();
                 new Meido(meidoConfig);
                 return;
                 
             // Error reporting.
-            case Parsing.Results.NoServer:
+            case Parsing.Result.NoServer:
                 Console.WriteLine("Please set a server address for the bot to connect to.");
                 break;
-            case Parsing.Results.NoNickname:
+            case Parsing.Result.NoNickname:
                 Console.WriteLine("Please set a nickname for the bot.");
                 break;
-            case Parsing.Results.InvalidPortNumber:
+            case Parsing.Result.InvalidPortNumber:
                 Console.WriteLine("Given port number was invalid.");
                 break;
-            case Parsing.Results.TriggerWhitespace:
+            case Parsing.Result.TriggerWhitespace:
                 Console.WriteLine("Trigger prefix cannot contain whitespace.");
                 break;
             default:

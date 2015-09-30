@@ -7,7 +7,7 @@ namespace MeidoBot
 {
     static class Parsing
     {
-        public enum Results
+        public enum Result
         {
             Success,
             NoServer,
@@ -17,31 +17,31 @@ namespace MeidoBot
         }
 
 
-        public static Results ParseConfig(XElement config, out MeidoConfig meidoconf)
+        public static Result ParseConfig(XElement config, out MeidoConfig meidoconf)
         {
             meidoconf = null;
 
             // Load the settings into variables.
             var server = (string)config.Element("server");
             if (string.IsNullOrWhiteSpace(server))
-                return Results.NoServer;
+                return Result.NoServer;
 
             var nick = (string)config.Element("nick");
             if (string.IsNullOrWhiteSpace(nick))
-                return Results.NoNickname;
+                return Result.NoNickname;
 
             var prefix = ParsePrefix(config);
             if (prefix == null)
-                return Results.TriggerWhitespace;
+                return Result.TriggerWhitespace;
 
             var port = ParsePort(config);
             if (port < 1)
-                return Results.InvalidPortNumber;
+                return Result.InvalidPortNumber;
 
             var channels = ParseChannels(config);
 
             meidoconf = new MeidoConfig(nick, server, port, channels, prefix);
-            return Results.Success;
+            return Result.Success;
         }
 
         static string ParsePrefix(XElement config)
