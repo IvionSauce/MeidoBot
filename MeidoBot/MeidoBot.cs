@@ -122,6 +122,8 @@ namespace MeidoBot
 
         void OnInvited(object sender, InviteEventArgs e)
         {
+            log.Message("Received invite from {0} for {1}", e.Who, e.Channel);
+
             if (!channels.Contains(e.Channel))
             {
                 channels.Add(e.Channel);

@@ -14,6 +14,7 @@ namespace MeidoBot
         readonly LogFactory logFac;
         readonly UserAuthManager userAuths;
 
+        readonly Logger log;
         readonly Dictionary<string, Trigger> triggers =
             new Dictionary<string, Trigger>(StringComparer.Ordinal);
 
@@ -21,6 +22,7 @@ namespace MeidoBot
         public MeidoComm(LogFactory factory)
         {
             logFac = factory;
+            log = logFac.CreateLogger("MEIDO");
 
             ConfDir = "conf";
             DataDir = "data";
@@ -53,6 +55,7 @@ namespace MeidoBot
             else if (callback == null)
                 throw new ArgumentNullException("callback");
 
+            log.Verbose("Registering trigger '{0}'.", trigger);
             triggers[trigger] = new Trigger(callback, needChannel);
         }
 
@@ -62,7 +65,12 @@ namespace MeidoBot
             if (triggers.TryGetValue(msg.Trigger, out tr))
             {
                 if (msg.Channel != null || !tr.NeedsChannel)
+                {
+                    string source = msg.Channel ?? "PM";
+                    log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
+
                     tr.Call(msg);
+                }
             }
         }
 
