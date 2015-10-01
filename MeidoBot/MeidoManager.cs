@@ -16,13 +16,24 @@ namespace MeidoBot
         static object _locker = new object();
 
 
-        public static void StartBot(MeidoConfig config)
+        public static bool StartBot(MeidoConfig config)
+        {
+            return StartBot(config, false);
+        }
+
+        public static bool StartBot(MeidoConfig config, bool restart)
         {
             lock (_locker)
             {
-                configs[config.ServerAddress] = config;
-                StartBotThread(config);
+                if (!runningBots.ContainsKey(config.ServerAddress) || restart)
+                {
+                    configs[config.ServerAddress] = config;
+                    StopBot(config.ServerAddress);
+                    StartBotThread(config);
+                    return true;
+                }
             }
+            return false;
         }
 
 
@@ -36,7 +47,6 @@ namespace MeidoBot
                     return true;
                 }
             }
-            
             return false;
         }
 
@@ -104,6 +114,55 @@ namespace MeidoBot
                     pair.Value.Dispose();
                     runningBots.Remove(pair.Key);
                 }
+            }
+        }
+
+
+        public static bool AddConfig(MeidoConfig conf)
+        {
+            lock (_locker)
+            {
+                if (!configs.ContainsKey(conf.ServerAddress))
+                {
+                    configs[conf.ServerAddress] = conf;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void AddOrReplaceConfig(MeidoConfig conf)
+        {
+            lock (_locker)
+            {
+                configs[conf.ServerAddress] = conf;
+            }
+        }
+
+
+        public static bool IsBotStarted(string server)
+        {
+            lock (_locker)
+            {
+                return runningBots.ContainsKey(server);
+            }
+        }
+
+        public static bool HasConfig(string server)
+        {
+            lock (_locker)
+            {
+                return configs.ContainsKey(server);
+            }
+        }
+
+
+        public static void Clear()
+        {
+            lock (_locker)
+            {
+                StopAllBots();
+                configs.Clear();
             }
         }
 
