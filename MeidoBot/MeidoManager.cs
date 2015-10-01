@@ -16,9 +16,6 @@ namespace MeidoBot
         static object _locker = new object();
 
 
-
-
-
         public static bool StartBot(string server)
         {
             return StartBot(server, false);
@@ -26,6 +23,9 @@ namespace MeidoBot
 
         public static bool StartBot(string server, bool restart)
         {
+            if (server == null)
+                throw new ArgumentNullException("server");
+            
             lock (_locker)
             {
                 MeidoConfig config;
@@ -43,6 +43,9 @@ namespace MeidoBot
 
         public static bool StartBot(MeidoConfig config, bool restart)
         {
+            if (config == null)
+                throw new ArgumentNullException("config");
+            
             lock (_locker)
             {
                 if (!runningBots.ContainsKey(config.ServerAddress))
@@ -64,6 +67,9 @@ namespace MeidoBot
 
         public static bool RestartBot(string server)
         {
+            if (server == null)
+                throw new ArgumentNullException("server");
+            
             lock (_locker)
             {
                 if (StopBot(server))
@@ -98,6 +104,9 @@ namespace MeidoBot
 
         public static bool StopBot(string server)
         {
+            if (server == null)
+                throw new ArgumentNullException("server");
+            
             lock (_locker)
             {
                 Meido bot;
@@ -127,6 +136,9 @@ namespace MeidoBot
 
         public static bool AddConfig(MeidoConfig conf)
         {
+            if (conf == null)
+                throw new ArgumentNullException("conf");
+            
             lock (_locker)
             {
                 if (!configs.ContainsKey(conf.ServerAddress))
@@ -140,6 +152,9 @@ namespace MeidoBot
 
         public static void AddOrReplaceConfig(MeidoConfig conf)
         {
+            if (conf == null)
+                throw new ArgumentNullException("conf");
+            
             lock (_locker)
             {
                 configs[conf.ServerAddress] = conf;
@@ -149,6 +164,9 @@ namespace MeidoBot
 
         public static bool IsBotStarted(string server)
         {
+            if (server == null)
+                throw new ArgumentNullException("server");
+            
             lock (_locker)
             {
                 return runningBots.ContainsKey(server);
@@ -157,6 +175,9 @@ namespace MeidoBot
 
         public static bool HasConfig(string server)
         {
+            if (server == null)
+                throw new ArgumentNullException("server");
+            
             lock (_locker)
             {
                 return configs.ContainsKey(server);
