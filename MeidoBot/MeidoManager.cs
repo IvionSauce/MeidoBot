@@ -16,6 +16,26 @@ namespace MeidoBot
         static object _locker = new object();
 
 
+
+
+
+        public static bool StartBot(string server)
+        {
+            return StartBot(server, false);
+        }
+
+        public static bool StartBot(string server, bool restart)
+        {
+            lock (_locker)
+            {
+                MeidoConfig config;
+                if (configs.TryGetValue(server, out config))
+                    return StartBot(config, restart);
+            }
+            return false;
+        }
+
+
         public static bool StartBot(MeidoConfig config)
         {
             return StartBot(config, false);
@@ -25,11 +45,16 @@ namespace MeidoBot
         {
             lock (_locker)
             {
-                if (!runningBots.ContainsKey(config.ServerAddress) || restart)
+                if (!runningBots.ContainsKey(config.ServerAddress))
                 {
-                    configs[config.ServerAddress] = config;
-                    StopBot(config.ServerAddress);
+                    AddOrReplaceConfig(config);
                     StartBotThread(config);
+                    return true;
+                }
+                else if (restart)
+                {
+                    AddOrReplaceConfig(config);
+                    RestartBot(config.ServerAddress);
                     return true;
                 }
             }
@@ -62,24 +87,6 @@ namespace MeidoBot
             }
         }
 
-
-        public static bool StartBot(string server)
-        {
-            lock (_locker)
-            {
-                MeidoConfig config;
-                if (configs.TryGetValue(server, out config))
-                {
-                    // If we have the config, but the bot is not running - start it.
-                    if (!runningBots.ContainsKey(server))
-                        StartBotThread(config);
-                    
-                    // Return true in any case, it's now running (regardless of whether it was running previously).
-                    return true;
-                }
-            }
-            return false;
-        }
 
         static void StartBotThread(MeidoConfig config)
         {
