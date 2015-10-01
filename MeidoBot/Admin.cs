@@ -29,12 +29,14 @@ namespace MeidoBot
                 // Admin triggers.
                 switch (trigger)
                 {
+                case "j":
                 case "join":
                     for (int i = 2; i < msg.MessageArray.Length; i++)
                         irc.RfcJoin(msg.MessageArray[i]);
 
                     return;
 
+                case "p":
                 case "part":
                     for (int i = 2; i < msg.MessageArray.Length; i++)
                         irc.RfcPart(msg.MessageArray[i]);
@@ -56,11 +58,13 @@ namespace MeidoBot
                 {
                     switch (trigger)
                     {
+                    case "dc":
                     case "disconnect":
                         msg.Reply("Disconnecting from {0}.", irc.Address);
                         MeidoManager.StopBot(irc.Address);
                         return;
 
+                    case "dc-all":
                     case "disconnect-all":
                         msg.Reply("Disconnecting from all servers.");
                         MeidoManager.StopAllBots();
