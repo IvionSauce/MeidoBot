@@ -24,6 +24,7 @@ namespace MeidoBot
         readonly MeidoComm meidoComm;
 
         readonly MeidoConfig conf;
+        readonly List<string> currentChannels;
 
 
         public Meido(MeidoConfig config)
@@ -33,6 +34,7 @@ namespace MeidoBot
 
             // We need these parameters for events, store them.
             conf = config;
+            currentChannels = new List<string>(conf.Channels);
 
             // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc);
@@ -113,8 +115,9 @@ namespace MeidoBot
             irc.Login(conf.Nickname, "Meido Bot", 0, "MeidoBot");
             log.Message("Connected as {0} to {1}", irc.Nickname, irc.Address);
 
-            log.Message("Joining channels: " + string.Join(" ", conf.Channels));
-            irc.RfcJoin(conf.Channels.ToArray());
+            // Join current channels, since those might differ from the configured channels due to invites.
+            log.Message("Joining channels: " + string.Join(" ", currentChannels));
+            irc.RfcJoin(currentChannels.ToArray());
 
             irc.Listen();
         }
@@ -124,9 +127,10 @@ namespace MeidoBot
         {
             log.Message("Received invite from {0} for {1}", e.Who, e.Channel);
 
-            if (!conf.Channels.Contains(e.Channel))
+            // Keep track of channels we're invited to, so that we may rejoin after disconnects.
+            if (!currentChannels.Contains(e.Channel))
             {
-                conf.Channels.Add(e.Channel);
+                currentChannels.Add(e.Channel);
                 irc.SendMessage(SendType.Notice, e.Who,
                     "If you want your channel on the auto-join list, please contact the owner.");
             }
