@@ -176,6 +176,26 @@ namespace MeidoBot
         }
 
 
+        void OnPart(object sender, PartEventArgs e)
+        {
+            
+            if (e.Who == irc.Nickname)
+            {
+                log.Message("Parting from {0}");
+                currentChannels.Remove(e.Channel);
+            }
+        }
+
+        void OnKick(object sender, KickEventArgs e)
+        {
+            if (e.Whom == irc.Nickname)
+            {
+                log.Message("Kicked from {0}");
+                currentChannels.Remove(e.Channel);
+            }
+        }
+
+
         void OnMessage(object sender, IrcEventArgs e)
         {
             var msg = new IrcMessage(e.Data, plugins.Prefix);

@@ -48,11 +48,11 @@ namespace MeidoBot
                 case "nick":
                     if (msg.MessageArray.Length == 3)
                     {
-                        msg.Reply("Attempting to change nick from {0} to {1}", irc.Nickname, msg.MessageArray[2]);
+                        msg.Reply("Attempting to change nick from {0} to {1}.", irc.Nickname, msg.MessageArray[2]);
                         irc.RfcNick(msg.MessageArray[2]);
                     }
                     else
-                        msg.Reply("Current nick is {0}", irc.Nickname);
+                        msg.Reply("Current nick is {0}.", irc.Nickname);
 
                     return;
 
