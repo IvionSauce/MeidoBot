@@ -8,19 +8,21 @@ namespace MeidoBot
     class Admin
     {
         readonly IrcClient irc;
-        readonly MeidoComm meido;
+        readonly Meido bot;
+        readonly MeidoComm meidoComm;
 
 
-        public Admin(IrcClient irc, MeidoComm meido)
+        public Admin(Meido bot, IrcClient irc, MeidoComm meidoComm)
         {
+            this.bot = bot;
             this.irc = irc;
-            this.meido = meido;
+            this.meidoComm = meidoComm;
         }
 
 
         public void AdminTrigger(IIrcMessage msg)
         {
-            if (meido.AuthLevel(msg.Nick) >= 2)
+            if (meidoComm.AuthLevel(msg.Nick) >= 2)
             {
                 string trigger = null;
                 if (msg.MessageArray.Length > 1)
@@ -43,6 +45,17 @@ namespace MeidoBot
                     
                     return;
 
+                case "nick":
+                    if (msg.MessageArray.Length == 3)
+                    {
+                        msg.Reply("Attempting to change nick from {0} to {1}", irc.Nickname, msg.MessageArray[2]);
+                        irc.RfcNick(msg.MessageArray[2]);
+                    }
+                    else
+                        msg.Reply("Current nick is {0}", irc.Nickname);
+
+                    return;
+
                 case "channels":
                     var channels = string.Join(", ", irc.GetChannels());
                     msg.Reply(channels);
@@ -54,7 +67,7 @@ namespace MeidoBot
                     return;
                 }
                 // Owner only triggers.
-                if (meido.AuthLevel(msg.Nick) == 3)
+                if (meidoComm.AuthLevel(msg.Nick) == 3)
                 {
                     switch (trigger)
                     {
@@ -79,6 +92,12 @@ namespace MeidoBot
                         msg.Reply("Restarting bots for all servers.");
                         MeidoManager.RestartAllBots();
                         return;
+
+                    case "reload":
+                        msg.Reply("Reloading plugins...");
+                        bot.ReloadPlugins();
+                        msg.Reply("Done reloading plugins.");
+                        return;
                     }
                 }
             }
@@ -91,11 +110,11 @@ namespace MeidoBot
         {
             if (msg.MessageArray.Length > 1)
             {
-                if (meido.Auth(msg.Nick, msg.MessageArray[1]))
+                if (meidoComm.Auth(msg.Nick, msg.MessageArray[1]))
                     msg.Reply("You've successfully authenticated.");
             }
 
-            msg.Reply("Your current Authentication Level is " + meido.AuthLevel(msg.Nick));
+            msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(msg.Nick));
         }
 
     }

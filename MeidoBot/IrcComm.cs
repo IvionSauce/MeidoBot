@@ -55,6 +55,15 @@ namespace MeidoBot
         {
             TriggerHandlers += handler;
         }
+
+        public void ClearHandlers()
+        {
+            ChannelMessageHandlers = null;
+            ChannelActionHandlers = null;
+            QueryMessageHandlers = null;
+            QueryActionHandlers = null;
+            TriggerHandlers = null;
+        }
         
         
         public void SendMessage(string target, string message, params object[] args)

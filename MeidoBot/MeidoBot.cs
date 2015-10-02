@@ -13,7 +13,7 @@ namespace MeidoBot
         readonly IrcClient irc = new IrcClient();
 
         readonly Admin admin;
-        readonly PluginManager plugins;
+        PluginManager plugins;
         readonly Logger log;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
@@ -45,31 +45,21 @@ namespace MeidoBot
             // Set aside some logging for ourself.
             log = logFac.CreateLogger("MEIDO");
 
-            // Setup plugins and load them.
-            plugins = new PluginManager(config.TriggerPrefix);
             LoadPlugins();
-
             // Setup non-plugin triggers and register them.
-            admin = new Admin(irc, meidoComm);
+            admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
 
-            // Setting some SmartIrc4Net options/properties.
+            // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
-
-            // Set event handlers...
-            irc.OnConnected += new EventHandler(OnConnected);
-            irc.OnInvite += new InviteEventHandler(OnInvited);
-
-            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
-            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
-
-            irc.OnChannelAction += new ActionEventHandler(ChannelAction);
-            irc.OnQueryAction += new ActionEventHandler(QueryAction);
+            SetHandlers();
         }
 
 
         void LoadPlugins()
         {
+            plugins = new PluginManager(conf.TriggerPrefix);
+
             // Load plugins and announce we're doing so.
             log.Message("Loading plugins...");
             plugins.LoadPlugins(ircComm, meidoComm);
@@ -90,6 +80,23 @@ namespace MeidoBot
             irc.Encoding = Encoding.UTF8;
         }
 
+        void SetHandlers()
+        {
+            irc.OnConnected += new EventHandler(OnConnected);
+            irc.OnInvite += new InviteEventHandler(OnInvited);
+
+            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
+            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
+
+            irc.OnChannelAction += new ActionEventHandler(ChannelAction);
+            irc.OnQueryAction += new ActionEventHandler(QueryAction);
+        }
+
+
+        // ---------------
+        // Public methods.
+        // ---------------
+
 
         public void Connect()
         {
@@ -104,6 +111,38 @@ namespace MeidoBot
             }
         }
 
+        public void Reconnect()
+        {
+            irc.Disconnect();
+            Connect();
+        }
+
+        public void Disconnect()
+        {
+            irc.Disconnect();
+        }
+
+
+        public void ReloadPlugins()
+        {
+            log.Message("Plugins reload! Stopping plugins.");
+            // Clear handlers and triggers before stopping the plugins.
+            ircComm.ClearHandlers();
+            meidoComm.ClearTriggers();
+            plugins.StopPlugins();
+
+            LoadPlugins();
+            RegisterSpecialTriggers();
+        }
+
+
+        public void Dispose()
+        {
+            // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
+            // been given no new messages will arrive.
+            irc.Disconnect();
+            plugins.StopPlugins();
+        }
 
         // ---------------
         // Event handlers.
@@ -220,13 +259,5 @@ namespace MeidoBot
             }
         }
 
-
-        public void Dispose()
-        {
-            // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
-            // been given no new messages will arrive.
-            irc.Disconnect();
-            plugins.StopPlugins();
-        }
     }
 }

@@ -74,6 +74,11 @@ namespace MeidoBot
             }
         }
 
+        public void ClearTriggers()
+        {
+            triggers.Clear();
+        }
+
 
         public bool Auth(string nick, string pass)
         {
