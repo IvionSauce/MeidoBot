@@ -113,12 +113,22 @@ namespace MeidoBot
 
         public void Reconnect()
         {
-            irc.Disconnect();
+            Disconnect();
             Connect();
         }
 
         public void Disconnect()
         {
+            Disconnect(null);
+        }
+
+        public void Disconnect(string quitMsg)
+        {
+            if (string.IsNullOrWhiteSpace(quitMsg))
+                irc.RfcQuit();
+            else
+                irc.RfcQuit(quitMsg);
+            
             irc.Disconnect();
         }
 
@@ -140,7 +150,9 @@ namespace MeidoBot
         {
             // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has
             // been given no new messages will arrive.
-            irc.Disconnect();
+            if (irc.IsConnected)
+                Disconnect();
+
             plugins.StopPlugins();
         }
 
