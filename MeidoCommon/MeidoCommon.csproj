@@ -35,9 +35,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="MeidoCommon.cs" />
     <Compile Include="XmlConfig.cs" />
-    <Compile Include="Comm.cs" />
-    <Compile Include="Events.cs" />
+    <Compile Include="CommInterfaces.cs" />
+    <Compile Include="EventsInterfaces.cs" />
+    <Compile Include="MiscInterfaces.cs" />
   </ItemGroup>
 </Project>
