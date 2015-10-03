@@ -90,6 +90,9 @@ namespace MeidoBot
 
             irc.OnChannelAction += new ActionEventHandler(ChannelAction);
             irc.OnQueryAction += new ActionEventHandler(QueryAction);
+
+            irc.OnPart += new PartEventHandler(OnPart);
+            irc.OnKick += new KickEventHandler(OnKick);
         }
 
 
