@@ -37,7 +37,7 @@ namespace IvionWebSoft
                                                       @"<span[^>]*>|</span>|" +
                                                       @"<a [^>]*>|</a>|" +
                                                       @"<abbr[^>]*>|</abbr>|" +
-                                                      @"<sub[^>]*>|</sub>" +
+                                                      @"<sub[^>]*>|</sub>|" +
                                                       @"<img [^>]*/>|" +
                                                       @"<sup[^>]*>.*?</sup>|" +
                                                       @"<small[^>]*>.*?</small>|" +
