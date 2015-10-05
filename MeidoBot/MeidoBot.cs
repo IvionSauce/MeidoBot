@@ -196,7 +196,7 @@ namespace MeidoBot
             
             if (e.Who == irc.Nickname)
             {
-                log.Message("Parting from {0}");
+                log.Message("Parting from {0}", e.Channel);
                 currentChannels.Remove(e.Channel);
             }
         }
@@ -205,7 +205,7 @@ namespace MeidoBot
         {
             if (e.Whom == irc.Nickname)
             {
-                log.Message("Kicked from {0}");
+                log.Message("Kicked from {0}", e.Channel);
                 currentChannels.Remove(e.Channel);
             }
         }
