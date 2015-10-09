@@ -61,18 +61,15 @@ public class Calc : IMeidoHook
 
     public static void HandleMessage(IIrcMessage e)
     {
-        if (e.Trigger == null)
+        var expr = TokenizedExpression.Parse(e.Message);
+        // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
+        // to be a calculation (not just a single number). A minimal calculation will involve at least 3 tokens:
+        // `number operator number`.
+        const int minTokenCount = 3;
+        if (expr.Success && expr.Expression.Count >= minTokenCount)
         {
-            var expr = TokenizedExpression.Parse(e.Message);
-            // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
-            // to be a calculation (not just a single number). A minimal calculation will involve at least 3 tokens:
-            // `number operator number`.
-            const int minTokenCount = 3;
-            if (expr.Success && expr.Expression.Count >= minTokenCount)
-            {
-                double result = ShuntingYard.Calculate(expr);
-                e.Reply( result.ToString() );
-            }
+            double result = ShuntingYard.Calculate(expr);
+            e.Reply( result.ToString() );
         }
     }
 
