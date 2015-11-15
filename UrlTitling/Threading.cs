@@ -159,7 +159,7 @@ class ChannelThread
 
     void ProcessMessage(MessageItem item)
     {
-        string[] urls = UrlExtractor.Extract(item.Message);
+        string[] urls = UrlTools.Extract(item.Message);
         if (urls.Length > 0)
         {
             log.Verbose("{0}/{1} {2}", Channel, item.Nick, item.Message);
@@ -202,7 +202,7 @@ class ChannelThread
         if (result.Success)
         {
             if (result.PrintTitle)
-                irc.SendMessage(Channel, result.Title);
+                irc.SendMessage(Channel, UrlTools.Filter(result.Title));
 
             log.Message(result.Messages);
             log.Message("{0} -- {1}", result.Requested, result.Title);

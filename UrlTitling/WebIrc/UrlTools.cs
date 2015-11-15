@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace WebIrc
 {
-    public static class UrlExtractor
+    public static class UrlTools
     {
-        static readonly Regex urlRegexp = new Regex(@"(?i)https?://[^\s]+");
+        static readonly Regex urlRegexp = new Regex(@"(?i)(https?://)([^\s]+)");
 
 
         public static string[] Extract(string message)
@@ -21,6 +21,12 @@ namespace WebIrc
                 results[i] = urlMatches[i].Value;
 
             return results;
+        }
+
+
+        public static string Filter(string message)
+        {
+            return urlRegexp.Replace(message, "hxxp://$2");
         }
     }
 }

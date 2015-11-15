@@ -45,12 +45,12 @@
     <Compile Include="WebIrc\ChanHandler.cs" />
     <Compile Include="WebIrc\HandlersMisc.cs" />
     <Compile Include="WebIrc\TitleConstruct.cs" />
-    <Compile Include="WebIrc\UrlExtractor.cs" />
     <Compile Include="WebIrc\WebToIrc.cs" />
     <Compile Include="WebIrc\WikipediaHandler.cs" />
     <Compile Include="WebIrc\TitlingResult.cs" />
     <Compile Include="WebIrc\TitlingRequest.cs" />
     <Compile Include="QueryTriggers.cs" />
+    <Compile Include="WebIrc\UrlTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">
