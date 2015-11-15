@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections.Generic;
 using MeidoCommon;
 using WebIrc;
+using IvionSoft;
 
 
 class ChannelThreadManager
@@ -105,8 +106,10 @@ class ChannelThread
     
     readonly IIrcComm irc;
     readonly ILog log;
+
     readonly Blacklist blacklist;
     readonly Whitelist whitelist;
+    readonly ShortHistory<string> urlHistory = new ShortHistory<string>(3);
     
     readonly WebToIrc webToIrc;
     
@@ -177,23 +180,31 @@ class ChannelThread
     
     void ProcessUrl(string nick, string url)
     {
-        bool? inWhite = whitelist.IsInList(url, Channel, nick);
-        // If whitelist not applicable.
-        if (inWhite == null)
+        // If we haven't seen the URL recently.
+        if (urlHistory.Add(url))
         {
-            if ( blacklist.IsInList(url, Channel, nick) )
-                log.Message("Blacklisted: {0}", url);
-            else
+            bool? inWhite = whitelist.IsInList(url, Channel, nick);
+            // Check blacklist if whitelist isn't applicable.
+            if (inWhite == null)
+            {
+                if ( blacklist.IsInList(url, Channel, nick) )
+                    log.Message("Blacklisted: {0}", url);
+                else
+                    OutputUrl(url);
+            }
+
+            // If in whitelist, go directly to output and skip blacklist.
+            else if (inWhite == true)
                 OutputUrl(url);
+            // If the whitelist was applicable, but the URL wasn't found in it.
+            else
+                log.Message("Not whitelisted: {0}", url);
         }
-        // If in whitelist, go directly to output and skip blacklist.
-        else if (inWhite == true)
-            OutputUrl(url);
-        // If the whitelist was applicable, but the URL wasn't found in it.
+        // If we have seen the URL recently, don't output it.
         else
-            log.Message("Not whitelisted: {0}", url);
+            log.Message("");
     }
-    
+
     
     void OutputUrl(string url)
     {
