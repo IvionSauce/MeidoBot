@@ -202,7 +202,7 @@ class ChannelThread
         }
         // If we have seen the URL recently, don't output it.
         else
-            log.Message("");
+            log.Message("Spam suppression: {0}", url);
     }
 
     
