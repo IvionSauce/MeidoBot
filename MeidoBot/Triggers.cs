@@ -35,7 +35,10 @@ namespace MeidoBot
                 log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
 
                 if (FirePredicate(msg, tr))
+                {
+                    log.Verbose("Firing trigger '{0}'.", msg.Trigger);
                     tr.Call(msg);
+                }
             }
         }
 
@@ -47,7 +50,6 @@ namespace MeidoBot
             if (!(trigger.NeedsChannel && msg.Channel == null) &&
                 !throttle.Triggers(msg))
             {
-                log.Verbose("Firing trigger '{0}'.", msg.Trigger);
                 return true;
             }
             else
