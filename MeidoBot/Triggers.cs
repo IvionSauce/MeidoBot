@@ -13,12 +13,6 @@ namespace MeidoBot
         readonly Logger log;
 
 
-        public Triggers(Logger log)
-        {
-            throttle = new ThrottleManager(log);
-            this.log = log;
-        }
-
         public Triggers(ThrottleManager tManager, Logger log)
         {
             throttle = tManager;
@@ -51,7 +45,7 @@ namespace MeidoBot
             // a channel property).
             // Second clause: whether or not triggers are being throttled.
             if (!(trigger.NeedsChannel && msg.Channel == null) &&
-                !throttle.TriggersCheck(msg))
+                !throttle.Triggers(msg))
             {
                 log.Verbose("Firing trigger '{0}'.", msg.Trigger);
                 return true;

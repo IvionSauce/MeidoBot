@@ -18,8 +18,14 @@ namespace MeidoBot
         }
 
 
+        // Returns true if trigger calls are allowed. Returns false otherwise.
+        public bool AllowTriggers(IrcMessage msg)
+        {
+            return !Triggers(msg);
+        }
+
         // Returns true if trigger calls should be throttled. Returns false otherwise.
-        public bool TriggersCheck(IrcMessage msg)
+        public bool Triggers(IrcMessage msg)
         {
             var entry = GetOrAdd(msg.ReturnTo);
             // Trigger calling happens sequentially, no need for locking.
@@ -43,8 +49,14 @@ namespace MeidoBot
         }
 
 
+        // Returns true if output is allowed. Returns false otherwise.
+        public bool AllowOutput(string target)
+        {
+            return !Output(target);
+        }
+
         // Returns true if output should be throttled. Returns false otherwise.
-        public bool OutputCheck(string target)
+        public bool Output(string target)
         {
             var entry = GetOrAdd(target);
             ThrottleInfo info;

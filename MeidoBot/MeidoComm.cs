@@ -16,10 +16,10 @@ namespace MeidoBot
         readonly UserAuthManager userAuths;
 
 
-        public MeidoComm(LogFactory factory)
+        public MeidoComm(ThrottleManager tManager, LogFactory factory)
         {
             logFac = factory;
-            triggers = new Triggers(factory.CreateLogger("MEIDO"));
+            triggers = new Triggers(tManager, logFac.CreateLogger("MEIDO"));
 
             ConfDir = "conf";
             DataDir = "data";
