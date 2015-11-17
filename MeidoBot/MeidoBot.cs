@@ -136,19 +136,6 @@ namespace MeidoBot
         }
 
 
-        public void ReloadPlugins()
-        {
-            log.Message("Plugins reload! Stopping plugins.");
-            // Clear handlers and triggers before stopping the plugins.
-            ircComm.ClearHandlers();
-            meidoComm.ClearTriggers();
-            plugins.StopPlugins();
-
-            LoadPlugins();
-            RegisterSpecialTriggers();
-        }
-
-
         public void Dispose()
         {
             // Disconnect from IRC before stopping the plugins, thereby ensuring that once the order to stop has

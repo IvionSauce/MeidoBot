@@ -93,10 +93,10 @@ namespace MeidoBot
                         MeidoManager.RestartAllBots();
                         return;
 
-                    case "reload":
-                        msg.Reply("Reloading plugins...");
-                        bot.ReloadPlugins();
-                        msg.Reply("Done reloading plugins.");
+                    case "gc-collect":
+                        long before = GC.GetTotalMemory(false);
+                        GC.Collect();
+                        msg.Reply("Garbage Collection Meido: {0:N0} -> {1:N0}", before, GC.GetTotalMemory(true));
                         return;
                     }
                 }
