@@ -22,8 +22,6 @@ namespace MeidoBot
         public Action<IIrcMessage> QueryMessageHandlers { get; private set; }
         public Action<IIrcMessage> QueryActionHandlers { get; private set; }
 
-        public Action<IIrcMessage> TriggerHandlers { get; private set; }
-
         readonly IrcClient irc;
         
         
@@ -49,20 +47,6 @@ namespace MeidoBot
         public void AddQueryActionHandler(Action<IIrcMessage> handler)
         {
             QueryActionHandlers += handler;
-        }
-
-        public void AddTriggerHandler(Action<IIrcMessage> handler)
-        {
-            TriggerHandlers += handler;
-        }
-
-        public void ClearHandlers()
-        {
-            ChannelMessageHandlers = null;
-            ChannelActionHandlers = null;
-            QueryMessageHandlers = null;
-            QueryActionHandlers = null;
-            TriggerHandlers = null;
         }
         
         

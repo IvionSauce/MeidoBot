@@ -201,14 +201,8 @@ namespace MeidoBot
         void OnMessage(object sender, IrcEventArgs e)
         {
             var msg = new IrcMessage(e.Data, plugins.Prefix);
-            
-            if (msg.Trigger != null)
-            {
-                if (ircComm.TriggerHandlers != null)
-                    ircComm.TriggerHandlers(msg);
 
-                meidoComm.FireTrigger(msg);
-            }
+            meidoComm.FireTrigger(msg);
 
             if (msg.Channel != null)
                 ChannelMessage(msg);

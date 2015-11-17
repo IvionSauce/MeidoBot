@@ -27,9 +27,6 @@ namespace MeidoCommon
         void AddQueryMessageHandler(Action<IIrcMessage> handler);
         void AddQueryActionHandler(Action<IIrcMessage> handler);
 
-        [Obsolete("Please use RegisterTrigger instead.")]
-        void AddTriggerHandler(Action<IIrcMessage> handler);
-
         void SendMessage(string target, string message);
         void SendMessage(string target, string message, params object[] args);
 
