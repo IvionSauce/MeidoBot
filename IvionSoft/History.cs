@@ -111,11 +111,11 @@ namespace IvionSoft
             if (Length == 0 || Contains(item))
                 return false;
 
-            for (int i = 0; i < (items.Length - 1); i++)
+            for (int i = 1; i < items.Length; i++)
             {
-                items[i + 1] = items[i];
+                items[i - 1] = items[i];
             }
-            items[0] = item;
+            items[items.Length - 1] = item;
 
             return true;
         }
