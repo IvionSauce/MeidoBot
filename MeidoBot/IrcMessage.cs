@@ -26,9 +26,9 @@ namespace MeidoBot
         readonly ReceiveType type;
         
         
-        public IrcMessage(IrcMessageData messageData, string prefix)
+        public IrcMessage(IrcComm irc, IrcMessageData messageData, string prefix)
         {
-            irc = new IrcComm(messageData.Irc);
+            this.irc = irc;
             type = messageData.Type;
             
             Message = messageData.Message;

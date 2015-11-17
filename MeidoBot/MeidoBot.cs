@@ -36,14 +36,15 @@ namespace MeidoBot
             conf = config;
             currentChannels = new List<string>(conf.Channels);
 
-            // Initialize the IrcComm with the IrcClient for this server/instance.
-            ircComm = new IrcComm(irc);
-
-            // Initialize the MeidoComm with the log factory for this server/instance.
+            // Initialize log factory for this server/instance.
             var logFac = new LogFactory(config.ServerAddress);
-            meidoComm = new MeidoComm(logFac);
             // Set aside some logging for ourself.
             log = logFac.CreateLogger("MEIDO");
+
+            var tManager = new ThrottleManager(log);
+            // Initialize the IrcComm with the IrcClient for this server/instance.
+            ircComm = new IrcComm(irc, tManager);
+            meidoComm = new MeidoComm(tManager, logFac);
 
             LoadPlugins();
             // Setup non-plugin triggers and register them.
@@ -200,9 +201,10 @@ namespace MeidoBot
 
         void OnMessage(object sender, IrcEventArgs e)
         {
-            var msg = new IrcMessage(e.Data, plugins.Prefix);
+            var msg = new IrcMessage(ircComm, e.Data, plugins.Prefix);
 
-            meidoComm.FireTrigger(msg);
+            if (msg.Trigger != null)
+                meidoComm.FireTrigger(msg);
 
             if (msg.Channel != null)
                 ChannelMessage(msg);
@@ -214,13 +216,13 @@ namespace MeidoBot
         void ChannelAction(object sender, ActionEventArgs e)
         {
             if (ircComm.ChannelActionHandlers != null)
-                ircComm.ChannelActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
+                ircComm.ChannelActionHandlers( new IrcMessage(ircComm, e.Data, plugins.Prefix) );
         }
 
         void QueryAction(object sender, ActionEventArgs e)
         {
             if (ircComm.QueryActionHandlers != null)
-                ircComm.QueryActionHandlers( new IrcMessage(e.Data, plugins.Prefix) );
+                ircComm.QueryActionHandlers( new IrcMessage(ircComm, e.Data, plugins.Prefix) );
         }
 
 

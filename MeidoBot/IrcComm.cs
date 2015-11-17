@@ -23,11 +23,13 @@ namespace MeidoBot
         public Action<IIrcMessage> QueryActionHandlers { get; private set; }
 
         readonly IrcClient irc;
+        readonly ThrottleManager throttle;
         
         
-        public IrcComm(IrcClient ircClient)
+        public IrcComm(IrcClient ircClient, ThrottleManager tManager)
         {
             irc = ircClient;
+            throttle = tManager;
         }
 
         
@@ -63,7 +65,10 @@ namespace MeidoBot
             var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
-                irc.SendMessage(SendType.Message, target, msg);
+            {
+                if (throttle.AllowOutput(target))
+                    irc.SendMessage(SendType.Message, target, msg);
+            }
         }
         
         
@@ -91,7 +96,10 @@ namespace MeidoBot
             var messages = MessageTools.Split(message, maxMsgLength);
 
             foreach (string msg in messages)
-                irc.SendMessage(SendType.Notice, target, msg);
+            {
+                if (throttle.AllowOutput(target))
+                    irc.SendMessage(SendType.Notice, target, msg);
+            }
         }
         
         
