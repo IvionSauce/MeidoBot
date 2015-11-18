@@ -11,6 +11,10 @@ namespace MeidoBot
     {
         public static readonly string Version = "0.90.0";
 
+
+        const string abort = "!! Aborting.";
+        const string miniHelp = "MeidoBot.exe <config.xml>";
+
         const string ExampleConfig = @"
 <config>
   <!--Required-->
@@ -27,11 +31,12 @@ namespace MeidoBot
 </config>
 ";
 
+        static string configPath;
+        static Meido bot;
+
+
         static void Main(string[] args)
         {
-            const string abort = "!! Aborting.";
-            const string miniHelp = "MeidoBot.exe <config.xml>";
-
             if (args.Length != 1)
             {
                 Console.WriteLine(miniHelp);
@@ -46,29 +51,54 @@ namespace MeidoBot
                 return;
             }
 
+            configPath = args[0];
+            bot = CreateMeido();
+            bot.Connect();
+        }
 
+
+        public static void RestartMeido()
+        {
+            var newbot = CreateMeido();
+            if (newbot != null)
+            {
+                bot.Disconnect("Restarting...");
+                bot.Dispose();
+                GC.Collect();
+
+                bot = newbot;
+                bot.Connect();
+            }
+        }
+
+
+        static Meido CreateMeido()
+        {
             XElement xmlConfig;
-            string file = args[0];
             try
             {
-                xmlConfig = XElement.Load(file);
+                xmlConfig = XElement.Load(configPath);
             }
             catch (Exception ex)
             {
                 if (ex is FileNotFoundException || ex is DirectoryNotFoundException)
-                    Console.WriteLine("!! Could not find '{0}'.", file);
+                    Console.WriteLine("!! Could not find '{0}'.", configPath);
                 else if (ex is UnauthorizedAccessException)
-                    Console.WriteLine("!! Access to '{0}' is denied.", file);
+                    Console.WriteLine("!! Access to '{0}' is denied.", configPath);
                 else if (ex is XmlException)
                     Console.WriteLine("!! Error parsing XML: " + ex.Message);
                 else
                     throw;
 
                 Console.WriteLine(abort);
-                return;
+                return null;
             }
 
+            return CreateMeido(xmlConfig);
+        }
 
+        static Meido CreateMeido(XElement xmlConfig)
+        {
             MeidoConfig meidoConfig;
             var result = Parsing.ParseConfig(xmlConfig, out meidoConfig);
 
@@ -77,10 +107,9 @@ namespace MeidoBot
             case Parsing.Result.Success:
                 Console.WriteLine("Starting MeidoBot {0}\n", Version);
                 Ssl.EnableTrustAll();
-                new Meido(meidoConfig).Connect();
-                return;
-                
-            // Error reporting.
+                return new Meido(meidoConfig);
+
+                // Error reporting.
             case Parsing.Result.NoServer:
                 Console.WriteLine("Please set a server address for the bot to connect to.");
                 break;
@@ -98,6 +127,7 @@ namespace MeidoBot
                 break;
             }
             Console.WriteLine(abort);
+            return null;
         }
     }
 }

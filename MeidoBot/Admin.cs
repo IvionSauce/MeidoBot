@@ -72,6 +72,10 @@ namespace MeidoBot
                         bot.Disconnect();
                         return;
 
+                    case "restart":
+                        Program.RestartMeido();
+                        return;
+
                     case "gc-collect":
                         long before = GC.GetTotalMemory(false);
                         GC.Collect();
