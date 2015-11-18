@@ -73,6 +73,15 @@ namespace MeidoBot
             info = null;
             return false;
         }
+
+
+        public void Reset()
+        {
+            foreach (var control in controlRates)
+                control.Reset();
+
+            stopThrottle = DateTimeOffset.MinValue;
+        }
     }
 
 
@@ -114,6 +123,11 @@ namespace MeidoBot
             }
 
             return false;
+        }
+
+        public void Reset()
+        {
+            counter = 0;
         }
     }
 }
