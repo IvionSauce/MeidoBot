@@ -35,10 +35,7 @@ namespace MeidoBot
                 log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
 
                 if (FirePredicate(msg, tr))
-                {
-                    log.Verbose("Firing trigger '{0}'.", msg.Trigger);
                     tr.Call(msg);
-                }
             }
         }
 
