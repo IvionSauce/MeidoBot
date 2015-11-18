@@ -36,6 +36,9 @@ class QueryTriggers
 
         for (int i = 1; i < msg.MessageArray.Length; i++)
         {
+            if (string.IsNullOrWhiteSpace(msg.MessageArray[i]))
+                continue;
+
             var result = wIrc.WebInfo(msg.MessageArray[i]);
 
             if (debug)
