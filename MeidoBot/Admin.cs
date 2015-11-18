@@ -60,11 +60,6 @@ namespace MeidoBot
                     var channels = string.Join(", ", irc.GetChannels());
                     msg.Reply(channels);
                     return;
-
-                case "servers":
-                    var servers = string.Join(", ", MeidoManager.GetServers());
-                    msg.Reply(servers);
-                    return;
                 }
                 // Owner only triggers.
                 if (meidoComm.AuthLevel(msg.Nick) == 3)
@@ -74,23 +69,7 @@ namespace MeidoBot
                     case "dc":
                     case "disconnect":
                         msg.Reply("Disconnecting from {0}.", irc.Address);
-                        MeidoManager.StopBot(irc.Address);
-                        return;
-
-                    case "dc-all":
-                    case "disconnect-all":
-                        msg.Reply("Disconnecting from all servers.");
-                        MeidoManager.StopAllBots();
-                        return;
-
-                    case "restart":
-                        msg.Reply("Restarting bot for {0}.", irc.Address);
-                        MeidoManager.RestartBot(irc.Address);
-                        return;
-
-                    case "restart-all":
-                        msg.Reply("Restarting bots for all servers.");
-                        MeidoManager.RestartAllBots();
+                        bot.Disconnect();
                         return;
 
                     case "gc-collect":

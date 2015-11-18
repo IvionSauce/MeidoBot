@@ -37,7 +37,6 @@
     <Compile Include="Ssl.cs" />
     <Compile Include="MessageTools.cs" />
     <Compile Include="Admin.cs" />
-    <Compile Include="MeidoManager.cs" />
     <Compile Include="Throttling\Control.cs" />
     <Compile Include="Throttling\ThrottleManager.cs" />
     <Compile Include="Triggers.cs" />
