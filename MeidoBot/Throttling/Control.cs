@@ -36,6 +36,9 @@ namespace MeidoBot
         readonly TimeSpan duration;
 
 
+        public ThrottleControl(RateControl[] controlRates, double throttleDurMins) :
+        this(controlRates, TimeSpan.FromMinutes(throttleDurMins)) {}
+
         public ThrottleControl(RateControl[] controlRates, TimeSpan throttleDuration)
         {
             if (controlRates == null)
@@ -93,6 +96,8 @@ namespace MeidoBot
         int counter = 0;
         DateTimeOffset firstTime;
 
+
+        public RateControl(int limit, double intervalSecs) : this(limit, TimeSpan.FromSeconds(intervalSecs)) {}
 
         public RateControl(int limit, TimeSpan interval)
         {
