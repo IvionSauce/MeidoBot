@@ -66,8 +66,11 @@ namespace MeidoBot
 
             foreach (string msg in messages)
             {
-                if (throttle.AllowOutput(target, SendMessage))
+                if ( throttle.AllowOutput(target,
+                    s => irc.SendMessage(SendType.Message, target, s)) )
+                {
                     irc.SendMessage(SendType.Message, target, msg);
+                }
             }
         }
         
@@ -97,8 +100,11 @@ namespace MeidoBot
 
             foreach (string msg in messages)
             {
-                if (throttle.AllowOutput(target, SendNotice))
+                if ( throttle.AllowOutput(target,
+                    s => irc.SendMessage(SendType.Notice, target, s)) )
+                {
                     irc.SendMessage(SendType.Notice, target, msg);
+                }
             }
         }
         

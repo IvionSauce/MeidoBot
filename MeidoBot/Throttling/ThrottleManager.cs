@@ -50,13 +50,13 @@ namespace MeidoBot
 
 
         // Returns true if output is allowed. Returns false otherwise.
-        public bool AllowOutput(string target, Action<string, string> notify)
+        public bool AllowOutput(string target, Action<string> notify)
         {
             return !Output(target, notify);
         }
 
         // Returns true if output should be throttled. Returns false otherwise.
-        public bool Output(string target, Action<string, string> notify)
+        public bool Output(string target, Action<string> notify)
         {
             var entry = GetOrAdd(target);
             ThrottleInfo info;
@@ -76,7 +76,7 @@ namespace MeidoBot
                     target, info.ThrottleDuration.TotalMinutes,
                     info.Limit, info.Interval.TotalSeconds);
 
-                notify(target, string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
+                notify(string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
                     "Going silent for {0} minutes. ({1} messages in {2} seconds)",
                     info.ThrottleDuration, info.Limit, info.Interval.TotalSeconds));
 
