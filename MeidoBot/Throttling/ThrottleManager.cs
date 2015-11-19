@@ -50,13 +50,13 @@ namespace MeidoBot
 
 
         // Returns true if output is allowed. Returns false otherwise.
-        public bool AllowOutput(string target)
+        public bool AllowOutput(string target, Action<string, string> notify)
         {
-            return !Output(target);
+            return !Output(target, notify);
         }
 
         // Returns true if output should be throttled. Returns false otherwise.
-        public bool Output(string target)
+        public bool Output(string target, Action<string, string> notify)
         {
             var entry = GetOrAdd(target);
             ThrottleInfo info;
@@ -75,6 +75,10 @@ namespace MeidoBot
                 log.Message("Halting messages and notices to {0} for {1} minutes. ({2} messages in {3} seconds)",
                     target, info.ThrottleDuration.TotalMinutes,
                     info.Limit, info.Interval.TotalSeconds);
+
+                notify(target, string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
+                    "Going silent for {0} minutes. ({1} messages in {2} seconds)",
+                    info.ThrottleDuration, info.Limit, info.Interval.TotalSeconds));
 
                 return true;
             }
@@ -109,21 +113,18 @@ namespace MeidoBot
 
         public SourceEntry()
         {
-            const int smallLimit = 5;
-            var smallInterval = TimeSpan.FromSeconds(2);
-
             const int bigLimit = 15;
             var bigInterval = TimeSpan.FromSeconds(15);
 
             var triggerRates = new RateControl[]
             {
-                new RateControl(smallLimit, smallInterval),
+                new RateControl(5, 2),
                 new RateControl(bigLimit, bigInterval)
             };
 
             var outputRates = new RateControl[]
             {
-                new RateControl(smallLimit, smallInterval),
+                new RateControl(10, 5),
                 new RateControl(bigLimit, bigInterval)
             };
 
