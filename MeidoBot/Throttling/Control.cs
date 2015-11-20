@@ -32,6 +32,18 @@ namespace MeidoBot
             }
         }
 
+        public TimeSpan TimeLeft
+        {
+            get
+            {
+                var timeleft = stopThrottle - DateTimeOffset.Now;
+                if (timeleft > TimeSpan.Zero)
+                    return timeleft;
+                else
+                    return TimeSpan.Zero;
+            }
+        }
+
         readonly RateControl[] controlRates;
         readonly TimeSpan duration;
 

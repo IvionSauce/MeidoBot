@@ -29,10 +29,18 @@ namespace MeidoBot
         {
             var entry = GetOrAdd(msg.ReturnTo);
             // Trigger calling happens sequentially, no need for locking.
+
+            // When trigger throttling is currently active, inform the one calling of that fact.
             if (entry.Triggers.ThrottleActive)
+            {
+                msg.SendNotice("Sorry, currently ignoring trigger calls from {0}. Time remaining: {1}",
+                    msg.ReturnTo, entry.Triggers.TimeLeft);
                 return true;
+            }
 
             ThrottleInfo info;
+            // If this trigger call causes the throttle to activate, share information about why and how long trigger
+            // calling will be ignored.
             if (entry.Triggers.Check(out info))
             {
                 var report =
@@ -70,6 +78,8 @@ namespace MeidoBot
                 info = entry.Output.Check();
             }
 
+            // If this outward message causes the throttle to activate, share information about why and how long we are
+            // going to stay silent (to prevent flooding/spam).
             if (info != null)
             {
                 log.Message("Halting messages and notices to {0} for {1} minutes. ({2} messages in {3} seconds)",
