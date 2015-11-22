@@ -66,11 +66,8 @@ namespace MeidoBot
 
             foreach (string msg in messages)
             {
-                if ( throttle.AllowOutput(target,
-                    s => irc.SendMessage(SendType.Message, target, s)) )
-                {
+                if (AllowOutput(target))
                     irc.SendMessage(SendType.Message, target, msg);
-                }
             }
         }
         
@@ -100,11 +97,8 @@ namespace MeidoBot
 
             foreach (string msg in messages)
             {
-                if ( throttle.AllowOutput(target,
-                    s => irc.SendMessage(SendType.Notice, target, s)) )
-                {
+                if (AllowOutput(target))
                     irc.SendMessage(SendType.Notice, target, msg);
-                }
             }
         }
         
@@ -124,6 +118,10 @@ namespace MeidoBot
             return irc.IsJoined(channel, nick);
         }
 
+
+        // ---------------
+        // Helper methods
+        // ---------------
 
         int CountNonMessageCharacters(int commandLength, int targetLength)
         {
@@ -159,6 +157,20 @@ namespace MeidoBot
             }
 
             return count;
+        }
+
+        // Small wrapper, so we can pass (without cluttering each caller) a messaging lambda that's not subject
+        // to throttling rules.
+        // It's used to inform about the imposed silence, which would otherwise be lost due to the active throttle.
+        bool AllowOutput(string target)
+        {
+            if ( throttle.AllowOutput(target,
+                msg => irc.SendMessage(SendType.Message, target, msg)) )
+            {
+                return true;
+            }
+            else
+                return false;
         }
     }
 }

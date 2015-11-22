@@ -181,8 +181,7 @@ namespace MeidoBot
 
         void OnPart(object sender, PartEventArgs e)
         {
-            
-            if (e.Who == irc.Nickname)
+            if (irc.IsMe(e.Who))
             {
                 log.Message("Parting from {0}", e.Channel);
                 currentChannels.Remove(e.Channel);
@@ -191,9 +190,9 @@ namespace MeidoBot
 
         void OnKick(object sender, KickEventArgs e)
         {
-            if (e.Whom == irc.Nickname)
+            if (irc.IsMe(e.Who))
             {
-                log.Message("Kicked from {0}", e.Channel);
+                log.Message("Kicked from {0} by {1}", e.Channel, e.Whom);
                 currentChannels.Remove(e.Channel);
             }
         }
