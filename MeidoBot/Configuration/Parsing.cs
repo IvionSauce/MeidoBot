@@ -40,7 +40,13 @@ namespace MeidoBot
 
             var channels = ParseChannels(config);
 
+            // Construct meidoconf with previously loaded values.
             meidoconf = new MeidoConfig(nick, server, port, channels, prefix);
+
+            // Set optional properties on meidoconfig.
+            meidoconf.ConfigurationDirectory = (string)config.Element("conf-dir");
+            meidoconf.DataDirectory = (string)config.Element("data-dir");
+
             return Result.Success;
         }
 

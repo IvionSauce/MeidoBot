@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -28,6 +27,8 @@ namespace MeidoBot
     <channel>#your</channel>
     <channel>#channels</channel>
   </channels>
+  <conf-dir><!--Directory where configuration files will be stored--></conf-dir>
+  <data-dir><!--Directory where data files will be stored--></data-dir>
 </config>
 ";
 
@@ -64,9 +65,9 @@ namespace MeidoBot
             {
                 bot.Disconnect("Restarting...");
                 bot.Dispose();
-                GC.Collect();
 
                 bot = newbot;
+                GC.Collect();
                 bot.Connect();
             }
         }
