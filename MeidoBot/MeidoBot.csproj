@@ -31,15 +31,16 @@
     <Compile Include="MeidoComm.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="Logging.cs" />
-    <Compile Include="MeidoConfig.cs" />
-    <Compile Include="Parsing.cs" />
     <Compile Include="Authentication.cs" />
-    <Compile Include="Ssl.cs" />
     <Compile Include="MessageTools.cs" />
     <Compile Include="Admin.cs" />
     <Compile Include="Throttling\Control.cs" />
     <Compile Include="Throttling\ThrottleManager.cs" />
     <Compile Include="Triggers.cs" />
+    <Compile Include="Configuration\MeidoConfig.cs" />
+    <Compile Include="Configuration\Parsing.cs" />
+    <Compile Include="Configuration\Ssl.cs" />
+    <Compile Include="Configuration\Ignores.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -58,5 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
+    <Folder Include="Configuration\" />
   </ItemGroup>
 </Project>
