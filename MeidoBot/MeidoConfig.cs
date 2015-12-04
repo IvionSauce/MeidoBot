@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -14,6 +15,34 @@ namespace MeidoBot
         public readonly string TriggerPrefix;
 
         public const int DefaultPort = 6667;
+
+
+        string basePath;
+        string _confDir;
+        public string ConfigurationDirectory
+        {
+            get { return _confDir; }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    _confDir = Path.Combine(basePath, "conf");
+                else
+                    _confDir = value;
+            }
+        }
+
+        string _dataDir;
+        public string DataDirectory
+        {
+            get { return _dataDir; }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    _dataDir = Path.Combine(basePath, "data");
+                else
+                    _dataDir = value;
+            }
+        }
 
 
         public MeidoConfig(string nickname, string address, string triggerPrefix) :
@@ -60,6 +89,8 @@ namespace MeidoBot
                 throw new ArgumentException("Cannot be empty or whitespace.", "address");
             else if (!IsValidTriggerPrefix(triggerPrefix))
                 throw new ArgumentException("Cannot contain whitespace characters.", "triggerPrefix");
+
+            SetBasePath(GetDefaultBasePath());
         }
 
 
@@ -82,6 +113,38 @@ namespace MeidoBot
                 return true;
             else
                 return false;
+        }
+
+
+        public void SetBasePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("Cannot be null, empty or whitespace", "path");
+
+            basePath = path;
+            ConfigurationDirectory = null;
+            DataDirectory = null;
+        }
+
+
+        public string GetDefaultBasePath()
+        {
+            string homePath;
+            string meidoDir;
+            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                homePath = Environment.GetEnvironmentVariable("HOME");
+                meidoDir = ".meidobot";
+            }
+            else
+            {
+                homePath = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+                meidoDir = "meidobot";
+            }
+            var serverDir = ServerAddress.Replace('.', '-');
+
+            return Path.Combine(homePath, meidoDir, serverDir);
         }
     }
 }
