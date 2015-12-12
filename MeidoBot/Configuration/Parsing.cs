@@ -16,6 +16,24 @@ namespace MeidoBot
             InvalidPortNumber
         }
 
+        public const string ExampleConfig = @"
+<config>
+  <!--Required-->
+  <nick>MeidoTest</nick>
+  <server>irc.server.address</server>
+  
+  <!--Optional-->
+  <port>6667</port>
+  <trigger-prefix>.</trigger-prefix>
+  <channels>
+    <channel>#your</channel>
+    <channel>#channels</channel>
+  </channels>
+  <conf-dir><!--Directory where configuration files will be stored--></conf-dir>
+  <data-dir><!--Directory where data files will be stored--></data-dir>
+</config>
+";
+
 
         public static Result ParseConfig(XElement config, out MeidoConfig meidoconf)
         {
