@@ -10,6 +10,20 @@ namespace MeidoBot
 {
     class Meido : IDisposable
     {
+        volatile Ignores _ignores = new Ignores();
+        public Ignores OtherBots
+        {
+            get { return _ignores; }
+            set
+            {
+                if (value == null)
+                    _ignores = new Ignores();
+                else
+                    _ignores = value;
+            }
+        }
+
+
         readonly IrcClient irc = new IrcClient();
 
         readonly Admin admin;
@@ -89,8 +103,8 @@ namespace MeidoBot
             irc.OnChannelMessage += new IrcEventHandler(OnMessage);
             irc.OnQueryMessage += new IrcEventHandler(OnMessage);
 
-            irc.OnChannelAction += new ActionEventHandler(ChannelAction);
-            irc.OnQueryAction += new ActionEventHandler(QueryAction);
+            irc.OnChannelAction += new ActionEventHandler(OnAction);
+            irc.OnQueryAction += new ActionEventHandler(OnAction);
 
             irc.OnPart += new PartEventHandler(OnPart);
             irc.OnKick += new KickEventHandler(OnKick);
@@ -200,41 +214,28 @@ namespace MeidoBot
 
         void OnMessage(object sender, IrcEventArgs e)
         {
-            var msg = new IrcMessage(ircComm, e.Data, plugins.Prefix);
-
-            if (msg.Trigger != null)
-                meidoComm.FireTrigger(msg);
-
-            if (msg.Channel != null)
-                ChannelMessage(msg);
-            else
-                QueryMessage(msg);
+            DoHandlers(e, ircComm.ChannelMessageHandlers, ircComm.QueryMessageHandlers);
         }
 
-
-        void ChannelAction(object sender, ActionEventArgs e)
+        void OnAction(object sender, ActionEventArgs e)
         {
-            if (ircComm.ChannelActionHandlers != null)
-                ircComm.ChannelActionHandlers( new IrcMessage(ircComm, e.Data, plugins.Prefix) );
+            DoHandlers(e, ircComm.ChannelActionHandlers, ircComm.QueryActionHandlers);
         }
 
-        void QueryAction(object sender, ActionEventArgs e)
+        void DoHandlers(IrcEventArgs e, Action<IIrcMessage> channelHandler, Action<IIrcMessage> queryHandler)
         {
-            if (ircComm.QueryActionHandlers != null)
-                ircComm.QueryActionHandlers( new IrcMessage(ircComm, e.Data, plugins.Prefix) );
-        }
+            var msg = new IrcMessage(ircComm, e.Data, conf.TriggerPrefix);
 
+            if (!OtherBots.Contains(msg.Nick))
+            {
+                if (msg.Trigger != null)
+                    meidoComm.FireTrigger(msg);
 
-        void ChannelMessage(IrcMessage msg)
-        {
-            if (ircComm.ChannelMessageHandlers != null)
-                ircComm.ChannelMessageHandlers(msg);
-        }
-
-        void QueryMessage(IrcMessage msg)
-        {
-            if (ircComm.QueryMessageHandlers != null)
-                ircComm.QueryMessageHandlers(msg);
+                if (channelHandler != null && msg.Channel != null)
+                    channelHandler(msg);
+                else if (queryHandler != null)
+                    queryHandler(msg);
+            }
         }
 
 
