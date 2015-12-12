@@ -42,7 +42,8 @@ namespace MeidoBot
 
         public Logger CreateLogger(string name)
         {
-            return new Logger(Server, name, Verbosity);
+            // Just log to console for now.
+            return Logger.ConsoleLogger(name);
         }
     }
 
@@ -56,20 +57,27 @@ namespace MeidoBot
             Errors
         }
 
-        readonly string msgPrefix;
-        readonly Verbosity verbosity;
+        readonly string loggerName;
+        readonly Action<string> output;
+        readonly Verbosity outputRestraint;
 
 
-        internal Logger(string server, string name, Verbosity verb)
+        internal Logger(string name, Action<string> output, Verbosity verb)
         {
-            msgPrefix = string.Format("[{0}] {1}", server, name);
-            verbosity = verb;
+            loggerName = name;
+            this.output = output;
+            outputRestraint = verb;
+        }
+
+        public static Logger ConsoleLogger(string name)
+        {
+            return new Logger(name, Console.WriteLine, Verbosity.Verbose);
         }
 
 
         public void Message(string message, params object[] args)
         {
-            if (verbosity == Verbosity.Normal || verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Normal || outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(string.Format(message, args), Verbosity.Normal);
             }
@@ -77,7 +85,7 @@ namespace MeidoBot
 
         public void Message(string message)
         {
-            if (verbosity == Verbosity.Normal || verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Normal || outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(message, Verbosity.Normal);
             }
@@ -85,7 +93,7 @@ namespace MeidoBot
 
         public void Message(IList<string> messages)
         {
-            if (verbosity == Verbosity.Normal || verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Normal || outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(messages, Verbosity.Normal);
             }
@@ -94,7 +102,7 @@ namespace MeidoBot
 
         public void Verbose(string message, params object[] args)
         {
-            if (verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(string.Format(message, args), Verbosity.Verbose);
             }
@@ -102,7 +110,7 @@ namespace MeidoBot
 
         public void Verbose(string message)
         {
-            if (verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(message, Verbosity.Verbose);
             }
@@ -110,7 +118,7 @@ namespace MeidoBot
 
         public void Verbose(IList<string> messages)
         {
-            if (verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Verbose)
             {
                 OutputLog(messages, Verbosity.Verbose);
             }
@@ -135,7 +143,7 @@ namespace MeidoBot
         public void Error(string errorMsg, Exception ex)
         {
             string msg;
-            if (verbosity == Verbosity.Verbose)
+            if (outputRestraint == Verbosity.Verbose)
                 msg = string.Concat(errorMsg, "\n", ex.ToString());
             else
                 msg = string.Concat(errorMsg, " ", ex.Message);
@@ -144,42 +152,42 @@ namespace MeidoBot
         }
 
 
-        void OutputLog(string message, Verbosity verb)
+        void OutputLog(string message, Verbosity msgType)
         {
-            var logMsg = FormatLogEntry(DateTime.Now, verb) + message;
+            var logMsg = FormatLogPre(DateTime.Now, msgType) + message;
 
-            Console.WriteLine(logMsg);
+            output(logMsg);
         }
 
-        void OutputLog(IList<string> messages, Verbosity verb)
+        void OutputLog(IList<string> messages, Verbosity msgType)
         {
-            var pre = FormatLogEntry(DateTime.Now, verb);
-            foreach(string msg in messages)
+            var pre = FormatLogPre(DateTime.Now, msgType);
+            foreach (string msg in messages)
             {
                 var logMsg = pre + msg;
-                Console.WriteLine(logMsg);
+                output(logMsg);
             }
         }
 
 
-        string FormatLogEntry(DateTime dt, Verbosity verb)
+        string FormatLogPre(DateTime dt, Verbosity msgType)
         {
             var time = dt.ToString("s");
 
             string prefix;
-            switch(verb)
+            switch (msgType)
             {
             case Verbosity.Normal:
             case Verbosity.Verbose:
                 prefix = string.Format("{0} {1}[{2}] ",
-                                       time, msgPrefix, Thread.CurrentThread.ManagedThreadId);
+                    time, loggerName, Thread.CurrentThread.ManagedThreadId);
                 break;
             case Verbosity.Errors:
                 prefix = string.Format("!! {0} {1}[{2}] ",
-                                       time, msgPrefix, Thread.CurrentThread.ManagedThreadId);
+                    time, loggerName, Thread.CurrentThread.ManagedThreadId);
                 break;
             default:
-                throw new InvalidOperationException("Unexpected Verbosity.");
+                throw new InvalidOperationException("Unexpected Message Type Verbosity.");
             }
             return prefix;
         }
