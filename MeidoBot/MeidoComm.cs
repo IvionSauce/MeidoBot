@@ -1,7 +1,7 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using MeidoCommon;
-using Meebey.SmartIrc4net;
 
 
 namespace MeidoBot
@@ -16,15 +16,15 @@ namespace MeidoBot
         readonly UserAuthManager userAuths;
 
 
-        public MeidoComm(ThrottleManager tManager, LogFactory factory)
+        public MeidoComm(MeidoConfig conf, ThrottleManager tManager, LogFactory factory)
         {
+            ConfDir = conf.ConfigurationDirectory;
+            DataDir = conf.DataDirectory;
+
             logFac = factory;
             triggers = new Triggers(tManager, logFac.CreateLogger("MEIDO"));
 
-            ConfDir = "conf";
-            DataDir = "data";
-
-            string authPath = System.IO.Path.Combine(ConfDir, "Auth.xml");
+            string authPath = ConfPathTo("Auth.xml");
             userAuths = new UserAuthManager(authPath, logFac.CreateLogger("AUTH"));
         }
 
@@ -58,6 +58,16 @@ namespace MeidoBot
         public void FireTrigger(IrcMessage msg)
         {
             triggers.FireTrigger(msg);
+        }
+
+
+        public string ConfPathTo(string filename)
+        {
+            return Path.Combine(ConfDir, filename);
+        }
+        public string DataPathTo(string filename)
+        {
+            return Path.Combine(DataDir, filename);
         }
 
 

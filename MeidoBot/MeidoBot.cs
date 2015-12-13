@@ -48,7 +48,7 @@ namespace MeidoBot
 
             // We need these parameters for events, store them.
             conf = config;
-            currentChannels = new List<string>(conf.Channels);
+            currentChannels = new List<string>(config.Channels);
 
             // Initialize log factory for this server/instance.
             var logFac = new LogFactory(config.ServerAddress);
@@ -58,7 +58,7 @@ namespace MeidoBot
             var tManager = new ThrottleManager(log);
             // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc, tManager);
-            meidoComm = new MeidoComm(tManager, logFac);
+            meidoComm = new MeidoComm(config, tManager, logFac);
 
             LoadPlugins();
             // Setup non-plugin triggers and register them.
