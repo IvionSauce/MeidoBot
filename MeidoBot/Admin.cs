@@ -69,7 +69,7 @@ namespace MeidoBot
                     case "dc":
                     case "disconnect":
                         msg.Reply("Disconnecting from {0}.", irc.Address);
-                        bot.Disconnect();
+                        bot.Dispose();
                         return;
 
                     case "restart":
