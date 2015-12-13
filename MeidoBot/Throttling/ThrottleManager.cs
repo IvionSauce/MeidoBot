@@ -44,9 +44,9 @@ namespace MeidoBot
             if (entry.Triggers.Check(out info))
             {
                 var report =
-                    string.Format("Ignoring trigger calls from {0} for {1} minutes. ({2} calls in {3} seconds)",
-                        msg.ReturnTo, info.ThrottleDuration.TotalMinutes,
-                        info.Limit, info.Interval.TotalSeconds);
+                    string.Format( "Ignoring trigger calls from {0} for {1}. ({2} calls in {3})",
+                        msg.ReturnTo, Short(info.ThrottleDuration),
+                        info.Limit, Short(info.Interval) );
                 
                 msg.Reply(report);
                 log.Message(report);
@@ -82,18 +82,29 @@ namespace MeidoBot
             // going to stay silent (to prevent flooding/spam).
             if (info != null)
             {
-                log.Message("Halting messages and notices to {0} for {1} minutes. ({2} messages in {3} seconds)",
-                    target, info.ThrottleDuration.TotalMinutes,
-                    info.Limit, info.Interval.TotalSeconds);
+                log.Message( "Halting messages and notices to {0} for {1}. ({2} messages in {3})",
+                    target, Short(info.ThrottleDuration),
+                    info.Limit, Short(info.Interval) );
 
-                notify(string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
-                    "Going silent for {0} minutes. ({1} messages in {2} seconds)",
-                    info.ThrottleDuration, info.Limit, info.Interval.TotalSeconds));
+                notify( string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
+                    "Going silent for {0}. ({1} messages in {2})",
+                    Short(info.ThrottleDuration), info.Limit, Short(info.Interval)) );
 
                 return true;
             }
 
             return false;
+        }
+
+
+        string Short(TimeSpan duration)
+        {
+            if (duration.TotalHours >= 1)
+                return duration.TotalHours + "h";
+            if (duration.TotalMinutes >= 1)
+                return duration.TotalMinutes + "m";
+
+            return duration.TotalSeconds + "s";
         }
 
 
