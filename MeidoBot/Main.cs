@@ -10,8 +10,6 @@ namespace MeidoBot
     {
         public static readonly string Version = "0.90.0";
 
-
-        const string abort = "!! Aborting.";
         const string miniHelp = "MeidoBot.exe <config.xml>";
 
 
@@ -36,14 +34,18 @@ namespace MeidoBot
             }
 
             configPath = args[0];
-            bot = CreateMeido();
+            bot = CreateMeido(Logger.ConsoleLogger("Main"));
             bot.Connect();
         }
 
 
         public static void RestartMeido()
         {
-            var newbot = CreateMeido();
+            // TODO: Make the caller supply the logger.
+            var log = Logger.ConsoleLogger("Main");
+            log.Message("Attempting to restart meido...");
+
+            var newbot = CreateMeido(log);
             if (newbot != null)
             {
                 bot.Disconnect("Restarting...");
@@ -52,11 +54,15 @@ namespace MeidoBot
                 bot = newbot;
                 GC.Collect();
                 bot.Connect();
+
+                log.Message("Restart successful!");
             }
+            else
+                log.Error("Restart failed.");
         }
 
 
-        static Meido CreateMeido()
+        static Meido CreateMeido(Logger log)
         {
             XElement xmlConfig;
             try
@@ -66,51 +72,53 @@ namespace MeidoBot
             catch (Exception ex)
             {
                 if (ex is FileNotFoundException || ex is DirectoryNotFoundException)
-                    Console.WriteLine("!! Could not find '{0}'.", configPath);
+                    log.Error("Could not find '{0}'.", configPath);
                 else if (ex is UnauthorizedAccessException)
-                    Console.WriteLine("!! Access to '{0}' is denied.", configPath);
+                    log.Error("Access to '{0}' is denied.", configPath);
                 else if (ex is XmlException)
-                    Console.WriteLine("!! Error parsing XML: " + ex.Message);
+                    log.Error("Error parsing XML: " + ex.Message);
                 else
                     throw;
-
-                Console.WriteLine(abort);
+                
                 return null;
             }
 
-            return CreateMeido(xmlConfig);
+            return CreateMeido(xmlConfig, log);
         }
 
-        static Meido CreateMeido(XElement xmlConfig)
+        static Meido CreateMeido(XElement xmlConfig, Logger log)
         {
             MeidoConfig meidoConfig;
             var result = Parsing.ParseConfig(xmlConfig, out meidoConfig);
 
+            Action<string> report =
+                errorMsg => log.Error("Missing or incorrect settings in '{0}': {1}", configPath, errorMsg);
+
             switch (result)
             {
             case Parsing.Result.Success:
-                Console.WriteLine("Starting MeidoBot {0}\n", Version);
+                log.Message("Starting MeidoBot {0}", Version);
                 Ssl.EnableTrustAll();
                 return new Meido(meidoConfig);
 
-                // Error reporting.
+            // Error reporting.
             case Parsing.Result.NoServer:
-                Console.WriteLine("Please set a server address for the bot to connect to.");
+                report("Please set a server address for the bot to connect to.");
                 break;
             case Parsing.Result.NoNickname:
-                Console.WriteLine("Please set a nickname for the bot.");
+                report("Please set a nickname for the bot.");
                 break;
             case Parsing.Result.InvalidPortNumber:
-                Console.WriteLine("Given port number was invalid.");
+                report("Given port number was invalid.");
                 break;
             case Parsing.Result.TriggerWhitespace:
-                Console.WriteLine("Trigger prefix cannot contain whitespace.");
+                report("Trigger prefix cannot contain whitespace.");
                 break;
             default:
-                Console.WriteLine("Unknown error occurred! (This should not happen)");
+                log.Error("Unknown error occurred! (This should not happen)");
                 break;
             }
-            Console.WriteLine(abort);
+
             return null;
         }
     }
