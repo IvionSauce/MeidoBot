@@ -53,7 +53,7 @@ namespace MeidoBot
             // Initialize log factory for this server/instance.
             var logFac = new LogFactory(config.ServerAddress);
             // Set aside some logging for ourself.
-            log = logFac.CreateLogger("MEIDO");
+            log = logFac.CreateLogger("Meido");
 
             var tManager = new ThrottleManager(log);
             // Initialize the IrcComm with the IrcClient for this server/instance.

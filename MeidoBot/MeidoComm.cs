@@ -22,10 +22,10 @@ namespace MeidoBot
             DataDir = conf.DataDirectory;
 
             logFac = factory;
-            triggers = new Triggers(tManager, logFac.CreateLogger("MEIDO"));
+            triggers = new Triggers(tManager, logFac.CreateLogger("Meido"));
 
             string authPath = ConfPathTo("Auth.xml");
-            userAuths = new UserAuthManager(authPath, logFac.CreateLogger("AUTH"));
+            userAuths = new UserAuthManager(authPath, logFac.CreateLogger("Auth"));
         }
 
 
