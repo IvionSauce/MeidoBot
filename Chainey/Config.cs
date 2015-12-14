@@ -24,12 +24,11 @@ class Config
     
     public Config()
     {
-        Location = "data/chainey.sqlite";
         Order = 3;
         Threads = 2;
 
         LearningChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {"#sankakucomplex", "#SteelGolem", "#blaat"};
+        {"#sankakucomplex", "#SteelGolem", "#hisouben"};
 
         RandomResponseChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         //{"#sankakucomplex", "#SteelGolem", "#blaat"};

@@ -63,6 +63,7 @@ public class IrcChainey : IMeidoHook
         meido = meidoComm;
         log = meido.CreateLogger(this);
 
+        conf.Location = meidoComm.DataPathTo("chainey.sqlite");
         chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
 
