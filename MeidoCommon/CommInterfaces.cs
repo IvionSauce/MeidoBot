@@ -7,6 +7,9 @@ namespace MeidoCommon
         string ConfDir { get; }
         string DataDir { get; }
 
+        string ConfPathTo(string filename);
+        string DataPathTo(string filename);
+
         ILog CreateLogger(IMeidoHook plugin);
 
         void RegisterTrigger(string trigger, Action<IIrcMessage> callback);
