@@ -89,7 +89,10 @@ namespace MeidoBot
                     log.Message("- " + s);
             }
             else
+            {
                 log.Error("Not loading plugins due to failed IO checks.");
+                plugins.DummyInit();
+            }
         }
 
 

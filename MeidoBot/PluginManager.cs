@@ -48,6 +48,12 @@ namespace MeidoBot
             Count = count;
         }
 
+        public void DummyInit()
+        {
+            pluginContainer = new IMeidoHook[0];
+            Count = 0;
+        }
+
 
         public string[] GetDescriptions()
         {
