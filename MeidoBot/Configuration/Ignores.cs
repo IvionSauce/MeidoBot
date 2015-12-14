@@ -42,10 +42,15 @@ namespace MeidoBot
             {
                 lines = File.ReadAllLines(path);
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                log.Verbose("Error loading ignores from {0} ({1})", path, ex.Message);
-                return new Ignores();
+                if (ex is IOException || ex is AccessViolationException)
+                {
+                    log.Verbose("Error loading ignores from {0} ({1})", path, ex.Message);
+                    return new Ignores();
+                }
+                else
+                    throw;
             }
 
             var tmp = new List<string>(lines.Length);
