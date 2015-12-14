@@ -10,7 +10,7 @@ namespace MeidoBot
 {
     class Meido : IDisposable
     {
-        volatile Ignores _ignores = new Ignores();
+        volatile Ignores _ignores;
         public Ignores OtherBots
         {
             get { return _ignores; }
@@ -65,6 +65,8 @@ namespace MeidoBot
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
 
+            OtherBots = Ignores.FromFile(meidoComm.ConfPathTo("OtherBots"), log);
+
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
             SetHandlers();
@@ -75,13 +77,19 @@ namespace MeidoBot
         {
             plugins = new PluginManager(conf.TriggerPrefix);
 
-            // Load plugins and announce we're doing so.
-            log.Message("Loading plugins...");
-            plugins.LoadPlugins(ircComm, meidoComm);
-            // Print number and descriptions of loaded plugins.
-            log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
-            foreach (string s in plugins.GetDescriptions())
-                log.Message("- " + s);
+            // Only load plugins if IO checks succeed.
+            if (PathTools.CheckIO(conf, log))
+            {
+                // Load plugins and announce we're doing so.
+                log.Message("Loading plugins...");
+                plugins.LoadPlugins(ircComm, meidoComm);
+                // Print number and descriptions of loaded plugins.
+                log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
+                foreach (string s in plugins.GetDescriptions())
+                    log.Message("- " + s);
+            }
+            else
+                log.Error("Not loading plugins due to failed IO checks.");
         }
 
 
