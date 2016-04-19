@@ -77,6 +77,10 @@ namespace IvionWebSoft
     public class SearchResults : WebResource, IEnumerable<SearchResult>
     {
         public SearchResult[] Results { get; private set; }
+        public int Count
+        {
+            get { return Results.Length; }
+        }
 
 
         public SearchResults(WebResource resource) : base(resource)
