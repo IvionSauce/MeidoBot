@@ -39,32 +39,69 @@ public class WebSearches : IMeidoHook
     {
         irc = ircComm;
         meido.RegisterTrigger("g", GoogleSearch);
+        meido.RegisterTrigger("yt", YtSearch);
+        meido.RegisterTrigger("mal", MalSearch);
+        meido.RegisterTrigger("anidb", AnidbSearch);
+        meido.RegisterTrigger("mu", MuSearch);
+        // yes: mal, anidb, mangaupdates(mu), youtube(yt)
+        // maybe: wikipedia, urbandict, dict, animenewsnetwork
     }
 
 
     void GoogleSearch(IIrcMessage e)
     {
+        ExecuteSearch(e, Site.None);
+    }
+
+    void YtSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.YouTube);
+    }
+
+    void MalSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.MyAnimeList);
+    }
+
+    void AnidbSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.AniDb);
+    }
+
+    void MuSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.MangaUpdates);
+    }
+
+
+    void ExecuteSearch(IIrcMessage e, Site site)
+    {
         if (e.MessageArray.Length > 1)
         {
             var searchTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-            var results = GoogleTools.Search(searchTerms);
-            
+            var results = site.Search(searchTerms);
+
             if (results.Success)
-            {
-                const int maxDisplayed = 3;
-                int displayed = 0;
-                foreach (var result in results)
-                {
-                    if (displayed >= maxDisplayed)
-                        break;
-                    
-                    var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
-                    var msg = string.Format("[{0}] {1} :: {2}", displayed + 1, title, result.Address);
-                    irc.SendMessage(e.ReturnTo, msg);
-                    
-                    displayed++;
-                }
-            } // if
-        } // if
+                ProcessSearch(results, site.DisplayMax, e.ReturnTo);
+            else
+                e.Reply("Error executing search: " + results.Exception.Message);
+        }
+    }
+
+
+    void ProcessSearch(SearchResults results, int displayMax, string target)
+    {
+        int displayed = 0;
+        foreach (var result in results)
+        {
+            if (displayed >= displayMax)
+                break;
+
+            var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
+            var msg = string.Format("[{0}] {1} :: {2}", displayed + 1, title, result.Address);
+            irc.SendMessage(target, msg);
+
+            displayed++;
+        }
     }
 }
