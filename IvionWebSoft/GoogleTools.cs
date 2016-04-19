@@ -17,19 +17,29 @@ namespace IvionWebSoft
             @"(<b>)(.*?)(</b>)");
 
 
-        public static SearchResults Search(string searchTerm)
+        public static SearchResults Search(string query)
         {
-            if (searchTerm == null)
-                throw new ArgumentNullException("searchTerm");
+            if (query == null)
+                throw new ArgumentNullException("query");
 
-            const string searchUrl = "https://www.google.com/search?q={0}&ie=utf-8&oe=utf-8&hl=en";
-
-            var currentSearch = string.Format(searchUrl, Uri.EscapeDataString(searchTerm));
-            var results = WebString.Download(currentSearch);
+            var results = WebString.Download( GoogleUrl(query) );
             if (!results.Success)
                 return new SearchResults(results);
 
             var matches = resultsRegexp.Matches(results.Document);
+            var parsedResults = ParseMatches(matches);
+
+            return new SearchResults(results, parsedResults);
+        }
+
+        static string GoogleUrl(string searchQuery)
+        {
+            const string searchUrl = "https://www.google.com/search?q={0}&ie=utf-8&oe=utf-8&hl=en";
+            return string.Format(searchUrl, Uri.EscapeDataString(searchQuery));
+        }
+
+        static SearchResult[] ParseMatches(MatchCollection matches)
+        {
             var parsedResults = new SearchResult[matches.Count];
             for (int i = 0; i < matches.Count; i++)
             {
@@ -45,7 +55,7 @@ namespace IvionWebSoft
                 }
             }
 
-            return new SearchResults(results, parsedResults);
+            return parsedResults;
         }
 
 
