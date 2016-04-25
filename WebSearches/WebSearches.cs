@@ -43,6 +43,7 @@ public class WebSearches : IMeidoHook
         meido.RegisterTrigger("mal", MalSearch);
         meido.RegisterTrigger("anidb", AnidbSearch);
         meido.RegisterTrigger("mu", MuSearch);
+        meido.RegisterTrigger("vndb", VndbSearch);
         // maybe: wikipedia, urbandict, dict, animenewsnetwork
     }
 
@@ -72,6 +73,11 @@ public class WebSearches : IMeidoHook
         ExecuteSearch(e, Site.MangaUpdates);
     }
 
+    void VndbSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.VnDb);
+    }
+
 
     void ExecuteSearch(IIrcMessage e, Site site)
     {
@@ -91,7 +97,6 @@ public class WebSearches : IMeidoHook
                 e.Reply("Error executing search: " + results.Exception.Message);
         }
     }
-
 
     void PrintResults(SearchResults results, Site site, string target)
     {
