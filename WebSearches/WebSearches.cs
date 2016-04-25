@@ -82,14 +82,19 @@ public class WebSearches : IMeidoHook
             var results = site.Search(searchTerms);
 
             if (results.Success)
-                ProcessSearch(results, site.DisplayMax, e.ReturnTo);
+            {
+                if (results.Count > 0)
+                    PrintSearch(results, site.DisplayMax, e.ReturnTo);
+                else
+                    e.Reply("Sorry, the query '{0}' didn't result in any hits.", searchTerms);
+            }
             else
                 e.Reply("Error executing search: " + results.Exception.Message);
         }
     }
 
 
-    void ProcessSearch(SearchResults results, int displayMax, string target)
+    void PrintSearch(SearchResults results, int displayMax, string target)
     {
         int displayed = 0;
         foreach (var result in results)
