@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using IvionWebSoft;
 
 
@@ -11,6 +13,8 @@ public class Site
     {
         get { return "site:" + SiteUrl.Host; }
     }
+
+    public Regex SiteNameRegexp { get; set; }
 
 
     public static readonly Site None;
@@ -26,8 +30,12 @@ public class Site
         YouTube = new Site("https://www.youtube.com/", 3);
         MyAnimeList = new Site("http://myanimelist.net/", 2);
         AniDb = new Site("https://anidb.net/", 2);
-        MangaUpdates = new Site("https://www.mangaupdates.com/", 2);
-        VnDb = new Site("https://vndb.org/", 2);
+
+        MangaUpdates = new Site("https://www.mangaupdates.com/", 2)
+        { SiteNameRegexp = new Regex("^Baka-Updates Manga - ") } ;
+
+        VnDb = new Site("https://vndb.org/", 2)
+        { SiteNameRegexp = null };
     }
 
     Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
@@ -36,12 +44,14 @@ public class Site
     {
         SiteUrl = url;
         DisplayMax = displayMax;
+        SiteNameRegexp = new Regex(" - [a-zA-Z.]+$");
     }
 
     public Site()
     {
         SiteUrl = null;
         DisplayMax = 3;
+        SiteNameRegexp = null;
     }
 
 
@@ -54,5 +64,33 @@ public class Site
             finalQuery = GoogleSiteDeclaration + " " + searchQuery;
         
         return GoogleTools.Search(finalQuery);
+    }
+
+
+    public IEnumerable<string> ProcessResults(SearchResults results)
+    {
+        int displayed = 0;
+        foreach (var result in results)
+        {
+            if (displayed >= DisplayMax)
+                break;
+
+            var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
+            title = RemoveSiteName(title);
+
+            var msg = string.Format("[{0}] {1} :: {2}", displayed + 1, title, result.Address);
+            yield return msg;
+
+            displayed++;
+        }
+    }
+
+
+    public string RemoveSiteName(string pageTitle)
+    {
+        if (SiteNameRegexp == null)
+            return pageTitle;
+        else
+            return SiteNameRegexp.Replace(pageTitle, string.Empty);
     }
 }

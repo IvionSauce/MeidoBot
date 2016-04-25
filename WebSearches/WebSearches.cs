@@ -43,7 +43,6 @@ public class WebSearches : IMeidoHook
         meido.RegisterTrigger("mal", MalSearch);
         meido.RegisterTrigger("anidb", AnidbSearch);
         meido.RegisterTrigger("mu", MuSearch);
-        // yes: mal, anidb, mangaupdates(mu), youtube(yt)
         // maybe: wikipedia, urbandict, dict, animenewsnetwork
     }
 
@@ -84,7 +83,7 @@ public class WebSearches : IMeidoHook
             if (results.Success)
             {
                 if (results.Count > 0)
-                    PrintSearch(results, site.DisplayMax, e.ReturnTo);
+                    PrintResults(results, site, e.ReturnTo);
                 else
                     e.Reply("Sorry, the query '{0}' didn't result in any hits.", searchTerms);
             }
@@ -94,19 +93,9 @@ public class WebSearches : IMeidoHook
     }
 
 
-    void PrintSearch(SearchResults results, int displayMax, string target)
+    void PrintResults(SearchResults results, Site site, string target)
     {
-        int displayed = 0;
-        foreach (var result in results)
-        {
-            if (displayed >= displayMax)
-                break;
-
-            var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
-            var msg = string.Format("[{0}] {1} :: {2}", displayed + 1, title, result.Address);
+        foreach (var msg in site.ProcessResults(results))
             irc.SendMessage(target, msg);
-
-            displayed++;
-        }
     }
 }
