@@ -18,6 +18,7 @@ public class Site
     public static readonly Site MyAnimeList;
     public static readonly Site AniDb;
     public static readonly Site MangaUpdates;
+    public static readonly Site VnDb;
 
     static Site()
     {
@@ -26,6 +27,7 @@ public class Site
         MyAnimeList = new Site("http://myanimelist.net/", 2);
         AniDb = new Site("https://anidb.net/", 2);
         MangaUpdates = new Site("https://www.mangaupdates.com/", 2);
+        VnDb = new Site("https://vndb.org/", 2);
     }
 
     Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
