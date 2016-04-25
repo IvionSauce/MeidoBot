@@ -35,7 +35,7 @@ public class Site
         { SiteNameRegexp = new Regex("^Baka-Updates Manga - ") } ;
 
         VnDb = new Site("https://vndb.org/", 2)
-        { SiteNameRegexp = null };
+        { SiteNameRegexp = new Regex(" - The Visual Novel Database$") };
     }
 
     Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
