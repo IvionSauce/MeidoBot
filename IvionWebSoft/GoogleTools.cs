@@ -8,10 +8,12 @@ namespace IvionWebSoft
 {
     public static class GoogleTools
     {
-        // Look upon this Regex and despair, yay.
         // Example: <h3 class="r"><a href="/url?q=http://epguides.com/CowboyBebop/&amp;sa=U&amp;ei=5WawU5D2MsO0PN6sgfAJ&amp;ved=0CB8QFjAB&amp;usg=AFQjCNGOTF8vsoyU186bgOVhXeTnfz7yEA"><b>Cowboy Bebop</b> (a Titles &amp; <b>Air Dates</b> Guide) - Epguides.com</a></h3>
+        // Class "r" is used for normal results, class "_X8d" is used for a special result that sometimes appears
+        // above the normal results, in a seperate box. This happens, for example, when searching for certain
+        // well-known youtube video's.
         static readonly Regex resultsRegexp = new Regex(
-            @"<h3 class=""r"">\s*<a href=""/url\?q=([^<>""]*)&amp;sa[^<>""]*""[^<>]*>(.*?)</a>\s*</h3>");
+            @"<h3 class=""(?:r|_X8d)"">\s*<a href=""/url\?q=([^<>""]*)&amp;sa[^<>""]*""[^<>]*>(.*?)</a>\s*</h3>");
 
         static readonly Regex boldRegExp = new Regex(
             @"(<b>)(.*?)(</b>)");
