@@ -6,6 +6,7 @@ using IvionWebSoft;
 using MeidoCommon;
 using System.ComponentModel.Composition;
 
+
 [Export(typeof(IMeidoHook))]
 public class IrcWeather : IMeidoHook
 {
@@ -70,45 +71,53 @@ public class IrcWeather : IMeidoHook
         meido.RegisterTrigger("W", SetWeatherLocation);
     }
 
+
     void WeatherSearch(IIrcMessage e)
     {
-        string queryTerms;
-        if (e.MessageArray.Length > 1)
-            queryTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-        else
-            queryTerms = defaultLocations.Get(e.Nick);
+        var location = GetLocation(e);
 
-
-        if (!string.IsNullOrWhiteSpace(queryTerms))
+        if (!string.IsNullOrWhiteSpace(location))
         {
-            var cond = weather.GetConditions(queryTerms);
+            var cond = weather.GetConditions(location);
 
             if (cond.Success)
-            {
-                // Only put Wind Gust in if it has a sensible value, ie higher than the normal Wind Speed.
-                string wind;
-                if (cond.WindGustInKph <= cond.WindSpeedInKph || cond.WindGustInMph <= cond.WindSpeedInMph)
-                {
-                    wind = string.Format("{0} km/h ({1} mph)", cond.WindSpeedInKph, cond.WindSpeedInMph);
-                }
-                else
-                {
-                    wind = string.Format("{0} -> {1} km/h ({2} -> {3} mph)", cond.WindSpeedInKph, cond.WindGustInKph,
-                        cond.WindSpeedInMph, cond.WindGustInMph);
-                }
-
-                var report = string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
-                    "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
-                    cond.WeatherLocation, cond.Description,
-                    cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
-                    cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
-                    cond.WindDirection, wind);
-
-                irc.SendMessage(e.ReturnTo, report);
-            }
+                irc.SendMessage(e.ReturnTo, Format(cond));
             else
                 e.Reply(cond.Exception.Message);
         }
+    }
+
+    string GetLocation(IIrcMessage e)
+    {
+        string location;
+        if (e.MessageArray.Length > 1)
+            location = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+        else
+            location = defaultLocations.Get(e.Nick);
+
+        return location;
+    }
+
+    string Format(WeatherConditions cond)
+    {
+        // Only put Wind Gust in if it has a sensible value, ie higher than the normal Wind Speed.
+        string wind;
+        if (cond.WindGustInKph <= cond.WindSpeedInKph || cond.WindGustInMph <= cond.WindSpeedInMph)
+        {
+            wind = string.Format("{0} km/h ({1} mph)", cond.WindSpeedInKph, cond.WindSpeedInMph);
+        }
+        else
+        {
+            wind = string.Format("{0} -> {1} km/h ({2} -> {3} mph)", cond.WindSpeedInKph, cond.WindGustInKph,
+                                 cond.WindSpeedInMph, cond.WindGustInMph);
+        }
+
+        return string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
+                                   "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
+                                   cond.WeatherLocation, cond.Description,
+                                   cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
+                                   cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
+                                   cond.WindDirection, wind);
     }
 
 
