@@ -85,6 +85,8 @@ public class IrcWeather : IMeidoHook
             else
                 e.Reply(cond.Exception.Message);
         }
+        else
+            e.Reply("Either specify a location or set your default location with the 'W' trigger.");
     }
 
     string GetLocation(IIrcMessage e)
