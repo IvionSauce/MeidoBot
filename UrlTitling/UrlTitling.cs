@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MeidoCommon;
 using System.ComponentModel.Composition;
 
+
 [Export(typeof(IMeidoHook))]
 public class UrlTitler : IMeidoHook
 {
@@ -54,7 +55,7 @@ public class UrlTitler : IMeidoHook
     public UrlTitler(IIrcComm irc, IMeidoComm meido)
     {
         var log = meido.CreateLogger(this);
-        var conf = new Config(Path.Combine(meido.ConfDir, "UrlTitling.xml"), log);
+        var conf = new Config(meido.ConfPathTo("UrlTitling.xml"), log);
 
         // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(irc, log, conf);
@@ -73,6 +74,7 @@ public class UrlTitler : IMeidoHook
 
         meido.RegisterTrigger("dump", Dump);
         meido.RegisterTrigger("query", qTriggers.Query);
+        meido.RegisterTrigger("q", qTriggers.Query);
         meido.RegisterTrigger("query-dbg", qTriggers.QueryDebug);
 
         this.meido = meido;
