@@ -45,7 +45,7 @@ public class IrcWeather : IMeidoHook
     [ImportingConstructor]
     public IrcWeather(IIrcComm irc, IMeidoComm meido)
     {
-        storagePath = Path.Combine(meido.DataDir, "_weatherunderground.xml");
+        storagePath = meido.DataPathTo("_weatherunderground.xml");
         try
         {
             defaultLocations = Storage<string>.Deserialize(storagePath);
@@ -57,7 +57,7 @@ public class IrcWeather : IMeidoHook
 
 
         var log = meido.CreateLogger(this);
-        var conf = new Config(Path.Combine(meido.ConfDir, "WeatherUnderground.xml"), log);
+        var conf = new Config(meido.ConfPathTo("WeatherUnderground.xml"), log);
 
         if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
         {
