@@ -16,7 +16,7 @@ public class IrcWeather : IMeidoHook
     }
     public string Version
     {
-        get { return "0.50"; }
+        get { return "0.51"; }
     }
 
     public Dictionary<string,string> Help
@@ -115,11 +115,11 @@ public class IrcWeather : IMeidoHook
         }
 
         return string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
-                                   "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
-                                   cond.WeatherLocation, cond.Description,
-                                   cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
-                                   cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
-                                   cond.WindDirection, wind);
+                             "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
+                             cond.WeatherLocation, cond.Description,
+                             cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
+                             cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
+                             cond.WindDirection, wind);
     }
 
 
