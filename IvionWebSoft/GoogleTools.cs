@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
+
 namespace IvionWebSoft
 {
     public static class GoogleTools
@@ -31,7 +32,7 @@ namespace IvionWebSoft
             var matches = resultsRegexp.Matches(results.Document);
             var parsedResults = ParseMatches(matches);
 
-            return new SearchResults(results, parsedResults);
+            return new SearchResults(results, Deduplication(parsedResults));
         }
 
         static string GoogleUrl(string searchQuery)
@@ -58,6 +59,28 @@ namespace IvionWebSoft
             }
 
             return parsedResults;
+        }
+
+        static SearchResult[] Deduplication(SearchResult[] results)
+        {
+            if (results.Length > 1)
+            {
+                var dedupResults = new List<SearchResult>(results.Length);
+                // Only check whether the first address is duplicated, this is the only case I've seen,
+                // most likely because we also try to get the result that's in a box above the regular results.
+                Uri firstLink = results[0].Address;
+                for (int i = 1; i > results.Length; i++)
+                {
+                    if (firstLink.Equals(results[i].Address))
+                        continue;
+                    
+                    dedupResults.Add(results[i]);
+                }
+
+                return dedupResults.ToArray();
+            }
+
+            return results;
         }
 
 
