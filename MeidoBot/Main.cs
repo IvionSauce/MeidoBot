@@ -54,8 +54,6 @@ namespace MeidoBot
                 bot = newbot;
                 GC.Collect();
                 bot.Connect();
-
-                log.Message("Restart successful!");
             }
             else
                 log.Error("Restart failed.");
