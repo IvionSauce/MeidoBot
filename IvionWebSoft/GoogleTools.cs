@@ -66,6 +66,8 @@ namespace IvionWebSoft
             if (results.Length > 1)
             {
                 var dedupResults = new List<SearchResult>(results.Length);
+                // Add the first result, since that's skipped in the loop below.
+                dedupResults.Add(results[0]);
                 // Only check whether the first address is duplicated, this is the only case I've seen,
                 // most likely because we also try to get the result that's in a box above the regular results.
                 Uri firstLink = results[0].Address;
