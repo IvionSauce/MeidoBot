@@ -71,7 +71,7 @@ namespace IvionWebSoft
                 // Only check whether the first address is duplicated, this is the only case I've seen,
                 // most likely because we also try to get the result that's in a box above the regular results.
                 Uri firstLink = results[0].Address;
-                for (int i = 1; i > results.Length; i++)
+                for (int i = 1; i < results.Length; i++)
                 {
                     if (firstLink.Equals(results[i].Address))
                         continue;
