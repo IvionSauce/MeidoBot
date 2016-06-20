@@ -32,13 +32,14 @@ namespace MeidoBot
             catalog.Catalogs.Add(new DirectoryCatalog("."));
 
             // Put it in a container and compose/import the plugins into the IEnumerable pluginContainer field above.
-            var container = new CompositionContainer(catalog);
+            using (var container = new CompositionContainer(catalog))
+            {
+                // With thanks to http://stackoverflow.com/questions/7684766/
+                container.ComposeExportedValue(ircComm);
+                container.ComposeExportedValue(meidoComm);
 
-            // With thanks to http://stackoverflow.com/questions/7684766/
-            container.ComposeExportedValue<IIrcComm>(ircComm);
-            container.ComposeExportedValue<IMeidoComm>(meidoComm);
-
-            container.ComposeParts(this);
+                container.ComposeParts(this);
+            }
 
             // Count the number of plugins loaded and make it availabe in the Count property.
             int count = 0;
