@@ -49,14 +49,25 @@ namespace MeidoBot
             if (newbot != null)
             {
                 bot.Disconnect("Restarting...");
+                // Dispose of old bot and assign new bot.
                 bot.Dispose();
-
                 bot = newbot;
-                GC.Collect();
+                // The previous 2 actions (disposing the old bot and removing the reference to it) have changed
+                // the entire program. The bot is the root of a large tree of objects (several helper classes,
+                // plugins, etc.), so now is a good time to force a complete collection.
+                Collect();
                 bot.Connect();
             }
             else
                 log.Error("Restart failed.");
+        }
+
+        static void Collect()
+        {
+            // Collect all the memories.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
 
