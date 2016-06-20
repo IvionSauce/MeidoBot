@@ -12,17 +12,13 @@ namespace MeidoBot
     // Both were used by yours truly to make this very simple plugin-architecture you see below.
     class PluginManager
     {
-        [ImportMany(typeof(IMeidoHook))]
-        IEnumerable<IMeidoHook> pluginContainer;
-
-        public int Count { get; private set; }
-        public string Prefix { get; private set; }
-
-
-        public PluginManager(string prefix)
+        public int Count
         {
-            Prefix = prefix;
+            get { return pluginContainer.Length; }
         }
+
+        [ImportMany(typeof(IMeidoHook))]
+        IMeidoHook[] pluginContainer;
 
 
         public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)
@@ -40,19 +36,11 @@ namespace MeidoBot
 
                 container.ComposeParts(this);
             }
-
-            // Count the number of plugins loaded and make it availabe in the Count property.
-            int count = 0;
-            foreach (var plugin in pluginContainer)
-                count++;
-
-            Count = count;
         }
 
         public void DummyInit()
         {
             pluginContainer = new IMeidoHook[0];
-            Count = 0;
         }
 
 
@@ -60,43 +48,26 @@ namespace MeidoBot
         {
             var descriptions = new string[Count];
 
-            int i = 0;
-            foreach (var plugin in pluginContainer)
+            for (int i = 0; i < Count; i++)
             {
-                descriptions[i] = string.Concat(plugin.Name, " ", plugin.Version);
-                i++;
+                var plugin = pluginContainer[i];
+                descriptions[i] = plugin.Name + " " + plugin.Version;
             }
 
             return descriptions;
         }
 
 
-        public string[] GetHelpSubjects()
+        public Dictionary<string, string>[] GetHelpDicts()
         {
-            var keys = new List<string>();
-            foreach (var plugin in pluginContainer)
-                foreach (string key in plugin.Help.Keys)
-                    keys.Add(key);
+            var dicts = new Dictionary<string, string>[Count];
 
-            keys.Sort();
-            return keys.ToArray();
-        }
-
-        public string GetHelp(string subject)
-        {
-            string helpSubject = subject.Trim();
-
-            if (helpSubject.StartsWith(Prefix))
-                helpSubject = subject.Substring(Prefix.Length);
-
-            string help;
-            foreach (var plugin in pluginContainer)
+            for (int i = 0; i < Count; i++)
             {
-                if (plugin.Help.TryGetValue(helpSubject, out help))
-                    return help;
+                dicts[i] = pluginContainer[i].Help;
             }
 
-            return null;
+            return dicts;
         }
 
 

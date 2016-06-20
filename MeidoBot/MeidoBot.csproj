@@ -42,6 +42,7 @@
     <Compile Include="Configuration\Ssl.cs" />
     <Compile Include="Configuration\Ignores.cs" />
     <Compile Include="Configuration\PathTools.cs" />
+    <Compile Include="Help.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

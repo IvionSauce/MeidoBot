@@ -27,6 +27,7 @@ namespace MeidoBot
         readonly IrcClient irc = new IrcClient();
 
         readonly Admin admin;
+        readonly Help help;
         PluginManager plugins;
         readonly Logger log;
 
@@ -60,6 +61,7 @@ namespace MeidoBot
             ircComm = new IrcComm(irc, tManager);
             meidoComm = new MeidoComm(config, tManager, logFac);
 
+            help = new Help(config.TriggerPrefix);
             LoadPlugins();
             // Setup non-plugin triggers and register them.
             admin = new Admin(this, irc, meidoComm);
@@ -75,7 +77,7 @@ namespace MeidoBot
 
         void LoadPlugins()
         {
-            plugins = new PluginManager(conf.TriggerPrefix);
+            plugins = new PluginManager();
 
             // Only load plugins if IO checks succeed.
             if (PathTools.CheckIO(conf, log))
@@ -83,6 +85,7 @@ namespace MeidoBot
                 // Load plugins and announce we're doing so.
                 log.Message("Loading plugins...");
                 plugins.LoadPlugins(ircComm, meidoComm);
+                help.RegisterHelp( plugins.GetHelpDicts() );
                 // Print number and descriptions of loaded plugins.
                 log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
                 foreach (string s in plugins.GetDescriptions())
@@ -256,36 +259,11 @@ namespace MeidoBot
 
         void RegisterSpecialTriggers()
         {
-            meidoComm.RegisterTrigger("h", Help);
-            meidoComm.RegisterTrigger("help", Help);
+            meidoComm.RegisterTrigger("h", help.Trigger);
+            meidoComm.RegisterTrigger("help", help.Trigger);
 
             meidoComm.RegisterTrigger("auth", admin.AuthTrigger);
             meidoComm.RegisterTrigger("admin", admin.AdminTrigger);
-        }
-
-        // Help trigger.
-        void Help(IIrcMessage msg)
-        {
-            string subject = null;
-            if (msg.MessageArray.Length > 1)
-                subject = string.Join(" ", msg.MessageArray, 1, msg.MessageArray.Length - 1);
-
-            if (string.IsNullOrWhiteSpace(subject))
-            {
-                string[] keys = plugins.GetHelpSubjects();
-                var subjects = string.Join(", ", keys);
-
-                msg.Reply("Help is available on - " + subjects);
-            }
-            else
-            {
-                string help = plugins.GetHelp(subject);
-
-                if (help != null)
-                    msg.Reply(help);
-                else
-                    msg.Reply("No help available.");
-            }
         }
 
     }
