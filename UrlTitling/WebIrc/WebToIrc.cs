@@ -122,7 +122,7 @@ namespace WebIrc
             // Media/Binary handling.
             if (ParseMedia && result.Bytes.Success)
             {
-                return MiscHandlers.BinaryToIrc(request, result.Bytes);
+                return BinaryHandler.BinaryToIrc(request, result.Bytes);
             }
 
             return request.CreateResult(false);
