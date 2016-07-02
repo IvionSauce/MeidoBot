@@ -94,32 +94,38 @@ namespace WebIrc
                 return Danbo.PostToIrc(request);
             }
             // Gelbooru handling.
-            else if (request.Url.Contains("gelbooru.com/index.php?page=post&s=view&id=",
+            if (request.Url.Contains("gelbooru.com/index.php?page=post&s=view&id=",
                                           StringComparison.OrdinalIgnoreCase))
             {
                 return Gelbo.PostToIrc(request);
             }
             // Foolz and 4chan handling.
-            else if (ChanHandler.Supports(request))
+            if (ChanHandler.Supports(request))
             {
                 return Chan.ThreadTopicToIrc(request);
+            }
+            // Twitter handling.
+            // Because following Meta Refreshes on Twitter will lead us to the mobile site.
+            if (MiscHandlers.IsTwitter(request))
+            {
+                return MiscHandlers.Twitter(request, urlFollower.Cookies);
             }
 
             var result = urlFollower.Load(request.Uri);
             request.Resource = result.Page;
 
+            // HTML handling.
             if (result.IsHtml)
             {
                 return HandleHtml(request, result.Page);
             }
-            else if (ParseMedia && result.Bytes.Success)
+            // Media/Binary handling.
+            if (ParseMedia && result.Bytes.Success)
             {
                 return MiscHandlers.BinaryToIrc(request, result.Bytes);
             }
-            else
-            {
-                return request.CreateResult(false);
-            }
+
+            return request.CreateResult(false);
         }
 
 
