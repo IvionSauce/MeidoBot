@@ -108,7 +108,7 @@ namespace WebIrc
             // Because following Meta Refreshes on Twitter will lead us to the mobile site.
             if (MiscHandlers.IsTwitter(request))
             {
-                return MiscHandlers.Twitter(request, urlFollower.Cookies);
+                return MiscHandlers.Twitter(request, Cookies);
             }
 
             var result = urlFollower.Load(request.Uri);
@@ -146,8 +146,8 @@ namespace WebIrc
                 request.AddMessage("HTML title length was in excess of 1024 characters, assuming spam.");
                 return request.CreateResult(false);
             }
-            // If defined and not of ridiculous length make it available to ConstructedTitle.
-            request.ConstructedTitle.HtmlTitle = htmlTitle;
+            // If defined and not of ridiculous length make it available to TitleBuilder.
+            request.IrcTitle.HtmlTitle = htmlTitle;
 
             // Youtube handling.
             if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
@@ -185,7 +185,7 @@ namespace WebIrc
             else if (Threshold < 0)
                 return req.CreateResult(false);
 
-            double urlTitleSimilarity = UrlTitle.Similarity(req.Url, req.ConstructedTitle.HtmlTitle);
+            double urlTitleSimilarity = UrlTitle.Similarity(req.Url, req.IrcTitle.HtmlTitle);
             req.AddMessage(
                 string.Format("URL-Title Similarity: {0} [Threshold: {1}]", urlTitleSimilarity, Threshold));
 

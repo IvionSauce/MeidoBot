@@ -12,13 +12,13 @@ namespace WebIrc
 
         public WebResource Resource { get; set; }
 
-        TitleConstruct _title = new TitleConstruct();
-        public TitleConstruct ConstructedTitle
+        TitleBuilder _title = new TitleBuilder();
+        public TitleBuilder IrcTitle
         {
             get { return _title; }
         }
 
-        List<string> messages = new List<string>();
+        readonly List<string> messages = new List<string> ();
 
 
 
@@ -69,7 +69,7 @@ namespace WebIrc
 
             return new TitlingResult(Url,
                                      Resource.Location, Resource.Success, Resource.Exception,
-                                     ConstructedTitle.ToString(), printTitle,
+                                     IrcTitle.ToString(), printTitle,
                                      messages);
         }
     }

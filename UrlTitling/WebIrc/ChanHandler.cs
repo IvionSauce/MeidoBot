@@ -43,7 +43,7 @@ namespace WebIrc
                     return req.CreateResult(false);
                 }
 
-                req.ConstructedTitle.SetFormat("[ /{0}/ - {1} ] [ {2} ]", post.Board, post.BoardName, topic);
+                req.IrcTitle.SetFormat("[ /{0}/ - {1} ] [ {2} ]", post.Board, post.BoardName, topic);
                 return req.CreateResult(true);
             }
             else

@@ -12,14 +12,14 @@ namespace WebIrc
         public string NormalCode { get; set; }
 
 
-        protected void FormatMessage(TitleConstruct title, BooruPost.Rating rated, string warning, int postNo)
+        protected void FormatMessage(TitleBuilder title, BooruPost.Rating rated, string warning, int postNo)
         {
             string rating = ResolveRating(rated);
             title.SetFormat("{0}[{1}]", NormalCode, rating);
             title.Append(warning).AppendFormat("[ #{0} ]", postNo);
         }
 
-        protected void FormatMessage(TitleConstruct title, BooruPost.Rating rated, string warning)
+        protected void FormatMessage(TitleBuilder title, BooruPost.Rating rated, string warning)
         {
             string rating = ResolveRating(rated);
             title.SetFormat("{0}[{1}]", NormalCode, rating).Append(warning);
@@ -101,7 +101,7 @@ namespace WebIrc
                     postInfo.CharacterTags.Length == 0 &&
                     postInfo.ArtistTags.Length == 0)
                 {
-                    FormatMessage(req.ConstructedTitle, postInfo.Rated, warning, postInfo.PostNo);
+                    FormatMessage(req.IrcTitle, postInfo.Rated, warning, postInfo.PostNo);
                     return req.CreateResult(true);
                 }
                 
@@ -113,8 +113,8 @@ namespace WebIrc
                 var copyrights = TagArrayToString(postInfo.CopyrightTags, CopyrightCode);
                 var artists = TagArrayToString(postInfo.ArtistTags, ArtistCode);
 
-                FormatMessage(req.ConstructedTitle, postInfo.Rated, warning);
-                FormatDanboInfo(req.ConstructedTitle, characters, copyrights, artists);
+                FormatMessage(req.IrcTitle, postInfo.Rated, warning);
+                FormatDanboInfo(req.IrcTitle, characters, copyrights, artists);
 
                 return req.CreateResult(true);
             }
@@ -147,7 +147,7 @@ namespace WebIrc
         }
         
         
-        static void FormatDanboInfo(TitleConstruct title, string characters, string copyrights, string artists)
+        static void FormatDanboInfo(TitleBuilder title, string characters, string copyrights, string artists)
         {
             title.Append('[');
             // If we have characters and copyrights, use them both. If we just have either characters or copyrights
@@ -177,7 +177,7 @@ namespace WebIrc
                 string warning = ConstructWarning(postInfo.Tags);
                 if (!string.IsNullOrEmpty(warning))
                 {
-                    FormatMessage(req.ConstructedTitle, postInfo.Rated, warning, postInfo.PostNo);
+                    FormatMessage(req.IrcTitle, postInfo.Rated, warning, postInfo.PostNo);
                     return req.CreateResult(true);
                 }
             }

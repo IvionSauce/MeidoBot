@@ -37,7 +37,7 @@ namespace WebIrc
                 else
                     summary = p.Substring(0, MaxCharacters) + ContinuationSymbol;
 
-                req.ConstructedTitle.SetFormat("[ {0} ]", summary);
+                req.IrcTitle.SetFormat("[ {0} ]", summary);
             }
             return req.CreateResult(true);
         }

@@ -12,7 +12,7 @@ namespace WebIrc
         {
             // If duration can be found, change the html info to include that.
             var ytTime = WebTools.GetYoutubeTime(htmlDoc);
-            req.ConstructedTitle.SetHtmlTitle().AppendTime(ytTime);
+            req.IrcTitle.SetHtmlTitle().AppendTime(ytTime);
 
             return req.CreateResult(true);
         }
@@ -40,7 +40,7 @@ namespace WebIrc
             if (tweet.Success)
             {
                 req.Resource = tweet;
-                req.ConstructedTitle.HtmlTitle = WebTools.GetTitle(tweet.Document);
+                req.IrcTitle.HtmlTitle = WebTools.GetTitle(tweet.Document);
 
                 return req.CreateResult(true);
             }

@@ -38,11 +38,11 @@ namespace WebIrc
                 break;
             }
 
-            FormatBinaryInfo(req.ConstructedTitle, type, media, wb.ContentLength);
+            FormatBinaryInfo(req.IrcTitle, type, media, wb.ContentLength);
             return req.CreateResult(true);
         }
 
-        static void FormatBinaryInfo(TitleConstruct title, string content, MediaProperties media, long length)
+        static void FormatBinaryInfo(TitleBuilder title, string content, MediaProperties media, long length)
         {
             if (media.Dimensions.Width > 0 && media.Dimensions.Height > 0)
             {

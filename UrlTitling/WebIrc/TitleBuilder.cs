@@ -3,7 +3,7 @@ using System.Text;
 
 namespace WebIrc
 {
-    public class TitleConstruct
+    public class TitleBuilder
     {
         string _title = string.Empty;
         public string HtmlTitle
@@ -18,16 +18,16 @@ namespace WebIrc
             }
         }
 
-        StringBuilder sb;
+        readonly StringBuilder sb;
 
 
-        public TitleConstruct()
+        public TitleBuilder()
         {
             sb = new StringBuilder(256);
         }
 
 
-        public TitleConstruct Append(string s)
+        public TitleBuilder Append(string s)
         {
             if (!string.IsNullOrEmpty(s))
             {
@@ -37,13 +37,13 @@ namespace WebIrc
             return this;
         }
 
-        public TitleConstruct Append(char c)
+        public TitleBuilder Append(char c)
         {
             sb.Append(' ').Append(c);
             return this;
         }
 
-        public TitleConstruct AppendFormat(string format, params object[] args)
+        public TitleBuilder AppendFormat(string format, params object[] args)
         {
             if (!string.IsNullOrEmpty(format))
             {
@@ -54,7 +54,7 @@ namespace WebIrc
         }
 
 
-        public TitleConstruct Set(string s)
+        public TitleBuilder Set(string s)
         {
             sb.Clear();
             if (!string.IsNullOrEmpty(s))
@@ -64,7 +64,7 @@ namespace WebIrc
             return this;
         }
 
-        public TitleConstruct SetFormat(string format, params object[] args)
+        public TitleBuilder SetFormat(string format, params object[] args)
         {
             sb.Clear();
             if (!string.IsNullOrEmpty(format))
@@ -74,7 +74,7 @@ namespace WebIrc
             return this;
         }
 
-        public TitleConstruct SetHtmlTitle()
+        public TitleBuilder SetHtmlTitle()
         {
             sb.Clear();
             sb.Append(string.Concat("[ ", HtmlTitle, " ]"));
@@ -83,7 +83,7 @@ namespace WebIrc
         }
 
 
-        public TitleConstruct AppendTime(TimeSpan duration)
+        public TitleBuilder AppendTime(TimeSpan duration)
         {
             if (duration.TotalSeconds >= 0.5d)
             {
@@ -102,7 +102,7 @@ namespace WebIrc
             return this;
         }
 
-        public TitleConstruct AppendSize(long size)
+        public TitleBuilder AppendSize(long size)
         {
             if (size >= 1)
             {
