@@ -39,5 +39,6 @@
     <Compile Include="CommInterfaces.cs" />
     <Compile Include="EventsInterfaces.cs" />
     <Compile Include="MiscInterfaces.cs" />
+    <Compile Include="Formatting.cs" />
   </ItemGroup>
 </Project>
