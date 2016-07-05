@@ -75,14 +75,30 @@ public class Site
             if (displayed >= DisplayMax)
                 break;
 
-            var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
-            title = RemoveSiteName(title);
+            var formatted = FormatResult(result);
 
-            var msg = string.Format("[{0}] {1} :: {2}", displayed + 1, title, result.Address);
+            var msg = string.Format("[{0}] {1}", displayed + 1, formatted);
             yield return msg;
 
             displayed++;
         }
+    }
+
+
+    public virtual string FormatResult(SearchResult result)
+    {
+        var title = FormatTitle(result);
+
+        return string.Format("{0} :: {1}", title, result.Address);
+    }
+
+
+    public virtual string FormatTitle(SearchResult result)
+    {
+        var title = GoogleTools.ReplaceBoldTags(result.Title, "\u0002", "\u000F");
+        title = RemoveSiteName(title);
+
+        return title;
     }
 
 
