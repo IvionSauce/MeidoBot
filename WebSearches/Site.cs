@@ -18,16 +18,20 @@ public class Site
 
 
     public static readonly Site None;
-    public static readonly Site YouTube;
+
+    public static readonly YoutubeSite YouTube;
+
     public static readonly Site MyAnimeList;
     public static readonly Site AniDb;
     public static readonly Site MangaUpdates;
     public static readonly Site VnDb;
 
+
     static Site()
     {
         None = new Site();
-        YouTube = new Site("https://www.youtube.com/", 3);
+        YouTube = new YoutubeSite();
+
         MyAnimeList = new Site("http://myanimelist.net/", 2);
         AniDb = new Site("https://anidb.net/", 2);
 
@@ -38,7 +42,7 @@ public class Site
         { SiteNameRegexp = new Regex(" - The Visual Novel Database$") };
     }
 
-    Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
+    internal Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
 
     public Site(Uri url, int displayMax)
     {

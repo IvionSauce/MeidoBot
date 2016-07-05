@@ -36,6 +36,7 @@
   <ItemGroup>
     <Compile Include="WebSearches.cs" />
     <Compile Include="Site.cs" />
+    <Compile Include="YoutubeSite.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
