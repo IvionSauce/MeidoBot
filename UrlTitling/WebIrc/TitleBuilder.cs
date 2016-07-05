@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Text;
+using MeidoCommon.Formatting;
+
 
 namespace WebIrc
 {
@@ -88,16 +90,7 @@ namespace WebIrc
             if (duration.TotalSeconds >= 0.5d)
             {
                 sb.Append(' ');
-
-                var hours = (int)duration.TotalHours;
-                int seconds = duration.Seconds;
-                if (duration.Milliseconds >= 500)
-                    seconds++;
-
-                if (hours > 0)
-                    sb.AppendFormat("[{0}:{1:00}:{2:00}]", hours, duration.Minutes, seconds);
-                else
-                    sb.AppendFormat("[{0}:{1:00}]", duration.Minutes, seconds);
+                sb.Append( Format.Duration(duration) );
             }
             return this;
         }
@@ -107,18 +100,7 @@ namespace WebIrc
             if (size >= 1)
             {
                 sb.Append(' ');
-                var sizeInK = size / 1024d;
-                if (sizeInK > 1024)
-                {
-                    var sizeInM = sizeInK / 1024d;
-                    sb.Append(sizeInM.ToString("#.#"));
-                    sb.Append("MB");
-                }
-                else
-                {
-                    sb.Append(sizeInK.ToString("#.#"));
-                    sb.Append("KB");
-                }
+                sb.Append( Format.Size(size) );
             }
             return this;
         }
