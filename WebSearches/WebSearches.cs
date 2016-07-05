@@ -40,11 +40,12 @@ public class WebSearches : IMeidoHook
         irc = ircComm;
         meido.RegisterTrigger("g", GoogleSearch);
         meido.RegisterTrigger("yt", YtSearch);
+        meido.RegisterTrigger("wiki", WikiSearch);
         meido.RegisterTrigger("mal", MalSearch);
         meido.RegisterTrigger("anidb", AnidbSearch);
         meido.RegisterTrigger("mu", MuSearch);
         meido.RegisterTrigger("vndb", VndbSearch);
-        // maybe: wikipedia, urbandict, dict, animenewsnetwork
+        // maybe: urbandict, dict, animenewsnetwork
     }
 
 
@@ -56,6 +57,11 @@ public class WebSearches : IMeidoHook
     void YtSearch(IIrcMessage e)
     {
         ExecuteSearch(e, Site.YouTube);
+    }
+
+    void WikiSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.Wikipedia);
     }
 
     void MalSearch(IIrcMessage e)

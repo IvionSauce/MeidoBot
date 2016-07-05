@@ -21,10 +21,12 @@ public class Site
 
     public static readonly YoutubeSite YouTube;
 
+    public static readonly Site Wikipedia;
     public static readonly Site MyAnimeList;
     public static readonly Site AniDb;
     public static readonly Site MangaUpdates;
     public static readonly Site VnDb;
+
 
 
     static Site()
@@ -32,11 +34,14 @@ public class Site
         None = new Site();
         YouTube = new YoutubeSite();
 
+        Wikipedia = new Site("https://en.wikipedia.org/", 3)
+        { SiteNameRegexp = new Regex(" - Wikipedia, the free encyclopedia$") };
+
         MyAnimeList = new Site("http://myanimelist.net/", 2);
         AniDb = new Site("https://anidb.net/", 2);
 
         MangaUpdates = new Site("https://www.mangaupdates.com/", 2)
-        { SiteNameRegexp = new Regex("^Baka-Updates Manga - ") } ;
+        { SiteNameRegexp = new Regex("^Baka-Updates Manga - ") };
 
         VnDb = new Site("https://vndb.org/", 2)
         { SiteNameRegexp = new Regex(" - The Visual Novel Database$") };
