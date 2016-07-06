@@ -63,6 +63,9 @@ namespace MeidoCommon.Formatting
 
         public static string Size(long sizeInBytes)
         {
+            if (sizeInBytes < 0)
+                throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Cannot be negative.");
+
             const string fmt = "#.#";
 
             var sizeInK = sizeInBytes / 1024d;
@@ -73,6 +76,73 @@ namespace MeidoCommon.Formatting
             }
 
             return sizeInK.ToString(fmt) + "KB";
+        }
+
+        /// <summary>
+        /// Shorten the specified lines and append continuation symbol if shortened.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if lines is null.</exception>
+        /// <param name="lines">Lines.</param>
+        /// <param name="maxChars">Max character count.</param>
+        /// <param name="continuationSymbol">Continuation symbol.</param>
+        public static string Shorten(string[] lines, int maxChars, string continuationSymbol)
+        {
+            return Shorten(lines, 0, maxChars, continuationSymbol);
+        }
+
+        /// <summary>
+        /// Shorten the specified lines and append continuation symbol if shortened. Shorten to max lines, if longer
+        /// than max char count shorten to max chars. Either one can be disabled by passing &lt;= 0.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if lines is null.</exception>
+        /// <param name="lines">Lines.</param>
+        /// <param name="maxLines">Max line count.</param>
+        /// <param name="maxChars">Max char count.</param>
+        /// <param name="continuationSymbol">Continuation symbol.</param>
+        public static string Shorten(string[] lines, int maxLines, int maxChars, string continuationSymbol)
+        {
+            if (lines == null)
+                throw new ArgumentNullException(nameof(lines));
+            
+            bool shortenLines = maxLines > 0;
+            bool shortenChars = maxChars > 0;
+
+            string shortened;
+            if (shortenLines && lines.Length > maxLines)
+                shortened = string.Join(" ", lines, 0, maxLines);
+            else
+                shortened = string.Join(" ", lines);
+
+            if (shortenChars && shortened.Length > maxChars)
+            {
+                shortened = shortened.Substring(0, maxChars);
+                return string.Concat(shortened, continuationSymbol);
+            }
+            if (shortenLines && lines.Length > maxLines)
+                return string.Concat(shortened, " ", continuationSymbol);
+            
+            return shortened;
+        }
+
+        /// <summary>
+        /// Shorten the specified string and append continuation symbol if shortened.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown if s is null.</exception>
+        /// <param name="s">A string to be shortened.</param>
+        /// <param name="maxChars">Max char count.</param>
+        /// <param name="continuationSymbol">Continuation symbol.</param>
+        public static string Shorten(string s, int maxChars, string continuationSymbol)
+        {
+            if (s == null)
+                throw new ArgumentNullException(nameof(s));
+
+            if (maxChars > 0 && s.Length > maxChars)
+            {
+                var shortened = s.Substring(0, maxChars);
+                return string.Concat(shortened, continuationSymbol);
+            }
+
+            return s;
         }
     }
 }
