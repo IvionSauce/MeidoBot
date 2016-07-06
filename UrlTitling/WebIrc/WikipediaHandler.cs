@@ -22,7 +22,7 @@ namespace WebIrc
             if (anchorIndex >= 0 && (anchorIndex + 1) < req.Url.Length)
             {
                 var anchorId = req.Url.Substring(anchorIndex + 1);
-                p = GetFirstParagraph(article, anchorId);
+                p = article.GetFirstParagraph(anchorId);
             }
             // If no anchor or if we couldn't extract a paragraph for the specific anchor,
             // get first paragraph of the article.
@@ -40,25 +40,6 @@ namespace WebIrc
                 req.IrcTitle.SetFormat("[ {0} ]", summary);
             }
             return req.CreateResult(true);
-        }
-
-        // Keep searching, from anchor forward, for a section with paragraphs.
-        // Returns null in case it couldn't find any.
-        static string GetFirstParagraph(WikipediaArticle article, string anchorId)
-        {
-            int sectionIndex = article.IndexOf(anchorId);
-            if (sectionIndex >= 0)
-            {
-                while (sectionIndex < article.SectionCount)
-                {
-                    var section = article[sectionIndex];
-                    if (section.Paragraphs.Length > 0)
-                        return section.Paragraphs[0];
-                    else
-                        sectionIndex++;
-                }
-            }
-            return null;
         }
     }
 }
