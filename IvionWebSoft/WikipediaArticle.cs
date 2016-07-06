@@ -11,8 +11,8 @@ namespace IvionWebSoft
         {
             get { return sections.Length; }
         }
-        WikipediaSection[] sections;
-        
+        readonly WikipediaSection[] sections;
+
 
         public WikipediaArticle(string title, string[] summary, WikipediaSection[] sections)
         {
@@ -32,6 +32,29 @@ namespace IvionWebSoft
         public WikipediaSection this[int i]
         {
             get { return sections[i]; }
+        }
+
+
+        // Keep searching, from sectionTitle forward, for a section with paragraphs.
+        // Returns null in case it couldn't find any.
+        public string GetFirstParagraph(string sectionTitle)
+        {
+            if (sectionTitle == null)
+                throw new ArgumentNullException(nameof(sectionTitle));
+            
+            int sectionIndex = IndexOf(sectionTitle);
+            if (sectionIndex >= 0)
+            {
+                while (sectionIndex < SectionCount)
+                {
+                    var section = this[sectionIndex];
+                    if (section.Paragraphs.Length > 0)
+                        return section.Paragraphs[0];
+                    else
+                        sectionIndex++;
+                }
+            }
+            return null;
         }
 
         public int IndexOf(string sectionTitle)
