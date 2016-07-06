@@ -1,5 +1,6 @@
 using System;
 using IvionWebSoft;
+using MeidoCommon.Formatting;
 
 
 namespace WebIrc
@@ -95,32 +96,11 @@ namespace WebIrc
         }
 
 
-        // Shorten post by limiting the amount of lines/sentences. Also check if post is below max amount of characters,
-        // even when it has had its lines reduced. The continuation symbol is appended if the post was shortened. Either
-        // of the limits (lines and chars) can be disabled by having them be <= 0.
         // Newlines are replaced with spaces and multiple, consecutive newlines are squashed.
         string ShortenPost(string post)
-        {            
-            bool shortenLines = TopicMaxLines > 0;
-            bool shortenChars = TopicMaxChars > 0;
-            
+        {
             string[] postLines = post.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
-            
-            string shortPost;
-            if (shortenLines && postLines.Length > TopicMaxLines)
-                shortPost = string.Join(" ", postLines, 0, TopicMaxLines);
-            else
-                shortPost = string.Join(" ", postLines);
-            
-            if (shortenChars && shortPost.Length > TopicMaxChars)
-            {
-                shortPost = shortPost.Substring(0, TopicMaxChars);
-                return string.Concat(shortPost, ContinuationSymbol);
-            }
-            else if (shortenLines && postLines.Length > TopicMaxLines)
-                return string.Concat(shortPost, " ", ContinuationSymbol);
-            else
-                return shortPost;
+            return Format.Shorten(postLines, TopicMaxLines, TopicMaxLines, ContinuationSymbol);
         }
     }
 }

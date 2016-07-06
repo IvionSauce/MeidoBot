@@ -1,5 +1,6 @@
 ﻿using System;
 using IvionWebSoft;
+using MeidoCommon.Formatting;
 
 
 namespace WebIrc
@@ -31,14 +32,10 @@ namespace WebIrc
 
             if (!string.IsNullOrWhiteSpace(p))
             {
-                string summary;
-                if (MaxCharacters > 0 && p.Length <= MaxCharacters)
-                    summary = p;
-                else
-                    summary = p.Substring(0, MaxCharacters) + ContinuationSymbol;
-
+                string summary = Format.Shorten(p, MaxCharacters, ContinuationSymbol);
                 req.IrcTitle.SetFormat("[ {0} ]", summary);
             }
+
             return req.CreateResult(true);
         }
     }
