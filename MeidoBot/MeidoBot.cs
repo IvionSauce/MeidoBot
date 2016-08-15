@@ -105,23 +105,23 @@ namespace MeidoBot
             irc.ActiveChannelSyncing = true;
             irc.AutoJoinOnInvite = true;
             irc.AutoReconnect = true;
-            irc.AutoRejoin = true;
+            //irc.AutoRejoin = true;
             irc.Encoding = Encoding.UTF8;
         }
 
         void SetHandlers()
         {
-            irc.OnConnected += new EventHandler(OnConnected);
-            irc.OnInvite += new InviteEventHandler(OnInvited);
+            irc.OnConnected += OnConnected;
+            irc.OnInvite += OnInvited;
 
-            irc.OnChannelMessage += new IrcEventHandler(OnMessage);
-            irc.OnQueryMessage += new IrcEventHandler(OnMessage);
+            irc.OnChannelMessage += OnMessage;
+            irc.OnQueryMessage += OnMessage;
 
-            irc.OnChannelAction += new ActionEventHandler(OnAction);
-            irc.OnQueryAction += new ActionEventHandler(OnAction);
+            irc.OnChannelAction += OnAction;
+            irc.OnQueryAction += OnAction;
 
-            irc.OnPart += new PartEventHandler(OnPart);
-            irc.OnKick += new KickEventHandler(OnKick);
+            irc.OnPart += OnPart;
+            irc.OnKick += OnKick;
         }
 
 
