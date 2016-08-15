@@ -26,10 +26,14 @@ namespace MeidoBot
 
         readonly IrcClient irc = new IrcClient();
 
-        readonly Admin admin;
-        readonly Help help;
-        PluginManager plugins;
         readonly Logger log;
+
+        // Plugin container (MEF) and manager.
+        PluginManager plugins;
+        // Provides 'auth' and 'admin' trigger.
+        readonly Admin admin;
+        // Provides help triggers 'help'/'h'.
+        readonly Help help;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
         // Also used to call the relevant method(s) on receiving messages.
@@ -38,6 +42,7 @@ namespace MeidoBot
         // running in it.
         readonly MeidoComm meidoComm;
 
+        // Configuration fields, used for initializing various helper classes and for events.
         readonly MeidoConfig conf;
         readonly List<string> currentChannels;
 
@@ -57,7 +62,6 @@ namespace MeidoBot
             log = logFac.CreateLogger("Meido");
 
             var tManager = new ThrottleManager(log);
-            // Initialize the IrcComm with the IrcClient for this server/instance.
             ircComm = new IrcComm(irc, tManager);
             meidoComm = new MeidoComm(config, tManager, logFac);
 

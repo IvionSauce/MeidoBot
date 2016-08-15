@@ -27,7 +27,7 @@ namespace MeidoBot
             var catalog = new AggregateCatalog();
             catalog.Catalogs.Add(new DirectoryCatalog("."));
 
-            // Put it in a container and compose/import the plugins into the IEnumerable pluginContainer field above.
+            // Put it in a container and compose/import the plugins into the pluginContainer field above.
             using (var container = new CompositionContainer(catalog))
             {
                 // With thanks to http://stackoverflow.com/questions/7684766/
