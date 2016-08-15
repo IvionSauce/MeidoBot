@@ -222,9 +222,9 @@ namespace MeidoBot
 
         void OnKick(object sender, KickEventArgs e)
         {
-            if (irc.IsMe(e.Who))
+            if (irc.IsMe(e.Whom))
             {
-                log.Message("Kicked from {0} by {1}", e.Channel, e.Whom);
+                log.Message("Kicked from {0} by {1}", e.Channel, e.Who);
                 currentChannels.Remove(e.Channel);
             }
         }
