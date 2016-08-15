@@ -37,11 +37,10 @@ namespace WebIrc
                 httpReq.CookieContainer = cookies;
             
             var tweet = WebString.Create(request, Encoding.UTF8);
+            req.Resource = tweet;
             if (tweet.Success)
             {
-                req.Resource = tweet;
                 req.IrcTitle.HtmlTitle = WebTools.GetTitle(tweet.Document);
-
                 return req.CreateResult(true);
             }
 

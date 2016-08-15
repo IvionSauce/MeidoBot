@@ -89,8 +89,9 @@ namespace WebIrc
         {
             if (duration.TotalSeconds >= 0.5d)
             {
-                sb.Append(' ');
+                sb.Append(' ').Append('[');
                 sb.Append( Format.Duration(duration) );
+                sb.Append(']');
             }
             return this;
         }

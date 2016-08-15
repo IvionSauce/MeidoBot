@@ -100,7 +100,7 @@ namespace WebIrc
         string ShortenPost(string post)
         {
             string[] postLines = post.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
-            return Format.Shorten(postLines, TopicMaxLines, TopicMaxLines, ContinuationSymbol);
+            return Format.Shorten(postLines, TopicMaxLines, TopicMaxChars, ContinuationSymbol);
         }
     }
 }
