@@ -24,7 +24,7 @@ namespace IvionWebSoft
             // HTML4 style.
             // Try to match <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             new Regex(
-                @"(?i)(?<=<meta http-equiv=[""']?Content-Type[""']? +content=[""']text/html; ?charset=)" +
+                @"(?i)(?<=<meta http-equiv=[""']?Content-Type[""']? +content=[""']text[/.]html;\s*charset=)" +
                 @"[\w-]+(?=[""'] */?>)"),
             
             // HTML5 style.
@@ -35,7 +35,7 @@ namespace IvionWebSoft
             // And because people like to make babies cry, HTML4 style - but with http-equiv and content switched around.
             // Try to match <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
             new Regex(
-                @"(?i)(?<=<meta content=[""']text/html; ?charset=)" +
+                @"(?i)(?<=<meta content=[""']text[/.]html;\s*charset=)" +
                 @"[\w-]+(?=[""'] +http-equiv=[""']?Content-Type[""']? */?>)")
             
         };
