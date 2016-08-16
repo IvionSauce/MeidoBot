@@ -20,12 +20,12 @@ namespace MeidoBot
 
     class ThrottleControl
     {
-        DateTimeOffset stopThrottle;
+        DateTime stopThrottle;
         public bool ThrottleActive
         {
             get
             {
-                if (DateTimeOffset.Now < stopThrottle)
+                if (DateTime.UtcNow < stopThrottle)
                     return true;
                 else
                     return false;
@@ -36,7 +36,7 @@ namespace MeidoBot
         {
             get
             {
-                var timeleft = stopThrottle - DateTimeOffset.Now;
+                var timeleft = stopThrottle - DateTime.UtcNow;
                 if (timeleft > TimeSpan.Zero)
                     return timeleft;
                 else
@@ -48,8 +48,8 @@ namespace MeidoBot
         readonly TimeSpan duration;
 
 
-        public ThrottleControl(RateControl[] controlRates, double throttleDurMins) :
-        this(controlRates, TimeSpan.FromMinutes(throttleDurMins)) {}
+        public ThrottleControl(RateControl[] controlRates, double throttleMinutes) :
+        this(controlRates, TimeSpan.FromMinutes(throttleMinutes)) {}
 
         public ThrottleControl(RateControl[] controlRates, TimeSpan throttleDuration)
         {
@@ -75,7 +75,7 @@ namespace MeidoBot
         {
             foreach (var control in controlRates)
             {
-                DateTimeOffset now;
+                DateTime now;
                 if (control.Check(out now))
                 {
                     stopThrottle = now + duration;
@@ -95,7 +95,7 @@ namespace MeidoBot
             foreach (var control in controlRates)
                 control.Reset();
 
-            stopThrottle = DateTimeOffset.MinValue;
+            stopThrottle = DateTime.MinValue;
         }
     }
 
@@ -106,7 +106,7 @@ namespace MeidoBot
         public readonly TimeSpan Interval;
 
         int counter = 0;
-        DateTimeOffset firstTime;
+        DateTime firstTime;
 
 
         public RateControl(int limit, double intervalSecs) : this(limit, TimeSpan.FromSeconds(intervalSecs)) {}
@@ -123,18 +123,18 @@ namespace MeidoBot
         }
 
 
-        public bool Check(out DateTimeOffset now)
+        public bool Check(out DateTime now)
         {
-            now = DateTimeOffset.MinValue;
+            now = DateTime.MinValue;
 
             counter++;
             if (counter == 1)
-                firstTime = DateTimeOffset.Now;
+                firstTime = DateTime.UtcNow;
 
             else if (counter == Limit)
             {
                 counter = 0;
-                now = DateTimeOffset.Now;
+                now = DateTime.UtcNow;
                 if ( (now - firstTime) <= Interval )
                     return true;
             }
