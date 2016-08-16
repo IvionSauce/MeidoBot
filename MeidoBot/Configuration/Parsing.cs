@@ -110,8 +110,8 @@ namespace MeidoBot
                 foreach (XElement channel in channels.Elements())
                 {
                     string chan = channel.Value;
-                    // Ignore empty entries or those not indicating a channel (with "#").
-                    if (!string.IsNullOrEmpty(chan) && chan[0] == '#')
+                    // Ignore empty entries or those not indicating a channel.
+                    if (!string.IsNullOrEmpty(chan) && MessageTools.IsChannel(chan))
                         chanList.Add(chan);
                 }
             }
