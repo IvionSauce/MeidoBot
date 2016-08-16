@@ -7,6 +7,28 @@ namespace MeidoBot
 {
     static class MessageTools
     {
+        public static bool IsChannel(string destination)
+        {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            if (destination == string.Empty)
+                return false;
+            
+            char prefix = destination[0];
+            switch (prefix)
+            {
+                // According to RFC2811:
+                case '#': // standard channel
+                case '&': // channel local to server
+                case '+': // no channel modes
+                case '!': // safe channels
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+
         // It should be noted that the 512 character limit for IRC messages means 512 bytes/octets. This is why we
         // need to look up how much bytes a certain character needs in UTF-8 (the encoding we use to send the messages).
 
