@@ -116,7 +116,7 @@ namespace MeidoBot
                 SourceEntry entry;
                 if (!sources.TryGetValue(source, out entry))
                 {
-                    entry = new SourceEntry();
+                    entry = new SourceEntry(source);
                     sources[source] = entry;
                 }
 
@@ -132,7 +132,7 @@ namespace MeidoBot
         public readonly ThrottleControl Output;
 
 
-        public SourceEntry()
+        public SourceEntry(string source)
         {
             const int bigLimit = 15;
             var bigInterval = TimeSpan.FromSeconds(15);
@@ -143,11 +143,20 @@ namespace MeidoBot
                 new RateControl(bigLimit, bigInterval)
             };
 
-            var outputRates = new RateControl[]
+            RateControl[] outputRates;
+            if (MessageTools.IsChannel(source))
             {
-                new RateControl(10, 5),
-                new RateControl(bigLimit, bigInterval)
-            };
+                outputRates = new RateControl[] {
+                    new RateControl(10, 5),
+                    new RateControl(bigLimit, bigInterval)
+                };
+            }
+            else
+            {
+                outputRates = new RateControl[] {
+                    new RateControl(30, 20)
+                };
+            }
 
             var duration = TimeSpan.FromMinutes(15);
 
