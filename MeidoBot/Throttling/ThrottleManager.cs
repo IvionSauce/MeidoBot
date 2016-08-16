@@ -134,21 +134,18 @@ namespace MeidoBot
 
         public SourceEntry(string source)
         {
-            const int bigLimit = 15;
-            var bigInterval = TimeSpan.FromSeconds(15);
-
             var triggerRates = new RateControl[]
             {
-                new RateControl(5, 2),
-                new RateControl(bigLimit, bigInterval)
+                new RateControl(5, 3),
+                new RateControl(15, 20)
             };
 
             RateControl[] outputRates;
             if (MessageTools.IsChannel(source))
             {
                 outputRates = new RateControl[] {
-                    new RateControl(10, 5),
-                    new RateControl(bigLimit, bigInterval)
+                    new RateControl(8, 5),
+                    new RateControl(12, 10)
                 };
             }
             else
