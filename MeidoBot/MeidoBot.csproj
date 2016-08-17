@@ -43,6 +43,7 @@
     <Compile Include="Configuration\Ignores.cs" />
     <Compile Include="Configuration\PathTools.cs" />
     <Compile Include="Help.cs" />
+    <Compile Include="Chatlogging.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
