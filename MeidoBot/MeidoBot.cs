@@ -62,7 +62,8 @@ namespace MeidoBot
             log = logFac.CreateLogger("Meido");
 
             var tManager = new ThrottleManager(log);
-            ircComm = new IrcComm(irc, tManager);
+            var chatLog = new Chatlogger(irc);
+            ircComm = new IrcComm(irc, tManager, chatLog);
             meidoComm = new MeidoComm(config, tManager, logFac);
 
             help = new Help(config.TriggerPrefix);

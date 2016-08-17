@@ -24,12 +24,14 @@ namespace MeidoBot
 
         readonly IrcClient irc;
         readonly ThrottleManager throttle;
+        readonly Chatlogger chatLog;
         
         
-        public IrcComm(IrcClient ircClient, ThrottleManager tManager)
+        public IrcComm(IrcClient ircClient, ThrottleManager tManager, Chatlogger chatLog)
         {
             irc = ircClient;
             throttle = tManager;
+            this.chatLog = chatLog;
         }
 
         
@@ -67,7 +69,10 @@ namespace MeidoBot
             foreach (string msg in messages)
             {
                 if (AllowOutput(target))
+                {
                     irc.SendMessage(SendType.Message, target, msg);
+                    chatLog.Message(target, msg);
+                }
             }
         }
         
@@ -80,6 +85,7 @@ namespace MeidoBot
         public void DoAction(string target, string action)
         {
             irc.SendMessage(SendType.Action, target, action);
+            chatLog.Action(target, action);
         }
         
         
@@ -98,7 +104,10 @@ namespace MeidoBot
             foreach (string msg in messages)
             {
                 if (AllowOutput(target))
+                {
                     irc.SendMessage(SendType.Notice, target, msg);
+                    chatLog.Notice(target, msg);
+                }
             }
         }
         
@@ -164,8 +173,12 @@ namespace MeidoBot
         // It's used to inform about the imposed silence, which would otherwise be lost due to the active throttle.
         bool AllowOutput(string target)
         {
-            if ( throttle.AllowOutput(target,
-                msg => irc.SendMessage(SendType.Message, target, msg)) )
+            Action<string> notify = msg => {
+                irc.SendMessage(SendType.Message, target, msg);
+                chatLog.Message(target, msg);
+            };
+
+            if ( throttle.AllowOutput(target, notify) )
             {
                 return true;
             }
