@@ -30,7 +30,6 @@
     <Compile Include="Main.cs" />
     <Compile Include="MeidoComm.cs" />
     <Compile Include="PluginManager.cs" />
-    <Compile Include="Logging.cs" />
     <Compile Include="Authentication.cs" />
     <Compile Include="MessageTools.cs" />
     <Compile Include="Admin.cs" />
@@ -43,7 +42,8 @@
     <Compile Include="Configuration\Ignores.cs" />
     <Compile Include="Configuration\PathTools.cs" />
     <Compile Include="Help.cs" />
-    <Compile Include="Chatlogging.cs" />
+    <Compile Include="Logging\Chatlogger.cs" />
+    <Compile Include="Logging\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -63,5 +63,6 @@
   <ItemGroup>
     <Folder Include="Throttling\" />
     <Folder Include="Configuration\" />
+    <Folder Include="Logging\" />
   </ItemGroup>
 </Project>
