@@ -31,6 +31,7 @@ namespace MeidoBot
   </channels>
   <conf-dir><!--Directory where configuration files will be stored--></conf-dir>
   <data-dir><!--Directory where data files will be stored--></data-dir>
+  <chatlog-dir><!--Directory where chatlogs will be stored--></chatlog-dir>
 </config>
 ";
 
@@ -64,6 +65,7 @@ namespace MeidoBot
             // Set optional properties on meidoconfig.
             meidoconf.ConfigurationDirectory = (string)config.Element("conf-dir");
             meidoconf.DataDirectory = (string)config.Element("data-dir");
+            meidoconf.ChatlogDirectory = (string)config.Element("chatlog-dir");
 
             return Result.Success;
         }

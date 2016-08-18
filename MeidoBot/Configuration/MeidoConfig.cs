@@ -22,26 +22,21 @@ namespace MeidoBot
         public string ConfigurationDirectory
         {
             get { return _confDir; }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                    _confDir = Path.Combine(basePath, "conf");
-                else
-                    _confDir = value;
-            }
+            set { _confDir = NewOrDefaultPath(value, "conf"); }
         }
 
         string _dataDir;
         public string DataDirectory
         {
             get { return _dataDir; }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                    _dataDir = Path.Combine(basePath, "data");
-                else
-                    _dataDir = value;
-            }
+            set { _dataDir = NewOrDefaultPath(value, "data"); }
+        }
+
+        string _chatlogDir;
+        public string ChatlogDirectory
+        {
+            get { return _chatlogDir; }
+            set { _chatlogDir = NewOrDefaultPath(value, "chatlogs"); }
         }
 
 
@@ -96,7 +91,7 @@ namespace MeidoBot
 
         public static bool IsValidTriggerPrefix(string prefix)
         {
-            if (prefix == null || prefix == string.Empty)
+            if (string.IsNullOrEmpty(prefix))
                 return false;
 
             foreach (char c in prefix)
@@ -124,6 +119,7 @@ namespace MeidoBot
             basePath = path;
             ConfigurationDirectory = null;
             DataDirectory = null;
+            ChatlogDirectory = null;
         }
 
 
@@ -145,6 +141,15 @@ namespace MeidoBot
             var serverDir = ServerAddress.Replace('.', '-');
 
             return Path.Combine(homePath, meidoDir, serverDir);
+        }
+
+
+        string NewOrDefaultPath(string newPath, string stdDir)
+        {
+            if (string.IsNullOrWhiteSpace(newPath))
+                return Path.Combine(basePath, stdDir);
+            else
+                return newPath;
         }
     }
 }
