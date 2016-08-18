@@ -123,12 +123,18 @@ namespace MeidoBot
             Log(e.Channel,
                 "<-- {0} ({1}@{2}) has left [{3}]",
                 e.Who, e.Data.Ident, e.Data.Host, e.PartMessage);
+
+            if (irc.IsMe(e.Who))
+                CloseLog(e.Channel);
         }
 
         void Kick(object s, KickEventArgs e)
         {
             Log(e.Channel,
                 "<-- {0} was kicked by {1} [{2}]", e.Whom, e.Who, e.KickReason);
+
+            if (irc.IsMe(e.Whom))
+                CloseLog(e.Channel);
         }
 
 
