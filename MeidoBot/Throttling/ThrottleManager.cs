@@ -30,13 +30,9 @@ namespace MeidoBot
             var entry = GetOrAdd(msg.ReturnTo);
             // Trigger calling happens sequentially, no need for locking.
 
-            // When trigger throttling is currently active, inform the one calling of that fact.
-            if (entry.Triggers.ThrottleActive)
-            {
-                msg.SendNotice("Sorry, currently ignoring trigger calls from {0}. Time remaining: {1}",
-                    msg.ReturnTo, entry.Triggers.TimeLeft);
+            // Checks of both Triggers and Output if their throttle is active.
+            if (ThrottleActive(msg, entry))
                 return true;
-            }
 
             ThrottleInfo info;
             // If this trigger call causes the throttle to activate, share information about why and how long trigger
@@ -48,9 +44,41 @@ namespace MeidoBot
                         msg.ReturnTo, Short(info.ThrottleDuration),
                         info.Limit, Short(info.Interval) );
                 
-                msg.Reply(report);
                 log.Message(report);
+                msg.Reply(report);
                 return true;
+            }
+
+            return false;
+        }
+
+        static bool ThrottleActive(IrcMessage msg, SourceEntry entry)
+        {
+            if (entry.Triggers.ThrottleActive)
+            {
+                msg.SendNotice("Sorry, currently ignoring trigger calls from {0}. Time remaining: {1}",
+                               msg.ReturnTo, entry.Triggers.TimeLeft);
+                return true;
+            }
+
+            // Lock on output checks.
+            lock (entry.Output)
+            {
+                // Refrain from doing any trigger work when output is being throttled anyways. This is not 100% safe,
+                // since some trigger calls might not output to originating channel/user (ReturnTo), but is worth it to
+                // protect against abuse.
+                if (entry.Output.ThrottleActive)
+                {
+                    // Only attempt to send if source (ReturnTo) of this trigger call isn't the nick, since that would
+                    // mean its subject to the active throttle which we just checked.
+                    if (msg.ReturnTo != msg.Nick)
+                    {
+                        msg.SendNotice("Sorry, currently staying silent in {0}. Time remaining: {1}",
+                                       msg.ReturnTo, entry.Output.TimeLeft);
+                    }
+
+                    return true;
+                }
             }
 
             return false;
