@@ -44,6 +44,8 @@
     <Compile Include="Help.cs" />
     <Compile Include="Logging\Chatlogger.cs" />
     <Compile Include="Logging\Logger.cs" />
+    <Compile Include="Logging\LogWriter.cs" />
+    <Compile Include="Logging\LogEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

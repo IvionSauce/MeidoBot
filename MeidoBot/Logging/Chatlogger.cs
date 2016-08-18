@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Meebey.SmartIrc4net;
 
 
@@ -8,6 +7,7 @@ namespace MeidoBot
     class Chatlogger
     {
         readonly IrcClient irc;
+        readonly LogWriter logWriter;
 
         const string messageFmt = "<{0}> {1}";
         const string actionFmt = "* {0} {1}";
@@ -46,6 +46,7 @@ namespace MeidoBot
             irc.OnTopicChange += TopicChange;
 
             this.irc = irc;
+            logWriter = new LogWriter();
         }
 
 
@@ -213,14 +214,12 @@ namespace MeidoBot
 
         void Log(string source, string logMsg, params object[] args)
         {
-            Log(source, string.Format(logMsg, args));
+            logWriter.Enqueue( new ChatLogEntry(source, logMsg, args) );
         }
 
-        void Log(string source, string logMsg)
+        void CloseLog(string source)
         {
-            var timestamp = DateTime.Now.ToString("HH:mm:ss");
-
-            Console.WriteLine("   [{0}] {1}/{2}", timestamp, source, logMsg);
+            logWriter.Enqueue( LogEntry.Close(source) );
         }
     }
 }
