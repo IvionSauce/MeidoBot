@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Meebey.SmartIrc4net;
 
 
@@ -9,12 +10,16 @@ namespace MeidoBot
         readonly IrcClient irc;
         readonly LogWriter logWriter;
 
+        readonly string chatlogDir;
+        readonly Dictionary<string, ChatlogMetaData> chatlogs =
+            new Dictionary<string, ChatlogMetaData>(StringComparer.OrdinalIgnoreCase);
+
         const string messageFmt = "<{0}> {1}";
         const string actionFmt = "* {0} {1}";
         const string noticeFmt = ">{0}< {1}";
 
 
-        public Chatlogger(IrcClient irc)
+        public Chatlogger(IrcClient irc, string chatlogDir)
         {
             irc.OnChannelMessage += Message;
             irc.OnQueryMessage += Message;
@@ -47,6 +52,7 @@ namespace MeidoBot
 
             this.irc = irc;
             logWriter = new LogWriter();
+            this.chatlogDir = chatlogDir;
         }
 
 
@@ -218,14 +224,57 @@ namespace MeidoBot
         }
 
 
-        void Log(string source, string logMsg, params object[] args)
+        void Log(string ircEntity, string logMsg, params object[] args)
         {
-            logWriter.Enqueue( new ChatLogEntry(source, logMsg, args) );
+            ChatlogMetaData metaData;
+            ChatLogEntry entry;
+            if (chatlogs.TryGetValue(ircEntity, out metaData))
+            {
+                entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
+
+                // Check if the day has changed since last write.
+                if (metaData.LastWrite.Date < entry.Timestamp.Date)
+                {
+                    logWriter.Enqueue(
+                        new LogEntry(metaData.LogfilePath,
+                                     "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp));
+                }
+            }
+            else
+            {
+                metaData = new ChatlogMetaData( ChatLogEntry.LogfilePath(chatlogDir, ircEntity) );
+                chatlogs[ircEntity] = metaData;
+
+                entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
+            }
+
+            logWriter.Enqueue(entry);
+            metaData.LastWrite = entry.Timestamp;
         }
 
-        void CloseLog(string source)
+
+        void CloseLog(string ircEntity)
         {
-            logWriter.Enqueue( LogEntry.Close(source) );
+            ChatlogMetaData metaData;
+            if (chatlogs.TryGetValue(ircEntity, out metaData))
+            {
+                logWriter.Enqueue( LogEntry.Close(metaData.LogfilePath) );
+                chatlogs.Remove(ircEntity);
+            }
+        }
+    }
+
+
+    class ChatlogMetaData
+    {
+        public readonly string LogfilePath;
+        public DateTime LastWrite { get; set; }
+
+
+        public ChatlogMetaData(string logfilePath)
+        {
+            LogfilePath = logfilePath;
+            LastWrite = DateTime.MaxValue;
         }
     }
 }
