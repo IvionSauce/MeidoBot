@@ -6,17 +6,20 @@ namespace MeidoBot
 {
     static class PathTools
     {
-        public static bool CheckIO(MeidoConfig conf, Logger log)
+        public static bool CheckPluginIO(MeidoConfig conf, Logger log)
         {
-            return VerifyPaths(conf, log) && DataRwTest(conf.DataDirectory, log);
+            return
+                VerifyDirectory(conf.ConfigurationDirectory, log) &&
+                VerifyDirectory(conf.DataDirectory, log) &&
+                RwTest(conf.DataDirectory, log);
         }
 
-        static bool VerifyPaths(MeidoConfig conf, Logger log)
+
+        public static bool VerifyDirectory(string directory, Logger log)
         {
             try
             {
-                Directory.CreateDirectory(conf.ConfigurationDirectory);
-                Directory.CreateDirectory(conf.DataDirectory);
+                Directory.CreateDirectory(directory);
                 return true;
             }
             catch (IOException ex)
@@ -31,10 +34,11 @@ namespace MeidoBot
             return false;
         }
 
-        static bool DataRwTest(string dataPath, Logger log)
+
+        static bool RwTest(string directory, Logger log)
         {
             FileStream stream = null;
-            var dataTestPath = Path.Combine(dataPath, "rw-test");
+            var dataTestPath = Path.Combine(directory, "rw-test");
             try
             {
                 stream = File.Create(dataTestPath);
@@ -45,11 +49,11 @@ namespace MeidoBot
             }
             catch (IOException ex)
             {
-                log.Error("IO Exception in testing r/w of '{0}': {1}", dataPath, ex.Message);
+                log.Error("IO Exception in testing r/w of '{0}': {1}", directory, ex.Message);
             }
             catch (AccessViolationException)
             {
-                log.Error("Access Violation in testing r/w of '{0}'.", dataPath);
+                log.Error("Access Violation in testing r/w of '{0}'.", directory);
             }
             finally
             {

@@ -85,7 +85,7 @@ namespace MeidoBot
             plugins = new PluginManager();
 
             // Only load plugins if IO checks succeed.
-            if (PathTools.CheckIO(conf, log))
+            if (PathTools.CheckPluginIO(conf, log))
             {
                 // Load plugins and announce we're doing so.
                 log.Message("Loading plugins...");
