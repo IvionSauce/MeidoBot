@@ -140,6 +140,8 @@ class ChannelThread
     
     void Consume()
     {
+        Thread.CurrentThread.Name = "URL-Titling " + Channel;
+
         MessageItem item;
         while (true)
         {
