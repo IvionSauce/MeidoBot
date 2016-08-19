@@ -24,7 +24,7 @@ namespace MeidoBot
                 Console.WriteLine(miniHelp);
                 return;
             }
-            else if (args[0].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
+            if (args[0].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
                 args[0].Equals("--help", StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine(miniHelp);
@@ -35,7 +35,12 @@ namespace MeidoBot
 
             configPath = args[0];
             bot = CreateMeido(Logger.ConsoleLogger("Main"));
-            bot.Connect();
+            if (bot != null)
+            {
+                // Holy scoping, Batman!
+                System.Threading.Thread.CurrentThread.Name = "SecretlySkynet";
+                bot.Connect();
+            }
         }
 
 

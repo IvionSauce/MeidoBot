@@ -18,8 +18,8 @@ namespace MeidoBot
         public LogWriter()
         {
             var t = new Thread(Consume);
-            t.Name = "LogWriter";
             t.Start();
+            t.Name = "LogWriter";
         }
 
 
