@@ -14,8 +14,15 @@ namespace MeidoBot
                 RwTest(conf.DataDirectory, log);
         }
 
+        public static bool CheckChatlogIO(string chatlogDir, Logger log)
+        {
+            return
+                VerifyDirectory(chatlogDir, log) &&
+                RwTest(chatlogDir, log);
+        }
 
-        public static bool VerifyDirectory(string directory, Logger log)
+
+        static bool VerifyDirectory(string directory, Logger log)
         {
             try
             {

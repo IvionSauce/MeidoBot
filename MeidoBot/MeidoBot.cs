@@ -62,7 +62,7 @@ namespace MeidoBot
             log = logFac.CreateLogger("Meido");
 
             var tManager = new ThrottleManager(log);
-            var chatLog = new Chatlogger(irc, conf.ChatlogDirectory);
+            var chatLog = SetupChatlog();
 
             ircComm = new IrcComm(irc, tManager, chatLog);
             meidoComm = new MeidoComm(config, tManager, logFac);
@@ -80,6 +80,17 @@ namespace MeidoBot
             SetHandlers();
         }
 
+
+        IChatlogger SetupChatlog()
+        {
+            if (PathTools.CheckChatlogIO(conf.ChatlogDirectory, log))
+            {
+                return new Chatlogger(irc, conf.ChatlogDirectory);
+            }
+
+            log.Error("No chatlogging due to failed IO checks.");
+            return new DummyChatlogger();
+        }
 
         void LoadPlugins()
         {

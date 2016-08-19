@@ -24,10 +24,10 @@ namespace MeidoBot
 
         readonly IrcClient irc;
         readonly ThrottleManager throttle;
-        readonly Chatlogger chatLog;
+        readonly IChatlogger chatLog;
         
         
-        public IrcComm(IrcClient ircClient, ThrottleManager tManager, Chatlogger chatLog)
+        public IrcComm(IrcClient ircClient, ThrottleManager tManager, IChatlogger chatLog)
         {
             irc = ircClient;
             throttle = tManager;

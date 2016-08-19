@@ -5,7 +5,7 @@ using Meebey.SmartIrc4net;
 
 namespace MeidoBot
 {
-    class Chatlogger
+    class Chatlogger : IChatlogger
     {
         readonly IrcClient irc;
         readonly LogWriter logWriter;
