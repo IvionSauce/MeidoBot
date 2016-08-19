@@ -1,6 +1,6 @@
 ﻿namespace MeidoBot
 {
-    public interface IChatlogger
+    interface IChatlogger
     {
         void Message(string target, string message);
         void Action(string target, string message);
@@ -9,7 +9,7 @@
 
 
     // Implement as no-ops.
-    public class DummyChatlogger : IChatlogger
+    class DummyChatlogger : IChatlogger
     {
         public void Message(string target, string message)
         {

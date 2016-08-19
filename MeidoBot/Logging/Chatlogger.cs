@@ -21,6 +21,15 @@ namespace MeidoBot
 
         public Chatlogger(IrcClient irc, string chatlogDir)
         {
+            this.irc = irc;
+            logWriter = new LogWriter();
+            this.chatlogDir = chatlogDir;
+
+            Subscribe();
+        }
+
+        void Subscribe()
+        {
             irc.OnChannelMessage += Message;
             irc.OnQueryMessage += Message;
 
@@ -49,10 +58,6 @@ namespace MeidoBot
 
             irc.OnTopic += Topic;
             irc.OnTopicChange += TopicChange;
-
-            this.irc = irc;
-            logWriter = new LogWriter();
-            this.chatlogDir = chatlogDir;
         }
 
 
