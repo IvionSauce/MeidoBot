@@ -44,8 +44,11 @@ namespace MeidoBot
             irc.OnPart += Part;
             irc.OnKick += Kick;
 
-            irc.OnNickChange += NickChange;
+            irc.OnChannelModeChange += ChannelMode;
+            irc.OnTopic += Topic;
+            irc.OnTopicChange += TopicChange;
 
+            irc.OnNickChange += NickChange;
             /* OnRawMessage is raised before OnQuit (and most other events) in IrcClient.
              * This knowledge breaks abstraction, but allows us to leverage the tracking (of users and channels)
              * that SmartIrc4Net's IrcClient offers with ActiveChannelSyncing turned on.
@@ -53,13 +56,12 @@ namespace MeidoBot
              * abstraction because otherwise we'd have to maintain our own tracking. While not ideal I like it better
              * than keeping a tracking structure parallel to IrcClient's. */
             irc.OnRawMessage += RawQuit;
-
-            irc.OnChannelModeChange += ChannelMode;
-
-            irc.OnTopic += Topic;
-            irc.OnTopicChange += TopicChange;
         }
 
+
+        // --------------------------
+        // Outgoing messages logging.
+        // --------------------------
 
         public void Message(string target, string message)
         {
@@ -79,6 +81,10 @@ namespace MeidoBot
                 noticeFmt, irc.Nickname, message);
         }
 
+
+        // --------------------------
+        // Incoming messages logging.
+        // --------------------------
 
         void Message(object s, IrcEventArgs e)
         {
@@ -116,11 +122,15 @@ namespace MeidoBot
         }
 
 
+        // ---------------------------------------
+        // IRC events related to a single channel.
+        // ---------------------------------------
+
         void Join(object s, JoinEventArgs e)
         {
             Log(e.Channel,
                 "--> {0} ({1}@{2}) has joined", e.Who, e.Data.Ident, e.Data.Host);
-            
+
             if (irc.IsMe(e.Who))
             {
                 Log(e.Channel,
@@ -149,6 +159,38 @@ namespace MeidoBot
         }
 
 
+        void ChannelMode(object s, ChannelModeChangeEventArgs e)
+        {
+            foreach (var m in e.ModeChanges)
+            {
+                string action;
+                if (m.Action == ChannelModeChangeAction.Set)
+                    action = "+" + m.ModeChar;
+                else
+                    action = "-" + m.ModeChar;
+                
+                Log(e.Channel,
+                    "-!- {0} has changed channel mode: {1} {2}", e.Data.Nick, action, m.Parameter);
+            }
+        }
+
+        void Topic(object s, TopicEventArgs e)
+        {
+            Log(e.Channel,
+                "-!- Channel topic: {0}", e.Topic);
+        }
+
+        void TopicChange(object s, TopicChangeEventArgs e)
+        {
+            Log(e.Channel,
+                "-!- {0} changed the topic to: {1}", e.Who, e.NewTopic);
+        }
+
+
+        // ---------------------------------------------------
+        // IRC events related to (possibly) multiple channels.
+        // ---------------------------------------------------
+
         void NickChange(object s, NickChangeEventArgs e)
         {
             foreach (var channel in GetJoinedChannels(e.NewNickname))
@@ -159,7 +201,6 @@ namespace MeidoBot
 
             CloseLog(e.OldNickname);
         }
-
 
         void RawQuit(object s, IrcEventArgs e)
         {
@@ -181,34 +222,9 @@ namespace MeidoBot
         }
 
 
-        void ChannelMode(object s, ChannelModeChangeEventArgs e)
-        {
-            foreach (var m in e.ModeChanges)
-            {
-                string action;
-                if (m.Action == ChannelModeChangeAction.Set)
-                    action = "+" + m.ModeChar;
-                else
-                    action = "-" + m.ModeChar;
-                
-                Log(e.Channel,
-                    "-!- {0} has changed channel mode: {1} {2}", e.Data.Nick, action, m.Parameter);
-            }
-        }
-
-
-        void Topic(object s, TopicEventArgs e)
-        {
-            Log(e.Channel,
-                "-!- Channel topic: {0}", e.Topic);
-        }
-
-        void TopicChange(object s, TopicChangeEventArgs e)
-        {
-            Log(e.Channel,
-                "-!- {0} changed the topic to: {1}", e.Who, e.NewTopic);
-        }
-
+        // ---------------
+        // Helper methods.
+        // ---------------
 
         string[] GetJoinedChannels(string nick)
         {
@@ -233,6 +249,10 @@ namespace MeidoBot
         }
 
 
+        // ----------------
+        // Logging methods.
+        // ----------------
+
         void Log(string ircEntity, string logMsg, params object[] args)
         {
             ChatlogMetaData metaData;
@@ -240,14 +260,7 @@ namespace MeidoBot
             if (chatlogs.TryGetValue(ircEntity, out metaData))
             {
                 entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
-
-                // Check if the day has changed since last write.
-                if (metaData.LastWrite.Date < entry.Timestamp.Date)
-                {
-                    logWriter.Enqueue(
-                        new LogEntry(metaData.LogfilePath,
-                                     "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp));
-                }
+                LogIfDayChanged(metaData, entry);
             }
             else
             {
@@ -261,6 +274,17 @@ namespace MeidoBot
             metaData.LastWrite = entry.Timestamp;
         }
 
+        // Check if the day has changed since last write.
+        void LogIfDayChanged(ChatlogMetaData metaData, ChatLogEntry entry)
+        {
+            if (metaData.LastWrite.Date < entry.Timestamp.Date)
+            {
+                logWriter.Enqueue(
+                    new LogEntry(metaData.LogfilePath, entry.Timestamp,
+                                 "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp));
+            }
+        }
+
 
         void CloseLog(string ircEntity)
         {
@@ -270,20 +294,6 @@ namespace MeidoBot
                 logWriter.Enqueue( LogEntry.Close(metaData.LogfilePath) );
                 chatlogs.Remove(ircEntity);
             }
-        }
-    }
-
-
-    class ChatlogMetaData
-    {
-        public readonly string LogfilePath;
-        public DateTime LastWrite { get; set; }
-
-
-        public ChatlogMetaData(string logfilePath)
-        {
-            LogfilePath = logfilePath;
-            LastWrite = DateTime.MaxValue;
         }
     }
 }
