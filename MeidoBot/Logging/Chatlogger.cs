@@ -19,10 +19,10 @@ namespace MeidoBot
         const string noticeFmt = ">{0}< {1}";
 
 
-        public Chatlogger(IrcClient irc, string chatlogDir)
+        public Chatlogger(IrcClient irc, LogWriter writer, string chatlogDir)
         {
             this.irc = irc;
-            logWriter = new LogWriter();
+            logWriter = writer;
             this.chatlogDir = chatlogDir;
 
             Subscribe();
@@ -156,6 +156,8 @@ namespace MeidoBot
                 Log(channel,
                     "-!- {0} is now known as {1}", e.OldNickname, e.NewNickname);
             }
+
+            CloseLog(e.OldNickname);
         }
 
 
@@ -173,6 +175,8 @@ namespace MeidoBot
                         "<-- {0} ({1}@{2}) has quit [{3}]",
                         e.Data.Nick, e.Data.Ident, e.Data.Host, e.Data.Message);
                 }
+
+                CloseLog(e.Data.Nick);
             }
         }
 

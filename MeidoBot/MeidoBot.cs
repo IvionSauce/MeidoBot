@@ -26,6 +26,7 @@ namespace MeidoBot
 
         readonly IrcClient irc = new IrcClient();
 
+        readonly LogWriter logWriter;
         readonly Logger log;
 
         // Plugin container (MEF) and manager.
@@ -62,6 +63,7 @@ namespace MeidoBot
             log = logFac.CreateLogger("Meido");
 
             var tManager = new ThrottleManager(log);
+            logWriter = new LogWriter();
             var chatLog = SetupChatlog();
 
             ircComm = new IrcComm(irc, tManager, chatLog);
@@ -85,7 +87,7 @@ namespace MeidoBot
         {
             if (PathTools.CheckChatlogIO(conf.ChatlogDirectory, log))
             {
-                return new Chatlogger(irc, conf.ChatlogDirectory);
+                return new Chatlogger(irc, logWriter, conf.ChatlogDirectory);
             }
 
             log.Error("No chatlogging due to failed IO checks.");
@@ -194,6 +196,7 @@ namespace MeidoBot
                 Disconnect();
 
             plugins.StopPlugins();
+            logWriter.Dispose();
         }
 
         // ---------------
