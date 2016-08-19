@@ -38,7 +38,6 @@ namespace MeidoBot
 
             irc.OnChannelNotice += Notice;
             irc.OnQueryNotice += Notice;
-            irc.OnCtcpRequest += Ctcp;
 
             irc.OnJoin += Join;
             irc.OnPart += Part;
@@ -108,17 +107,6 @@ namespace MeidoBot
                 Log(source,
                     noticeFmt, e.Data.Nick, e.Data.Message);
             }
-        }
-
-        void Ctcp(object s, CtcpEventArgs e)
-        {
-            var ctcpCmd = e.CtcpCommand;
-            if (!string.IsNullOrEmpty(e.CtcpParameter))
-                ctcpCmd += e.CtcpParameter;
-            
-            Log(e.Data.Nick,
-                "-!- Received a CTCP {0} from {1}",
-                ctcpCmd, e.Data.Nick);
         }
 
 

@@ -142,6 +142,7 @@ namespace MeidoBot
             irc.OnPart += OnPart;
             irc.OnKick += OnKick;
 
+            irc.OnCtcpRequest += OnCtcp;
             // IrcClient should automatically respond to CTCP VERSION if CtcpVersion is set, but it does not.
             // So we gotta do it ourselves.
             irc.OnCtcpRequest += CtcpVersion;
@@ -276,6 +277,15 @@ namespace MeidoBot
             }
         }
 
+
+        void OnCtcp(object s, CtcpEventArgs e)
+        {
+            var ctcpCmd = e.CtcpCommand;
+            if (!string.IsNullOrEmpty(e.CtcpParameter))
+                ctcpCmd += e.CtcpParameter;
+
+            log.Message("Received a CTCP {0} from {1}", ctcpCmd, e.Data.Nick);
+        }
 
         void CtcpVersion(object s, CtcpEventArgs e)
         {
