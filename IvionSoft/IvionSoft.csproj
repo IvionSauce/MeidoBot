@@ -43,6 +43,5 @@
     <Compile Include="History.cs" />
     <Compile Include="GenericStorage.cs" />
     <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="ThreadLocalSqlite.cs" />
   </ItemGroup>
 </Project>

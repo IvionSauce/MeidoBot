@@ -2,9 +2,10 @@ using System;
 using System.Timers;
 using System.Threading;
 using Mono.Data.Sqlite;
+using IvionSoft;
 
 
-namespace IvionSoft
+namespace Chainey
 {
     public class ThreadLocalSqlite : IDisposable
     {
@@ -36,7 +37,7 @@ namespace IvionSoft
     }
 
 
-    internal class LocalSqlite : IDisposable
+    class LocalSqlite : IDisposable
     {
         readonly string connStr;
         readonly uint timeout;
@@ -99,7 +100,7 @@ namespace IvionSoft
                         cleaner.Interval = timeout - timeSinceLastAccess;
 
                     // Else keep the standard interval.
-                    else if (cleaner.Interval != timeout)
+                    else
                         cleaner.Interval = timeout;
 
                     cleaner.Start();
