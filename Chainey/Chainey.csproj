@@ -47,6 +47,7 @@
     <Compile Include="SentenceConstruct.cs" />
     <Compile Include="Selectors.cs" />
     <Compile Include="BuilderVectors.cs" />
+    <Compile Include="ThreadLocalSqlite.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
