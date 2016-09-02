@@ -1,5 +1,5 @@
 ﻿using IvionWebSoft;
-using MinimalistParsers;
+using IvionSoft.MinimalistParsers;
 
 
 namespace WebIrc

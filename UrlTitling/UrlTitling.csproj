@@ -66,10 +66,6 @@
       <Project>{5DD1DFDC-6090-4C23-A760-90C06BD96F6E}</Project>
       <Name>IvionWebSoft</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MinimalistParsers\MinimalistParsers.csproj">
-      <Project>{19588E23-5B8A-4E85-BD1A-8EE461812AC3}</Project>
-      <Name>MinimalistParsers</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebIrc\" />
