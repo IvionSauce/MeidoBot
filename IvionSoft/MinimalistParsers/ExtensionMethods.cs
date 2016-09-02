@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     internal static class ExtensionMethods
     {

@@ -42,5 +42,16 @@
     <Compile Include="History.cs" />
     <Compile Include="GenericStorage.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="MinimalistParsers\Ebml.cs" />
+    <Compile Include="MinimalistParsers\ExtensionMethods.cs" />
+    <Compile Include="MinimalistParsers\Gif.cs" />
+    <Compile Include="MinimalistParsers\Jpeg.cs" />
+    <Compile Include="MinimalistParsers\MediaDispatch.cs" />
+    <Compile Include="MinimalistParsers\Png.cs" />
+    <Compile Include="MinimalistParsers\StreamChunk.cs" />
+    <Compile Include="MinimalistParsers\Types.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="MinimalistParsers\" />
   </ItemGroup>
 </Project>

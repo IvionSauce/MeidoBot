@@ -1,6 +1,6 @@
 using System;
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     public enum MediaType
     {

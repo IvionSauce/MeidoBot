@@ -25,8 +25,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IvionWebSoft", "IvionWebSof
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSearches", "WebSearches\WebSearches.csproj", "{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalistParsers", "MinimalistParsers\MinimalistParsers.csproj", "{19588E23-5B8A-4E85-BD1A-8EE461812AC3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeatherUnderground", "WeatherUnderground\WeatherUnderground.csproj", "{E3D4A39E-C3C6-4F08-8E77-6FCACA0AC891}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tell", "Tell\Tell.csproj", "{9B1DD5A2-10C4-4940-9A98-A089FFD7A8FB}"
@@ -41,10 +39,6 @@ Global
 		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09A86B71-CE7A-486D-96C6-AC9E6CD81C46}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19588E23-5B8A-4E85-BD1A-8EE461812AC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19588E23-5B8A-4E85-BD1A-8EE461812AC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19588E23-5B8A-4E85-BD1A-8EE461812AC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19588E23-5B8A-4E85-BD1A-8EE461812AC3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25BC8E01-398B-45EE-BD1D-9AD34AD6FA91}.Release|Any CPU.ActiveCfg = Release|Any CPU

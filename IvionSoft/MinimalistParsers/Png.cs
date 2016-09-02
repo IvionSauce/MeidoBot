@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     public static class Png
     {

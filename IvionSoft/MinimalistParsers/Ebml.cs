@@ -12,7 +12,7 @@ using System.Collections.Generic;
 // integer reader helped me immensely in understanding and implementing my own.
 // https://github.com/Matroska-Org/libebml/blob/master/src/EbmlElement.cpp the function is called ReadCodedSizeValue.
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     public static class Ebml
     {

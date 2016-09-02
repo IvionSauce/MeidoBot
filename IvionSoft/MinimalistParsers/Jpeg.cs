@@ -9,7 +9,7 @@ using System.IO;
 // Neither of these gave any details about the interior organization of most segments, the following link has a few
 // http://www.xbdev.net/image_formats/jpeg/tut_jpg/jpeg_file_layout.php
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     public static class Jpeg
     {

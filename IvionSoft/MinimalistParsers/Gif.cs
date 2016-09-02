@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace MinimalistParsers
+namespace IvionSoft.MinimalistParsers
 {
     public static class Gif
     {
