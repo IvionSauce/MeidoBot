@@ -14,6 +14,8 @@ namespace MeidoBot
         readonly Dictionary<string, ChatlogMetaData> chatlogs =
             new Dictionary<string, ChatlogMetaData>(StringComparer.OrdinalIgnoreCase);
 
+        int logCount;
+
         const string messageFmt = "<{0}> {1}";
         const string actionFmt = "* {0} {1}";
         const string noticeFmt = ">{0}< {1}";
@@ -260,6 +262,8 @@ namespace MeidoBot
 
             logWriter.Enqueue(entry);
             metaData.LastWrite = entry.Timestamp;
+
+            Cleaner();
         }
 
         // Check if the day has changed since last write.
@@ -270,6 +274,32 @@ namespace MeidoBot
                 logWriter.Enqueue(
                     new LogEntry(metaData.LogfilePath, entry.Timestamp,
                                  "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp));
+            }
+        }
+
+        void Cleaner()
+        {
+            const int cleanInterval = 1000;
+            var timeLimit = TimeSpan.FromMinutes(10);
+
+            if (logCount < cleanInterval)
+                logCount++;
+            else
+            {
+                logCount = 0;
+
+                var toClose = new List<string>();
+                // Make sure to do arithmetic in UTC.
+                var now = DateTime.UtcNow;
+                foreach (var pair in chatlogs)
+                {
+                    var lastWrite = pair.Value.LastWrite.ToUniversalTime();
+                    if ( (now - lastWrite) >= timeLimit )
+                        toClose.Add(pair.Key);
+                }
+
+                foreach (var key in toClose)
+                    CloseLog(key);
             }
         }
 
