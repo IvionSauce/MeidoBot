@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>WeatherUnderground</RootNamespace>
     <AssemblyName>WeatherUnderground</AssemblyName>
-    <UseMSBuildEngine>True</UseMSBuildEngine>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
