@@ -10,13 +10,13 @@ class TellEntry
     [DataMember]
     public readonly string Message;
     [DataMember]
-    public readonly DateTimeOffset SentDate;
+    public readonly DateTime SentDateUtc;
 
     public TimeSpan ElapsedTime
     {
         get
         {
-            return DateTimeOffset.Now - SentDate;
+            return DateTime.UtcNow - SentDateUtc;
         }
     }
 
@@ -25,6 +25,6 @@ class TellEntry
     {
         From = from;
         Message = message;
-        SentDate = DateTimeOffset.Now;
+        SentDateUtc = DateTime.UtcNow;
     }
 }
