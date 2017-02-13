@@ -135,12 +135,9 @@ public class IrcTell : IMeidoHook
     public void Clear(IIrcMessage e)
     {
         var inbox = inboxes.Get(e.Nick);
-        int count = 0;
-        if (inbox != null)
-        {
-            count = inbox.MessagesCount;
-            inbox.ClearMessages();
-        }
+        int count = inbox.MessagesCount;
+
+        inbox.ClearMessages();
 
         irc.SendNotice(e.Nick, "Cleared all your messages. (Count: {0})", count);
         if (count > 0)
@@ -151,23 +148,8 @@ public class IrcTell : IMeidoHook
     public void MessageHandler(IIrcMessage e)
     {
         var inbox = inboxes.Get(e.Nick);
-        if ( inbox != null && inbox.NewMessages )
-        {
-            Notify(e.Nick, inbox);
-        }
-    }
-
-    void Notify(string nick, TellsInbox inbox)
-    {
-        TellEntry entry;
-        if (inbox.TryReadNext(out entry))
-        {
-            irc.SendNotice(nick, FormatTell(entry));
-            if (inbox.MessagesCount > 0)
-                irc.SendNotice(nick, "You have {0} other message(s) waiting.", inbox.MessagesCount);
-
-            inboxes.Save(inbox);
-        }
+        if (inbox.NewMessages)
+            irc.SendNotice(e.Nick, "You have {0} message(s) waiting.", inbox.MessagesCount);
     }
 
 
