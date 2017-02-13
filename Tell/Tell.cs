@@ -69,6 +69,9 @@ public class IrcTell : IMeidoHook
             else
                 e.Reply("Sorry, {0}'s inbox is full!", destinationNick);
         }
+        // Short circuit tell to tell-read if not enough arguments.
+        else
+            Read(e);
     }
 
     static bool TryGetArgs(string[] ircMsg, out string toNick, out string tellMsg)
@@ -90,8 +93,8 @@ public class IrcTell : IMeidoHook
 
     public void Read(IIrcMessage e)
     {
-        var inbox = inboxes.Get(e.Nick);
         // tell-read [amount]
+        var inbox = inboxes.Get(e.Nick);
         var tells = inbox.Read(GetAmount(e.MessageArray));
         if (tells.Length > 0)
         {
