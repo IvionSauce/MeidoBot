@@ -102,6 +102,7 @@ public class IrcTell : IMeidoHook
                 irc.SendNotice(e.Nick, FormatTell(tellMsg));
 
             irc.SendNotice(e.Nick, "You have {0} more message(s) waiting.", inbox.MessagesCount);
+            inboxes.Save(inbox);
         }
         else
             irc.SendNotice(e.Nick, "No messages to read.");
