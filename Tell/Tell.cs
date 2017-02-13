@@ -29,8 +29,6 @@ public class IrcTell : IMeidoHook
                 {"tell-read", "tell-read [number] - Read message associated with number. Reads next waiting message " +
                     "if no number was supplied."},
                 
-                {"tell-show", "tell-show - Shows an overview of all your waiting messages."},
-                
                 {"tell-clear", "tell-clear - Clears all your waiting messages."}
             };
         }
@@ -49,7 +47,6 @@ public class IrcTell : IMeidoHook
 
         meido.RegisterTrigger("tell", Tell);
         meido.RegisterTrigger("tell-read", Read);
-        meido.RegisterTrigger("tell-show", Show);
         meido.RegisterTrigger("tell-clear", Clear);
 
         irc.AddChannelMessageHandler(MessageHandler);
@@ -132,28 +129,6 @@ public class IrcTell : IMeidoHook
 
         index = 0;
         return false;
-    }
-
-
-    public void Show(IIrcMessage e)
-    {
-        var inbox = inboxes.Get(e.Nick);
-        if (inbox != null)
-        {
-            Overview(e.Nick, inbox.GetAll());
-        }
-
-        irc.SendNotice(e.Nick, " -----");
-    }
-
-    void Overview(string nick, TellEntry[] entries)
-    {
-        for (int i = 0; i < entries.Length; i++)
-        {
-            var entry = entries[i];
-            irc.SendNotice(nick, "[{0}] From {1}, {2} ago.",
-                           i, entry.From, Format.DurationWithDays(entry.ElapsedTime));
-        }
     }
 
 

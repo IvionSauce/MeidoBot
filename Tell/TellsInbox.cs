@@ -91,23 +91,6 @@ class TellsInbox
     }
 
 
-    public TellEntry[] GetAll()
-    {
-        var allEntries = new TellEntry[MessagesCount];
-        int index = 0;
-        foreach (var entry in entries)
-        {
-            if (entry != null)
-            {
-                allEntries[index] = entry;
-                index++;
-            }
-        }
-        NewMessages = false;
-        return allEntries;
-    }
-
-
     public void ClearMessages()
     {
         for (int i = 0; i < entries.Length; i++)
