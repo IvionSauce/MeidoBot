@@ -89,20 +89,29 @@ class Inboxes
     {
         string filename =
             Prefix + inbox.Username.ToLowerInvariant() + ".xml";
-
         var path = Path.Combine(storagePath, filename);
 
-        using (var stream = File.Open(path, FileMode.Create))
+        // Normal save.
+        if (inbox.MessagesCount > 0)
         {
-            var settings = new XmlWriterSettings() {
-                Indent = true,
-                // Because tell messages can contain control codes that make the XmlWriter barf,
-                // disable checking. Not ideal, but it seems to serialize and deserialize fine.
-                CheckCharacters = false
-            };
+            using (var stream = File.Open(path, FileMode.Create))
+            {
+                var settings = new XmlWriterSettings() {
+                    Indent = true,
+                    // Because tell messages can contain control codes that make the XmlWriter barf,
+                    // disable checking. Not ideal, but it seems to serialize and deserialize fine.
+                    CheckCharacters = false
+                };
 
-            using (var writer = XmlWriter.Create(stream, settings))
-                dcs.WriteObject(writer, inbox);
+                using (var writer = XmlWriter.Create(stream, settings))
+                    dcs.WriteObject(writer, inbox);
+            }
+        }
+        // Remove empty inbox from dict and clean up remnants of the inbox on disk.
+        else
+        {
+            nickToInbox.Remove(inbox.Username);
+            File.Delete(path);
         }
     }
 }
