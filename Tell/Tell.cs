@@ -24,10 +24,9 @@ public class IrcTell : IMeidoHook
             return new Dictionary<string, string>()
             {
                 {"tell", "tell <nick> <message> - Relay message to nick, will be relayed when nick is active. " +
-                    "See also: tell-read, tell-show, tell-clear"},
+                    "See also: tell-read, tell-clear"},
                 
-                {"tell-read", "tell-read [number] - Read message associated with number. Reads next waiting message " +
-                    "if no number was supplied."},
+                {"tell-read", "tell-read [n] - Read the next `n` messages, defaults to 5."},
                 
                 {"tell-clear", "tell-clear - Clears all your waiting messages."}
             };
@@ -92,43 +91,31 @@ public class IrcTell : IMeidoHook
     public void Read(IIrcMessage e)
     {
         var inbox = inboxes.Get(e.Nick);
-        if (inbox == null || inbox.MessagesCount == 0)
+        // tell-read [amount]
+        var tells = inbox.Read(GetAmount(e.MessageArray));
+        if (tells.Length > 0)
         {
-            irc.SendNotice(e.Nick, "You have no messages to read.");
-            return;
-        }
+            foreach (TellEntry tellMsg in tells)
+                irc.SendNotice(e.Nick, FormatTell(tellMsg));
 
-        TellEntry tell;
-        int tellIdx;
-        // tell-read [number]
-        if (TryGetIdx(e.MessageArray, out tellIdx))
-        {
-            if (inbox.TryRead(tellIdx, out tell))
-            {
-                irc.SendNotice(e.Nick, FormatTell(tell));
-                inboxes.Save(inbox);
-            }
-            else
-                irc.SendNotice(e.Nick, "No such message.");
+            irc.SendNotice(e.Nick, "You have {0} more message(s) waiting.", inbox.MessagesCount);
         }
-        // tell-read
-        else if (inbox.TryReadNext(out tell))
-        {
-            irc.SendNotice(e.Nick, FormatTell(tell));
-            inboxes.Save(inbox);
-        }
+        else
+            irc.SendNotice(e.Nick, "No messages to read.");
     }
 
-    static bool TryGetIdx(string[] msg, out int index)
+    static int GetAmount(string[] msg)
     {
+        const int stdAmount = 5;
+
         if (msg.Length > 1)
         {
-            if (int.TryParse(msg[1], out index))
-                return true;
+            int amount;
+            if (int.TryParse(msg[1], out amount))
+                return amount;
         }
 
-        index = 0;
-        return false;
+        return stdAmount;
     }
 
 

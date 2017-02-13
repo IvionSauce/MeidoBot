@@ -47,53 +47,35 @@ class TellsInbox
     }
 
 
-    public bool TryReadNext(out TellEntry entry)
+    public TellEntry[] Read(int amount)
     {
-        entry = NextEntry();
-        if (entry != null)
-        {
-            NewMessages = false;
-            return true;
-        }
+        TellEntry[] messages;
+        if (amount > MessagesCount)
+            messages = new TellEntry[MessagesCount];
+        else
+            messages = new TellEntry[amount];
 
-        return false;
-    }
+        // Index over internal tell entries.
+        int inboxIdx = 0;
+        // Index over outgoing 'read' messages.
+        int messagesIdx = 0;
 
-    TellEntry NextEntry()
-    {
-        for (int i = 0; i < entries.Length; i++)
+        while (inboxIdx < entries.Length && messagesIdx < messages.Length)
         {
-            if (entries[i] != null)
+            if (entries[inboxIdx] != null)
             {
-                var entry = entries[i];
-
-                entries[i] = null;
-                MessagesCount--;
-
-                return entry;
+                messages[messagesIdx] = entries[inboxIdx];
+                entries[inboxIdx] = null;
+                messagesIdx++;
             }
+
+            inboxIdx++;
         }
 
-        return null;
-    }
+        MessagesCount = MessagesCount - messages.Length;
+        NewMessages = false;
 
-
-    public bool TryRead(int msgNo, out TellEntry entry)
-    {
-        if (msgNo >= 0 && msgNo < entries.Length)
-        {
-            entry = entries[msgNo];
-            if (entry != null)
-            {
-                entries[msgNo] = null;
-                MessagesCount--;
-                NewMessages = false;
-                return true;
-            }
-        }
-
-        entry = null;
-        return false;
+        return messages;
     }
 
 
