@@ -11,16 +11,19 @@ class TellsInbox
     [DataMember]
     public bool NewMessages { get; set; }
 
-    const int MaxEntries = 10;
+    const int StdMaxMessages = 30;
     [DataMember]
-    readonly TellEntry[] entries = new TellEntry[MaxEntries];
+    readonly TellEntry[] entries;
 
 
-    public TellsInbox(string username)
+    public TellsInbox(string username) : this(username, StdMaxMessages) {}
+
+    public TellsInbox(string username, int maxMessages)
     {
         Username = username;
         MessagesCount = 0;
         NewMessages = false;
+        entries = new TellEntry[maxMessages];
     }
 
 
