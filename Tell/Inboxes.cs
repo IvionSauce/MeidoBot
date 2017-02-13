@@ -31,7 +31,7 @@ class Inboxes
             return inbox;
         }
         else
-            return null;
+            return TellsInbox.Empty;
     }
 
 

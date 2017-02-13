@@ -16,6 +16,9 @@ class TellsInbox
     readonly TellEntry[] entries;
 
 
+    static public TellsInbox Empty = new TellsInbox(string.Empty, 0);
+
+
     public TellsInbox(string username) : this(username, StdMaxMessages) {}
 
     public TellsInbox(string username, int maxMessages)
