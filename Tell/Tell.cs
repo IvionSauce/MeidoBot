@@ -140,7 +140,11 @@ public class IrcTell : IMeidoHook
     {
         var inbox = inboxes.Get(e.Nick);
         if (inbox.NewMessages)
-            irc.SendNotice(e.Nick, "You have {0} message(s) waiting.", inbox.MessagesCount);
+        {
+            irc.SendNotice(e.Nick, "You have {0} tell message(s) waiting.", inbox.MessagesCount);
+            inbox.NewMessages = false;
+            inboxes.Save(inbox);
+        }
     }
 
 
