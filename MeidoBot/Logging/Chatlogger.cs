@@ -233,7 +233,6 @@ namespace MeidoBot
                  * we want to know the channels they were part of for logging purposes. (which is solved by `RawQuit`)
                 */
 
-                Console.WriteLine("--- User was null for " + nick);
                 return new string[0];
             }
         }

@@ -164,8 +164,8 @@ namespace MeidoBot
         {
             var triggerRates = new RateControl[]
             {
-                new RateControl(5, 3),
-                new RateControl(15, 20)
+                new RateControl(6, 30),
+                new RateControl(8, 60)
             };
 
             RateControl[] outputRates;

@@ -78,10 +78,8 @@ namespace MeidoBot
             // write as much of them in one go.
             LogEntry next;
             while (NextEntry(entry.Filepath, out next))
-            {
-                Console.WriteLine("--- Consecutive writes! ({0})", entry.Filepath);
                 writer.WriteLine(next);
-            }
+            
             writer.Flush();
         }
 
