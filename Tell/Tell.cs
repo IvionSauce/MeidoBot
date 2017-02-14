@@ -101,7 +101,7 @@ public class IrcTell : IMeidoHook
             foreach (TellEntry tellMsg in tells)
                 irc.SendNotice(e.Nick, FormatTell(tellMsg));
 
-            irc.SendNotice(e.Nick, "You have {0} more message(s) waiting.", inbox.MessagesCount);
+            irc.SendNotice(e.Nick, " ----- {0} message(s) remaining.", inbox.MessagesCount);
             inboxes.Save(inbox);
         }
         else
@@ -115,8 +115,10 @@ public class IrcTell : IMeidoHook
         if (msg.Length > 1)
         {
             int amount;
-            if (int.TryParse(msg[1], out amount))
+            if (int.TryParse(msg[1], out amount) && amount > 0)
+            {
                 return amount;
+            }
         }
 
         return stdAmount;
