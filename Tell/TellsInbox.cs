@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 
 [DataContract]
@@ -87,6 +88,23 @@ class TellsInbox
         }
         MessagesCount = 0;
         NewMessages = false;
+    }
+
+
+    public int DeleteMessages(Func<TellEntry, bool> predicate)
+    {
+        int deleted = 0;
+        for (int i = 0; i < entries.Length; i++)
+        {
+            if (predicate(entries[i]))
+            {
+                entries[i] = null;
+                deleted++;
+            }
+        }
+
+        MessagesCount = MessagesCount - deleted;
+        return deleted;
     }
 
 }

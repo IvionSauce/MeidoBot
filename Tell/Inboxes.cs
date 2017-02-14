@@ -20,6 +20,7 @@ class Inboxes
     {
         this.storagePath = storagePath;
         LoadAll();
+        Prune();
     }
 
 
@@ -73,6 +74,38 @@ class Inboxes
         {
             // Ignore not found files.
         }
+    }
+
+
+    public void Prune()
+    {
+        const int days = 60;
+        var tSpan = TimeSpan.FromDays(days);
+        var predicate = OlderThan(tSpan);
+
+        var changed = new List<TellsInbox>();
+        // Prune messages in each inbox.
+        foreach (TellsInbox inbox in nickToInbox.Values)
+        {
+            if (inbox.DeleteMessages(predicate) > 0)
+                changed.Add(inbox);
+        }
+
+        // Save changed inboxes.
+        foreach (TellsInbox inbox in changed)
+            Save(inbox);
+    }
+
+    static Func<TellEntry, bool> OlderThan(TimeSpan t)
+    {
+        var now = DateTime.UtcNow;
+
+        return entry => {
+            if (now - entry.SentDateUtc > t)
+                return true;
+            else
+                return false;
+        };
     }
 
 
