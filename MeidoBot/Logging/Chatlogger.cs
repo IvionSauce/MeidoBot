@@ -124,8 +124,7 @@ namespace MeidoBot
             if (irc.IsMe(e.Who))
             {
                 Log(e.Channel,
-                    "-!- Joined channel {0} as {1} on {2:ddd dd MMM yyyy}",
-                    e.Channel, e.Who, DateTime.Now);
+                    "-!- Joined channel {0} as {1}", e.Channel, e.Who);
             }
         }
 
@@ -245,20 +244,15 @@ namespace MeidoBot
         void Log(string ircEntity, string logMsg, params object[] args)
         {
             ChatlogMetaData metaData;
-            ChatLogEntry entry;
-            if (chatlogs.TryGetValue(ircEntity, out metaData))
-            {
-                entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
-                LogIfDayChanged(metaData, entry);
-            }
-            else
+            if (!chatlogs.TryGetValue(ircEntity, out metaData))
             {
                 metaData = new ChatlogMetaData( ChatLogEntry.LogfilePath(chatlogDir, ircEntity) );
                 chatlogs[ircEntity] = metaData;
-
-                entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
             }
 
+            var entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
+
+            LogIfDayChanged(metaData, entry);
             logWriter.Enqueue(entry);
             metaData.LastWrite = entry.Timestamp;
 
@@ -268,7 +262,7 @@ namespace MeidoBot
         // Check if the day has changed since last write.
         void LogIfDayChanged(ChatlogMetaData metaData, ChatLogEntry entry)
         {
-            if (metaData.LastWrite.Date < entry.Timestamp.Date)
+            if (metaData.LastWrite.Date != entry.Timestamp.Date)
             {
                 logWriter.Enqueue(
                     new LogEntry(metaData.LogfilePath, entry.Timestamp,
@@ -279,27 +273,41 @@ namespace MeidoBot
         void Cleaner()
         {
             const int cleanInterval = 1000;
-            var timeLimit = TimeSpan.FromMinutes(10);
 
             if (logCount < cleanInterval)
                 logCount++;
             else
             {
                 logCount = 0;
-
-                var toClose = new List<string>();
-                // Make sure to do arithmetic in UTC.
-                var now = DateTime.UtcNow;
-                foreach (var pair in chatlogs)
-                {
-                    var lastWrite = pair.Value.LastWrite.ToUniversalTime();
-                    if ( (now - lastWrite) >= timeLimit )
-                        toClose.Add(pair.Key);
-                }
-
-                foreach (var key in toClose)
-                    CloseLog(key);
+                Clean();
             }
+        }
+
+        void Clean()
+        {
+            var timeLimit = TimeSpan.FromMinutes(10);
+
+            var toRemove = new List<string>();
+            // Make sure to do arithmetic in UTC.
+            var now = DateTime.UtcNow;
+            foreach (var pair in chatlogs)
+            {
+                var lastWrite = pair.Value.LastWrite.ToUniversalTime();
+                if ( (now - lastWrite) >= timeLimit )
+                {
+                    // When exceeding the timelimit, close the file so we regularly release filehandles.
+                    logWriter.Enqueue( LogEntry.Close(pair.Value.LogfilePath) );
+                    // Keep the metadata for a while longer, only delete it when there's a change in date.
+                    // This ensures that LogIfDayChanged always correctly logs day changes.
+                    if (lastWrite.Date < now.Date)
+                    {
+                        toRemove.Add(pair.Key);
+                    }
+                } // if
+            } // foreach
+
+            foreach (var key in toRemove)
+                chatlogs.Remove(key);
         }
 
 
@@ -309,8 +317,8 @@ namespace MeidoBot
             if (chatlogs.TryGetValue(ircEntity, out metaData))
             {
                 logWriter.Enqueue( LogEntry.Close(metaData.LogfilePath) );
-                chatlogs.Remove(ircEntity);
             }
         }
+
     }
 }
