@@ -288,11 +288,10 @@ namespace MeidoBot
             var timeLimit = TimeSpan.FromMinutes(10);
 
             var toRemove = new List<string>();
-            // Make sure to do arithmetic in UTC.
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.Now;
             foreach (var pair in chatlogs)
             {
-                var lastWrite = pair.Value.LastWrite.ToUniversalTime();
+                var lastWrite = pair.Value.LastWrite;
                 if ( (now - lastWrite) >= timeLimit )
                 {
                     // When exceeding the timelimit, close the file so we regularly release filehandles.

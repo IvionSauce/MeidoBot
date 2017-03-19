@@ -5,16 +5,16 @@ namespace MeidoBot
 {
     class LogEntry
     {
-        public readonly DateTime Timestamp;
+        public readonly DateTimeOffset Timestamp;
         public readonly string LogMessage;
         public readonly object[] FormatParams;
         public readonly string Filepath;
 
 
         public LogEntry(string path, string message, params object[] formatParams)
-            : this(path, DateTime.Now, message, formatParams) {}
+            : this(path, DateTimeOffset.Now, message, formatParams) {}
 
-        public LogEntry(string path, DateTime timestamp, string message, params object[] formatParams)
+        public LogEntry(string path, DateTimeOffset timestamp, string message, params object[] formatParams)
         {
             Timestamp = timestamp;
             LogMessage = message;

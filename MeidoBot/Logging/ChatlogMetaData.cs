@@ -6,13 +6,13 @@ namespace MeidoBot
     class ChatlogMetaData
     {
         public readonly string LogfilePath;
-        public DateTime LastWrite { get; set; }
+        public DateTimeOffset LastWrite { get; set; }
 
 
         public ChatlogMetaData(string logfilePath)
         {
             LogfilePath = logfilePath;
-            LastWrite = DateTime.MaxValue;
+            LastWrite = DateTimeOffset.MaxValue;
         }
     }
 }

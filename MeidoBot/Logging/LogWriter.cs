@@ -51,7 +51,7 @@ namespace MeidoBot
                 else
                 {
                     // Clean up writers before exiting.
-                    CloseAll(DateTime.Now);
+                    CloseAll(DateTimeOffset.Now);
                     return;
                 }
             }
@@ -99,7 +99,7 @@ namespace MeidoBot
         }
 
 
-        StreamWriter GetOrOpen(string filePath, DateTime timestamp)
+        StreamWriter GetOrOpen(string filePath, DateTimeOffset timestamp)
         {
             StreamWriter writer;
             if (!pathToWriter.TryGetValue(filePath, out writer))
@@ -115,7 +115,7 @@ namespace MeidoBot
         }
 
 
-        void CloseAll(DateTime timestamp)
+        void CloseAll(DateTimeOffset timestamp)
         {
             foreach (var w in pathToWriter.Values)
             {
@@ -123,7 +123,7 @@ namespace MeidoBot
             }
         }
 
-        void CloseIfOpen(string filePath, DateTime timestamp)
+        void CloseIfOpen(string filePath, DateTimeOffset timestamp)
         {
             StreamWriter writer;
             if (pathToWriter.TryGetValue(filePath, out writer))
@@ -133,7 +133,7 @@ namespace MeidoBot
             }
         }
 
-        static void Close(StreamWriter writer, DateTime timestamp)
+        static void Close(StreamWriter writer, DateTimeOffset timestamp)
         {
             writer.WriteLine("### Closing file on {0:s}", timestamp);
             writer.Dispose();
