@@ -96,7 +96,7 @@ class TellsInbox
         int deleted = 0;
         for (int i = 0; i < entries.Length; i++)
         {
-            if (predicate(entries[i]))
+            if (entries[i] != null && predicate(entries[i]))
             {
                 entries[i] = null;
                 deleted++;
