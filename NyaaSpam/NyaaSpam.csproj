@@ -40,9 +40,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="NyaaSpam.cs" />
-    <Compile Include="NyaaPatterns.cs" />
-    <Compile Include="NyaaFeedReader.cs" />
+    <Compile Include="FeedSpam.cs" />
+    <Compile Include="Patterns.cs" />
+    <Compile Include="FeedReader.cs" />
     <Compile Include="Config.cs" />
   </ItemGroup>
   <ItemGroup>

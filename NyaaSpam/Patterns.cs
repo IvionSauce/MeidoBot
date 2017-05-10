@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using IvionSoft;
 
 
-public class NyaaPatterns : IDisposable
+public class Patterns : IDisposable
 {
     volatile bool _serialize = true;
     public bool SerializeOnModification
@@ -38,9 +38,9 @@ public class NyaaPatterns : IDisposable
     readonly object _storageLock = new object();
 
 
-    public NyaaPatterns() : this(TimeSpan.Zero) {}
+    public Patterns() : this(TimeSpan.Zero) {}
 
-    public NyaaPatterns(TimeSpan bufferTime)
+    public Patterns(TimeSpan bufferTime)
     {
         if (bufferTime < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException("bufferTime", "Cannot be less than 0.");

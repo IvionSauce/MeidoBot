@@ -14,8 +14,8 @@ public class NyaaSpam : IMeidoHook
 
     readonly Config conf;
 
-    readonly NyaaPatterns nyaa;
-    readonly NyaaFeedReader feedReader;
+    readonly Patterns nyaa;
+    readonly FeedReader feedReader;
 
 
     public string Name
@@ -55,7 +55,7 @@ public class NyaaSpam : IMeidoHook
         meido = meidoComm;
 
         string nyaaFile = Path.Combine(meido.DataDir, "_nyaapatterns.xml");
-        nyaa = new NyaaPatterns( TimeSpan.FromMinutes(1) ) { FileLocation = nyaaFile };
+        nyaa = new  Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = nyaaFile };
         try
         {
             nyaa.Deserialize();
@@ -66,7 +66,7 @@ public class NyaaSpam : IMeidoHook
         var log = meido.CreateLogger(this);
         conf = new Config(Path.Combine(meido.ConfDir, "NyaaSpam.xml"), log);
 
-        feedReader = new NyaaFeedReader(ircComm, log, conf, nyaa);
+        feedReader = new FeedReader(ircComm, log, conf, nyaa);
         feedReader.Start();
 
         irc = ircComm;

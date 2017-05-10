@@ -6,11 +6,11 @@ using System.ServiceModel.Syndication;
 using MeidoCommon;
 
 
-class NyaaFeedReader
+class FeedReader
 {
     public TimeSpan Interval { get; private set; }
     public HashSet<string> SkipCategories { get; private set; }
-    public NyaaPatterns Nyaa { get; private set; }
+    public Patterns Nyaa { get; private set; }
     
     Timer tmr;
     
@@ -20,7 +20,7 @@ class NyaaFeedReader
     DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
     
     
-    public NyaaFeedReader(IIrcComm irc, ILog log, Config conf, NyaaPatterns patterns)
+    public FeedReader(IIrcComm irc, ILog log, Config conf, Patterns patterns)
     {
         this.irc = irc;
         this.log = log;
