@@ -7,20 +7,20 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class NyaaSpam : IMeidoHook
+public class FeedSpam : IMeidoHook
 {
     readonly IIrcComm irc;
     readonly IMeidoComm meido;
 
     readonly Config conf;
 
-    readonly Patterns nyaa;
+    readonly Patterns feedPatterns;
     readonly FeedReader feedReader;
 
 
     public string Name
     {
-        get { return "NyaaSpam"; }
+        get { return "FeedSpam"; }
     }
     public string Version
     {
@@ -46,27 +46,27 @@ public class NyaaSpam : IMeidoHook
     public void Stop()
     {
         feedReader.Stop();
-        nyaa.Dispose();
+        feedPatterns.Dispose();
     }
 
     [ImportingConstructor]
-    public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
+    public FeedSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         meido = meidoComm;
 
-        string nyaaFile = Path.Combine(meido.DataDir, "_nyaapatterns.xml");
-        nyaa = new  Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = nyaaFile };
+        string feedFile = Path.Combine(meido.DataDir, "feedpatterns.xml");
+        feedPatterns = new  Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = feedFile };
         try
         {
-            nyaa.Deserialize();
+            feedPatterns.Deserialize();
         }
         catch (FileNotFoundException)
         {}
 
         var log = meido.CreateLogger(this);
-        conf = new Config(Path.Combine(meido.ConfDir, "NyaaSpam.xml"), log);
+        conf = new Config(Path.Combine(meido.ConfDir, "FeedSpam.xml"), log);
 
-        feedReader = new FeedReader(ircComm, log, conf, nyaa);
+        feedReader = new FeedReader(ircComm, log, conf, feedPatterns);
         feedReader.Start();
 
         irc = ircComm;
@@ -141,7 +141,7 @@ public class NyaaSpam : IMeidoHook
         if (assocPat == null)
         {
             foreach (var pattern in patterns)
-                if (nyaa.Add(channel, pattern) != -1)
+                if (feedPatterns.Add(channel, pattern) != -1)
                     amount++;
 
             irc.SendNotice(nick, "Added {0} pattern(s)", amount);
@@ -149,7 +149,7 @@ public class NyaaSpam : IMeidoHook
         else if (assocPat >= 0)
         {
             foreach (var pattern in patterns)
-                if (nyaa.AddExclude(channel, assocPat.Value, pattern) != -1)
+                if (feedPatterns.AddExclude(channel, assocPat.Value, pattern) != -1)
                     amount++;
 
             irc.SendNotice(nick, "Added {0} exclude pattern(s)", amount);
@@ -157,7 +157,7 @@ public class NyaaSpam : IMeidoHook
         else
         {
             foreach (var pattern in patterns)
-                if (nyaa.AddGlobalExclude(channel, pattern) != -1)
+                if (feedPatterns.AddGlobalExclude(channel, pattern) != -1)
                     amount++;
 
             irc.SendNotice(nick, "Added {0} global exclude pattern(s)", amount);
@@ -175,7 +175,7 @@ public class NyaaSpam : IMeidoHook
         {
             foreach (int n in numbers)
             {
-                removedPattern = nyaa.Remove(channel, n);
+                removedPattern = feedPatterns.Remove(channel, n);
                 if (removedPattern != null)
                     irc.SendNotice(nick, "Deleted pattern: {0}", removedPattern);
             }
@@ -184,7 +184,7 @@ public class NyaaSpam : IMeidoHook
         {
             foreach (int n in numbers)
             {
-                removedPattern = nyaa.RemoveExclude(channel, assocPat.Value, n);
+                removedPattern = feedPatterns.RemoveExclude(channel, assocPat.Value, n);
                 if (removedPattern != null)
                     irc.SendNotice(nick, "Removed exclude pattern: {0}", removedPattern);
             }
@@ -193,7 +193,7 @@ public class NyaaSpam : IMeidoHook
         {
             foreach (int n in numbers)
             {
-                removedPattern = nyaa.RemoveGlobalExclude(channel, n);
+                removedPattern = feedPatterns.RemoveGlobalExclude(channel, n);
                 if (removedPattern != null)
                     irc.SendNotice(nick, "Removed global exclude pattern: {0}", removedPattern);
             }
@@ -208,20 +208,20 @@ public class NyaaSpam : IMeidoHook
         if (assocPat == null)
         {
             irc.SendNotice(nick, "Patterns for {0}:", channel);
-            patterns = nyaa.GetPatterns(channel);
+            patterns = feedPatterns.GetPatterns(channel);
         }
         else if (assocPat >= 0)
         {
-            string pattern = nyaa.Get(channel, assocPat.Value);
+            string pattern = feedPatterns.Get(channel, assocPat.Value);
             if (pattern != null)
                 irc.SendNotice(nick, "Exclude patterns associated with \"{0}\":", pattern);
 
-            patterns = nyaa.GetExcludePatterns(channel, assocPat.Value);
+            patterns = feedPatterns.GetExcludePatterns(channel, assocPat.Value);
         }
         else
         {
             irc.SendNotice(nick, "Global exclude patterns for {0}:", channel);
-            patterns = nyaa.GetGlobalExcludePatterns(channel);
+            patterns = feedPatterns.GetGlobalExcludePatterns(channel);
         }
 
         IrcShow(nick, patterns);

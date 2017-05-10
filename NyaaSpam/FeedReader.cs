@@ -10,7 +10,7 @@ class FeedReader
 {
     public TimeSpan Interval { get; private set; }
     public HashSet<string> SkipCategories { get; private set; }
-    public Patterns Nyaa { get; private set; }
+    public Patterns Patterns { get; private set; }
     
     Timer tmr;
     
@@ -27,7 +27,7 @@ class FeedReader
         
         Interval = TimeSpan.FromMinutes(conf.Interval);
         SkipCategories = conf.SkipCategories;
-        Nyaa = patterns;
+        Patterns = patterns;
     }
     
     public void Start()
@@ -80,7 +80,7 @@ class FeedReader
             if (SkipCategories.Contains(item.Categories[0].Name))
                 continue;
             
-            string[] channels = Nyaa.PatternMatch(item.Title.Text);
+            string[] channels = Patterns.PatternMatch(item.Title.Text);
             foreach (string channel in channels)
             {
                 irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
