@@ -77,7 +77,7 @@ class FeedReader
             if (item.PublishDate <= lastPrintedTime)
                 break;
             // Skip processing items in categories we don't care about.
-            if (SkipCategories.Contains(item.Categories[0].Name))
+            if (Skip(item))
                 continue;
             
             string[] channels = Patterns.PatternMatch(item.Title.Text);
@@ -87,5 +87,16 @@ class FeedReader
             }
         }
         lastPrintedTime = latestPublish;
+    }
+
+    bool Skip(SyndicationItem item)
+    {
+        foreach (SyndicationCategory cat in item.Categories)
+        {
+            if (SkipCategories.Contains(cat.Name))
+                return true;
+        }
+
+        return false;
     }
 }

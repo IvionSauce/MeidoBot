@@ -46,18 +46,13 @@ class Config : XmlConfig
     {
         var config =
             new XElement ("config",
-                new XElement ("active-channels",
-                    new XElement ("channel", string.Empty)
-                ),
-
-                new XElement ("interval", 15, new XComment ("In minutes")),
-
-                new XElement ("skip-categories",
-                    new XElement ("category", "Non-English-translated Anime"),
-                    new XElement ("category", "Non-English-translated Live Action"),
-                    new XElement ("category", "Non-English-scanlated Books")
-                )
-            );
+                          new XElement ("active-channels",
+                                        new XElement ("channel", string.Empty)),
+                          new XElement ("interval", 15,
+                                        new XComment ("In minutes")),
+                          new XElement ("skip-categories",
+                                        new XElement ("category", string.Empty))
+                         );
 
         return config;
     }
