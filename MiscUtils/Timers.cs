@@ -80,11 +80,10 @@ class Timers
         var desc = new List<TimerDescription>();
         lock (_locker)
         {
-            int i = 0;
-            while (i < timers.Length && timers[i] != null)
+            foreach (SingleTimer tmr in timers)
             {
-                desc.Add( new TimerDescription(timers[i]) );
-                i++;
+                if (tmr != null)
+                    desc.Add( new TimerDescription(tmr) );
             }
         }
         return desc.ToArray();
@@ -134,12 +133,13 @@ class Timers
     {
         lock (_locker)
         {
-            int i = 0;
-            while (i < timers.Length && timers[i] != null)
+            for (int i = 0; i < timers.Length; i++)
             {
-                timers[i].Dispose();
-                timers[i] = null;
-                i++;
+                if (timers[i] != null)
+                {
+                    timers[i].Dispose();
+                    timers[i] = null;
+                }
             }
         }
     }
