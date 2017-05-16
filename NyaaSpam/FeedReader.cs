@@ -8,10 +8,11 @@ using MeidoCommon;
 
 class FeedReader
 {
+    public Uri Feed { get; private set; }
     public TimeSpan Interval { get; private set; }
-    public HashSet<string> SkipCategories { get; private set; }
     public Patterns Patterns { get; private set; }
-    
+    public HashSet<string> SkipCategories { get; private set; }
+
     Timer tmr;
     
     readonly IIrcComm irc;
@@ -24,7 +25,8 @@ class FeedReader
     {
         this.irc = irc;
         this.log = log;
-        
+
+        Feed = conf.Feed;
         Interval = TimeSpan.FromMinutes(conf.Interval);
         SkipCategories = conf.SkipCategories;
         Patterns = patterns;
@@ -45,7 +47,7 @@ class FeedReader
         SyndicationFeed feed;
         try
         {
-            XmlReader reader = XmlReader.Create("http://www.nyaa.se/?page=rss");
+            XmlReader reader = XmlReader.Create(Feed.OriginalString);
             feed = SyndicationFeed.Load(reader);
         }
         catch (System.Net.WebException ex)
