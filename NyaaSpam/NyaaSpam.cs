@@ -23,7 +23,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.71"; }
+        get { return "0.72"; }
     }
 
     public Dictionary<string,string> Help
@@ -84,7 +84,11 @@ public class NyaaSpam : IMeidoHook
         if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
         {
             if (e.MessageArray.Length == 1)
+            {
+                e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
+                        conf.Feed, conf.Interval);
                 return;
+            }
 
             string command = e.MessageArray[1];
             string input = string.Empty;
