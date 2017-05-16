@@ -44,32 +44,39 @@ public class NyaaSpam : IMeidoHook
 
     public void Stop()
     {
-        feedReader.Stop();
-        feedPatterns.Dispose();
+        if (feedReader != null)
+            feedReader.Stop();
+        
+        if (feedPatterns != null)
+            feedPatterns.Dispose();
     }
 
     [ImportingConstructor]
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         meido = meidoComm;
-
-        string patternsFile = meidoComm.DataPathTo("nyaapatterns.xml");
-        feedPatterns = new Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = patternsFile };
-        try
-        {
-            feedPatterns.Deserialize();
-        }
-        catch (System.IO.FileNotFoundException)
-        {}
-
         var log = meido.CreateLogger(this);
-        conf = new Config(meidoComm.ConfPathTo("NyaaSpam.xml"), log);
+        conf = new Config(meido.ConfPathTo("NyaaSpam.xml"), log);
 
-        feedReader = new FeedReader(ircComm, log, conf, feedPatterns);
-        feedReader.Start();
+        if (conf.Feed != null)
+        {
+            string patternsFile = meido.DataPathTo("nyaapatterns.xml");
+            feedPatterns = new Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = patternsFile };
+            try
+            {
+                feedPatterns.Deserialize();
+            }
+            catch (System.IO.FileNotFoundException)
+            {}
 
-        irc = ircComm;
-        meido.RegisterTrigger("nyaa", Nyaa, true);
+            feedReader = new FeedReader(ircComm, log, conf, feedPatterns);
+            feedReader.Start();
+
+            irc = ircComm;
+            meido.RegisterTrigger("nyaa", Nyaa, true);
+        }
+        else
+            log.Error("Disabled due to invalid or missing feed address.");
     }
 
     public void Nyaa(IIrcMessage e)
