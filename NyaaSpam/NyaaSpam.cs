@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -7,7 +6,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class FeedSpam : IMeidoHook
+public class NyaaSpam : IMeidoHook
 {
     readonly IIrcComm irc;
     readonly IMeidoComm meido;
@@ -20,7 +19,7 @@ public class FeedSpam : IMeidoHook
 
     public string Name
     {
-        get { return "FeedSpam"; }
+        get { return "NyaaSpam"; }
     }
     public string Version
     {
@@ -50,21 +49,21 @@ public class FeedSpam : IMeidoHook
     }
 
     [ImportingConstructor]
-    public FeedSpam(IIrcComm ircComm, IMeidoComm meidoComm)
+    public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         meido = meidoComm;
 
-        string feedFile = Path.Combine(meido.DataDir, "feedpatterns.xml");
-        feedPatterns = new  Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = feedFile };
+        string patternsFile = meidoComm.DataPathTo("nyaapatterns.xml");
+        feedPatterns = new Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = patternsFile };
         try
         {
             feedPatterns.Deserialize();
         }
-        catch (FileNotFoundException)
+        catch (System.IO.FileNotFoundException)
         {}
 
         var log = meido.CreateLogger(this);
-        conf = new Config(Path.Combine(meido.ConfDir, "FeedSpam.xml"), log);
+        conf = new Config(meidoComm.ConfPathTo("NyaaSpam.xml"), log);
 
         feedReader = new FeedReader(ircComm, log, conf, feedPatterns);
         feedReader.Start();
