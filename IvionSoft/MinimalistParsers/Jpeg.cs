@@ -87,8 +87,14 @@ namespace IvionSoft.MinimalistParsers
 
         static bool IsSof(byte[] marker)
         {
-            // If we find the Start of Frame marker, SOF0/SOF2 (Baseline/Progressive).
-            return marker[0] == 0xff && (marker[1] == 0xc0 || marker[1] == 0xc2);
+            // Check if marker is the Start of Frame marker.
+            // 0xc0 ~ SOF0 (Baseline)
+            // 0xc1 ~ SOF1 (Extended sequential)
+            // 0xc2 ~ SOF2 (Progressive)
+            // [...]
+            // They go up to SOF15. But they are, like SOF1 above, very rarily used.
+            // But since the SOF format is the same for all of them there's no problem just accepting them all.
+            return marker[0] == 0xff && (marker[1] >= 0xc0 && marker[1] < 0xd0);
         }
     }
 }
