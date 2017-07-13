@@ -49,7 +49,11 @@ namespace IvionSoft.MinimalistParsers
                         return new MediaProperties(MediaType.Jpeg, dim);
                     }
 
-                    stream.Position += segmentLength - 2;
+                    // Protect against going backwards due to bogus segment lengths.
+                    // Also unsigned integers will fuck everything up when they wrap around. Which will happen
+                    // without this check.
+                    if (segmentLength > 2)
+                        stream.Position += segmentLength - 2;
                 } // while
                 return new MediaProperties(MediaType.Jpeg);
             } // if
