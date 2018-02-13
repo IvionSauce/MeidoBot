@@ -94,7 +94,24 @@ namespace IvionSoft.MinimalistParsers
             // [...]
             // They go up to SOF15. But they are, like SOF1 above, very rarily used.
             // But since the SOF format is the same for all of them there's no problem just accepting them all.
-            return marker[0] == 0xff && (marker[1] >= 0xc0 && marker[1] < 0xd0);
+            return marker[0] == 0xff && IsValidSof(marker[1]);
+        }
+
+        // We used to accept everything in the range [0xc0 - 0xcf] as valid SOF markers, but this isn't correct and has
+        // led to problems in a small number of cases.
+        static bool IsValidSof(byte sof)
+        {
+            // Exclude SOF4/0xc4 and SOF12/0xcc which do not seem to exist...
+            // We did bump into a SOF4 marker in a JPEG, which was probably used for some other purpose than as a
+            // Start of Frame marker, making a mess of our little algorithm.
+            if ((sof >= 0xc0 && sof < 0xc4) ||
+                (sof >= 0xc5 && sof < 0xcc) ||
+                (sof >= 0xcd && sof <= 0xcf))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
