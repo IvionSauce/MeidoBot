@@ -23,10 +23,10 @@ namespace Calculation
 
         // List in which to collect the tokenized expression.
         List<CalcToken> exprList;
+        // List to temporarily store token characters, for tokens that can be multiple characters long.
+        List<char> tmpToken;
 
-        // List to temporarily store the digits making up a number (may include a decimal point).
-        // Also keep track if the number has a decimal point, to make sure it only has one.
-        List<char> tmpNum;
+        // Keep track if the number has a decimal point, to make sure it only has one.
         bool decimalPoint;
         // CalcToken needs to know the original starting index of tokens, keep track of it for numbers.
         int numberStart;
@@ -34,17 +34,20 @@ namespace Calculation
         // For keeping track of the number of opening and closing parentheses.
         int parenBalance;
 
+        int symbolStart;
+
 
         public TokenExpression Tokenize(string expr)
         {
             exprList = new List<CalcToken>();
-            tmpNum = new List<char>();
+            tmpToken = new List<char>();
 
             // Set initial values of control and housekeeping variables.
             TokenTypes allowedTokens = TokenTypes.ExprBegin;
             decimalPoint = false;
             numberStart = -1;
             parenBalance = 0;
+            symbolStart = -1;
 
             for (int i = 0; i < expr.Length; i++)
             {
@@ -138,6 +141,16 @@ namespace Calculation
                 else if (char.IsWhiteSpace(c))
                     continue;
 
+                // ----------------------
+                // ----- [7] Symbol -----
+                // ----------------------
+                else if (allowedTokens.HasFlag(TokenTypes.Symbol))
+                {
+                    AddCharToSym(c, i);
+                    // Set the allowed tokens for the next character.
+                    allowedTokens = TokenTypes.Symbol | TokenTypes.Operator | TokenTypes.L_Paren;
+                }
+
                 // ----- [7] Unsupported Character -----
                 // Abort on unsupported character.
                 else
@@ -160,26 +173,15 @@ namespace Calculation
         }
 
 
-        void AddDigitToNum(char c, int index)
-        {
-            if (tmpNum.Count == 0)
-                numberStart = index;
-
-            tmpNum.Add(c);
-        }
-
-        void AddDotToNum()
-        {
-            if (tmpNum.Count == 0)
-                tmpNum.Add('0');
-
-            decimalPoint = true;
-            tmpNum.Add('.');
-        }
-
+        // -------------------------------------------
+        // --- Methods for single character tokens ---
+        // -------------------------------------------
 
         void AddLParenToExpr(int index)
         {
+            // A left parenthesis can follow a function, thus:
+            AddFuncToExpr();
+
             exprList.Add( CalcToken.ParenOpen(index) );
             // Record the opening of a subexpression to the parentheses balance.
             parenBalance++;
@@ -187,8 +189,8 @@ namespace Calculation
 
         void AddRParenToExpr(int index)
         {
-            // Because a right parenthesis can follow a number, commit collected single digits as a number token.
-            AddNumToExpr();
+            // A right parenthesis can follow a number or a symbol, thus:
+            AddOperandToExpr();
 
             exprList.Add( CalcToken.ParenClose(index) );
             // Record the closing of a subexpression to the parentheses balance.
@@ -197,24 +199,91 @@ namespace Calculation
 
         void AddOperatorToExpr(char token, int index)
         {
-            // Because an operator can follow a number, commit collected single digits as a number token.
-            AddNumToExpr();
+            // An operator can follow a number or a symbol, thus:
+            AddOperandToExpr();
 
             exprList.Add( CalcToken.Operator(token, index) );
         }
 
 
+        // -----------------------------------------
+        // --- Methods for multicharacter tokens ---
+        // -----------------------------------------
+
+
+        // --- Collecting single chars in temporary storage `tmpToken` ----
+
+        void AddDigitToNum(char c, int index)
+        {
+            if (tmpToken.Count == 0)
+                numberStart = index;
+
+            tmpToken.Add(c);
+        }
+
+        void AddDotToNum()
+        {
+            if (tmpToken.Count == 0)
+                tmpToken.Add('0');
+
+            decimalPoint = true;
+            tmpToken.Add('.');
+        }
+
+        void AddCharToSym(char c, int index)
+        {
+            if (tmpToken.Count == 0)
+                symbolStart = index;
+
+            tmpToken.Add(c);
+        }
+
+
+        // --- Comitting collected characters as a single token ---
+
+        void AddOperandToExpr()
+        {
+            AddNumToExpr();
+            AddSymToExpr();
+        }
+
         void AddNumToExpr()
         {
-            if (tmpNum.Count == 0)
-                return;
+            if (numberStart >= 0 && tmpToken.Count > 0)
+            {
+                var num = new string( tmpToken.ToArray() );
+                exprList.Add( CalcToken.Number(num, numberStart) );
 
-            var num = new string( tmpNum.ToArray() );
-            exprList.Add( CalcToken.Number(num, numberStart) );
+                tmpToken.Clear();
+            }
 
-            tmpNum.Clear();
             decimalPoint = false;
             numberStart = -1;
+        }
+
+        void AddSymToExpr(bool isFunction)
+        {
+            if (symbolStart >= 0 && tmpToken.Count > 0)
+            {
+                var sym = new string( tmpToken.ToArray() );
+                if (isFunction)
+                    exprList.Add( CalcToken.Function(sym, symbolStart) );
+                else
+                    exprList.Add( CalcToken.Symbol(sym, symbolStart) );
+
+                tmpToken.Clear();
+            }
+
+            symbolStart = -1;
+        }
+
+        void AddSymToExpr()
+        {
+            AddSymToExpr(false);
+        }
+        void AddFuncToExpr()
+        {
+            AddSymToExpr(true);
         }
     }
 }
