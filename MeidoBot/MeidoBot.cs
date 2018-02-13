@@ -25,6 +25,8 @@ namespace MeidoBot
 
 
         readonly IrcClient irc = new IrcClient();
+        // Auto-reconnect handling.
+        readonly AutoReconnect reconnect;
 
         readonly LogWriter logWriter;
         readonly Logger log;
@@ -51,7 +53,7 @@ namespace MeidoBot
         public Meido(MeidoConfig config)
         {
             if (config == null)
-                throw new ArgumentNullException("config");
+                throw new ArgumentNullException(nameof(config));
 
             // We need these parameters for events, store them.
             conf = config;
@@ -80,6 +82,7 @@ namespace MeidoBot
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
             SetHandlers();
+            reconnect = new AutoReconnect(irc);
         }
 
 
@@ -123,8 +126,6 @@ namespace MeidoBot
             irc.CtcpVersion = "MeidoBot " + Program.Version;
             irc.ActiveChannelSyncing = true;
             irc.AutoJoinOnInvite = true;
-            irc.AutoReconnect = true;
-            //irc.AutoRejoin = true;
             irc.Encoding = Encoding.UTF8;
         }
 
@@ -204,7 +205,6 @@ namespace MeidoBot
         // Event handlers.
         // ---------------
 
-        // Tell the server who we are and join channel(s).
         void OnConnected(object sender, EventArgs e)
         {
             irc.Login(conf.Nickname, "Meido Bot", 0, "MeidoBot");
@@ -214,6 +214,9 @@ namespace MeidoBot
             log.Message("Joining channels: " + string.Join(" ", currentChannels));
             irc.RfcJoin(currentChannels.ToArray());
 
+            // Because we call `Listen` in this event handler no other OnConnected handlers will be called,
+            // since `Listen` is a blocking call. So we got to inform `AutoReconnect` manually.
+            reconnect.SuccessfulConnect();
             irc.Listen();
         }
 
