@@ -170,25 +170,22 @@ namespace Calculation
                     allowedTokens = TokenTypes.Symbol | TokenTypes.L_Paren | TokenTypes.ExprEnd;
                 }
 
-                // ----- [9] Unsupported Character -----
-                // Abort on unsupported character.
+                // ----- [9] Unexpected Character -----
                 else
-                    return new TokenExpression("Unsupported character: " + c, i);
+                    return new TokenExpression("Unexpected character: " + c, i);
             }
 
             // Abort on unclosed subexpression(s) / too many left parentheses.
             if (depthMeter.Count > 0)
                 return new TokenExpression("Unclosed subexpression(s) detected, amount: " + depthMeter.Count);
-
-            AddNumToExpr();
-
-            // Final check. The expression should have ended in either a number or a right parenthesis. Both of these
+            // Final check. The expression should have ended in either an operand or a right parenthesis. Both of these
             // set the allowedTokens to include TokenType.Operator, which would not be set by the others. So check for
             // that to determine whether the expression has ended correctly.
-            if (allowedTokens.HasFlag(TokenTypes.Operator))
-                return new TokenExpression(exprList);
-            else
-                return new TokenExpression("Expression did not end with a number or closing parenthesis");
+            if (!allowedTokens.HasFlag(TokenTypes.Operator))
+                return new TokenExpression("Expression did not end with an operand or closing parenthesis");
+            
+            AddOperandToExpr();
+            return new TokenExpression(exprList);
         }
 
 
