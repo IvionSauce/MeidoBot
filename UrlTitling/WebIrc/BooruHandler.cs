@@ -42,19 +42,33 @@ namespace WebIrc
 
         protected string ConstructWarning(string[] generalTags)
         {
+            return ConstructWarning(generalTags, new string[0]);
+        }
+
+        protected string ConstructWarning(string[] generalTags, string[] metaTags)
+        {
             // Return early if there's nothing to do.
-            if (WarningTags == null || WarningTags.Count == 0 || generalTags.Length == 0)
+            if (WarningTags == null || WarningTags.Count == 0 ||
+                (generalTags.Length == 0 && metaTags.Length == 0))
+            {
                 return string.Empty;
+            }
             
             var warnings = new List<string>();
-            foreach (string tag in generalTags)
-                if (WarningTags.Contains(tag))
-                    warnings.Add(tag);
+            WarningLoop(warnings, generalTags);
+            WarningLoop(warnings, metaTags);
             
             if (warnings.Count > 0)
                 return string.Concat("[", string.Join(", ", warnings), "]");
             else
                 return string.Empty;
+        }
+
+        void WarningLoop(List<string> warnings, string[] tags)
+        {
+            foreach (string tag in tags)
+                if (WarningTags.Contains(tag))
+                    warnings.Add(tag);
         }
     }
 
@@ -93,7 +107,7 @@ namespace WebIrc
             
             if (postInfo.Success)
             {
-                string warning = ConstructWarning(postInfo.GeneralTags);
+                string warning = ConstructWarning(postInfo.GeneralTags, postInfo.MetaTags);
                 
                 // If image has no character, copyright or artist tags, return just the post ID, rating and
                 // possible warning.
