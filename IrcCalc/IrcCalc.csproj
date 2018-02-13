@@ -40,6 +40,11 @@
     <Compile Include="TokenizedExpression.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="ShuntingYard.cs" />
+    <Compile Include="CalcToken.cs" />
+    <Compile Include="CalcEnvironment.cs" />
+    <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Expressions.cs" />
+    <Compile Include="Verifier.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
