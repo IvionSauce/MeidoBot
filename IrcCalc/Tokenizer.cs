@@ -28,13 +28,14 @@ namespace Calculation
 
         // Keep track if the number has a decimal point, to make sure it only has one.
         bool decimalPoint;
-        // CalcToken needs to know the original starting index of tokens, keep track of it for numbers.
+        // CalcToken needs to know the original starting index of tokens, keep track of it.
         int numberStart;
-
-        // For keeping track of the number of opening and closing parentheses.
-        int parenBalance;
-
         int symbolStart;
+
+        // This lovely field is doing double duty as both tracking parentheses balance and whether the subexpression
+        // we're in is associated with a function (top of the stack will be `true`).
+        // This way we can ascertain whether argument seperators are occuring illegally.
+        Stack<bool> depthMeter;
 
 
         public TokenExpression Tokenize(string expr)
@@ -46,8 +47,8 @@ namespace Calculation
             TokenTypes allowedTokens = TokenTypes.ExprBegin;
             decimalPoint = false;
             numberStart = -1;
-            parenBalance = 0;
             symbolStart = -1;
+            depthMeter = new Stack<bool>();
 
             for (int i = 0; i < expr.Length; i++)
             {
@@ -110,7 +111,7 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.R_Paren))
                     {
-                        if (parenBalance == 0)
+                        if (depthMeter.Count == 0)
                             return new TokenExpression("Tried to close a subexpression before it was opened", i);
 
                         AddRParenToExpr(i);
@@ -173,8 +174,8 @@ namespace Calculation
             }
 
             // Abort on unclosed subexpression(s) / too many left parentheses.
-            if (parenBalance > 0)
-                return new TokenExpression("Unclosed subexpression(s) detected, amount: " + parenBalance);
+            if (depthMeter.Count > 0)
+                return new TokenExpression("Unclosed subexpression(s) detected, amount: " + depthMeter.Count);
 
             AddNumToExpr();
 
@@ -195,11 +196,12 @@ namespace Calculation
         void AddLParenToExpr(int index)
         {
             // A left parenthesis can follow a function, thus:
-            AddFuncToExpr();
+            bool funcSubexpr = AddFuncToExpr();
 
             exprList.Add( CalcToken.ParenOpen(index) );
             // Record the opening of a subexpression to the parentheses balance.
-            parenBalance++;
+            // Also record whether the subexpression we entered is associated with a function.
+            depthMeter.Push(funcSubexpr);
         }
 
         void AddRParenToExpr(int index)
@@ -209,7 +211,7 @@ namespace Calculation
 
             exprList.Add( CalcToken.ParenClose(index) );
             // Record the closing of a subexpression to the parentheses balance.
-            parenBalance--;
+            depthMeter.Pop();
         }
 
         void AddSepToExpr(int index)
@@ -284,8 +286,9 @@ namespace Calculation
             numberStart = -1;
         }
 
-        void AddSymToExpr(bool isFunction)
+        bool AddSymToExpr(bool isFunction)
         {
+            bool added = false;
             if (symbolStart >= 0 && tmpToken.Count > 0)
             {
                 var sym = new string( tmpToken.ToArray() );
@@ -294,19 +297,21 @@ namespace Calculation
                 else
                     exprList.Add( CalcToken.Symbol(sym, symbolStart) );
 
+                added = true;
                 tmpToken.Clear();
             }
 
             symbolStart = -1;
+            return added;
         }
 
-        void AddSymToExpr()
+        bool AddSymToExpr()
         {
-            AddSymToExpr(false);
+            return AddSymToExpr(false);
         }
-        void AddFuncToExpr()
+        bool AddFuncToExpr()
         {
-            AddSymToExpr(true);
+            return AddSymToExpr(true);
         }
     }
 }
