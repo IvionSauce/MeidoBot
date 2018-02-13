@@ -141,17 +141,32 @@ namespace Calculation
                 else if (char.IsWhiteSpace(c))
                     continue;
 
+                // ----------------------------------
+                // ----- [7] Argument Seperator -----
+                // ----------------------------------
+                else if (c == ',')
+                {
+                    if (allowedTokens.HasFlag(TokenTypes.R_Paren))
+                    {
+                        AddSepToExpr(i);
+                        // Set the allowed tokens for the next character.
+                        allowedTokens = TokenTypes.ExprBegin;
+                    }
+                    else
+                        return new TokenExpression("Unexpected argument seperator", i);
+                }
+
                 // ----------------------
-                // ----- [7] Symbol -----
+                // ----- [8] Symbol -----
                 // ----------------------
                 else if (allowedTokens.HasFlag(TokenTypes.Symbol))
                 {
                     AddCharToSym(c, i);
                     // Set the allowed tokens for the next character.
-                    allowedTokens = TokenTypes.Symbol | TokenTypes.Operator | TokenTypes.L_Paren;
+                    allowedTokens = TokenTypes.Symbol | TokenTypes.L_Paren | TokenTypes.ExprEnd;
                 }
 
-                // ----- [7] Unsupported Character -----
+                // ----- [9] Unsupported Character -----
                 // Abort on unsupported character.
                 else
                     return new TokenExpression("Unsupported character: " + c, i);
@@ -195,6 +210,14 @@ namespace Calculation
             exprList.Add( CalcToken.ParenClose(index) );
             // Record the closing of a subexpression to the parentheses balance.
             parenBalance--;
+        }
+
+        void AddSepToExpr(int index)
+        {
+            // An argument seperator can follow a number or a symbol, thus:
+            AddOperandToExpr();
+
+            exprList.Add( CalcToken.ArgSeperator(index) );
         }
 
         void AddOperatorToExpr(char token, int index)
