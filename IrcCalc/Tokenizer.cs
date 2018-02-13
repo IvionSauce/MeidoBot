@@ -21,11 +21,8 @@ namespace Calculation
             ExprEnd = Operator | R_Paren
         }
 
-        static readonly HashSet<char> opChars =
-            new HashSet<char>(new char[] { '+', '-', '*', '/', '^' });
-
         // List in which to collect the tokenized expression.
-        List<string> exprList;
+        List<CalcToken> exprList;
 
         // List to temporarily store the digits making up a number (may include a decimal point).
         // Also keep track if the number has a decimal point, to make sure it only has one.
@@ -36,9 +33,9 @@ namespace Calculation
         int parenBalance;
 
 
-        public TokenizedExpression Tokenize(string expr)
+        public TokenExpression Tokenize(string expr)
         {
-            exprList = new List<string>();
+            exprList = new List<CalcToken>();
             tmpNum = new List<char>();
 
             // Set initial values of control and housekeeping variables.
@@ -62,28 +59,28 @@ namespace Calculation
                         allowedTokens = TokenTypes.Number | TokenTypes.ExprEnd;
                     }
                     else
-                        return new TokenizedExpression("Unexpected number: " + c, i);
+                        return new TokenExpression("Unexpected number: " + c, i);
                 }
                 else if (c == '.')
                 {
                     if (allowedTokens.HasFlag(TokenTypes.Number))
                     {
                         if (decimalPoint)
-                            return new TokenizedExpression("More than one decimal point detected", i);
+                            return new TokenExpression("More than one decimal point detected", i);
 
                         AddDotToNum();
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number;
                     }
                     else
-                        return new TokenizedExpression("Unexpected decimal point", i);
+                        return new TokenExpression("Unexpected decimal point", i);
                 }
 
                 // ---------------------------
                 // ----- [2] Unary Minus -----
                 // ---------------------------
                 else if (c == '-' && allowedTokens.HasFlag(TokenTypes.UnaryMinus))
-                    exprList.Add("u-");
+                    exprList.Add( CalcToken.UnaryMinus(i) );
 
                 // --------------------------------
                 // ----- [3] Left Parenthesis -----
@@ -92,12 +89,12 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.L_Paren))
                     {
-                        AddLParenToExpr();
+                        AddLParenToExpr(i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.ExprBegin;
                     }
                     else
-                        return new TokenizedExpression("Unexpected left parenthesis", i);
+                        return new TokenExpression("Unexpected left parenthesis", i);
                 }
 
                 // ---------------------------------
@@ -108,29 +105,29 @@ namespace Calculation
                     if (allowedTokens.HasFlag(TokenTypes.R_Paren))
                     {
                         if (parenBalance == 0)
-                            return new TokenizedExpression("Tried to close a subexpression before it was opened", i);
+                            return new TokenExpression("Tried to close a subexpression before it was opened", i);
 
-                        AddRParenToExpr();
+                        AddRParenToExpr(i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.ExprEnd;
                     }
                     else
-                        return new TokenizedExpression("Unexpected right parenthesis", i);
+                        return new TokenExpression("Unexpected right parenthesis", i);
                 }
 
                 // ------------------------
                 // ----- [5] Operator -----
                 // ------------------------
-                else if (opChars.Contains(c))
+                else if (CalcToken.IsOperatorChar(c))
                 {
                     if (allowedTokens.HasFlag(TokenTypes.Operator))
                     {
-                        AddOperatorToExpr(c);
+                        AddOperatorToExpr(c, i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.ExprBegin;
                     }
                     else
-                        return new TokenizedExpression("Unexpected operator: " + c, i);
+                        return new TokenExpression("Unexpected operator: " + c, i);
                 }
 
                 // ----- [6] Whitespace -----
@@ -141,12 +138,12 @@ namespace Calculation
                 // ----- [7] Unsupported Character -----
                 // Abort on unsupported character.
                 else
-                    return new TokenizedExpression("Unsupported character: " + c, i);
+                    return new TokenExpression("Unsupported character: " + c, i);
             }
 
             // Abort on unclosed subexpression(s) / too many left parentheses.
             if (parenBalance > 0)
-                return new TokenizedExpression("Unclosed subexpression(s) detected, amount: " + parenBalance);
+                return new TokenExpression("Unclosed subexpression(s) detected, amount: " + parenBalance);
 
             AddNumToExpr();
 
@@ -154,9 +151,9 @@ namespace Calculation
             // set the allowedTokens to include TokenType.Operator, which would not be set by the others. So check for
             // that to determine whether the expression has ended correctly.
             if (allowedTokens.HasFlag(TokenTypes.Operator))
-                return new TokenizedExpression(exprList);
+                return new TokenExpression(exprList);
             else
-                return new TokenizedExpression("Expression did not end with a number or closing parenthesis");
+                return new TokenExpression("Expression did not end with a number or closing parenthesis");
         }
 
 
@@ -170,29 +167,29 @@ namespace Calculation
         }
 
 
-        void AddLParenToExpr()
+        void AddLParenToExpr(int index)
         {
-            exprList.Add( "(" );
+            exprList.Add( CalcToken.ParenOpen(index) );
             // Record the opening of a subexpression to the parentheses balance.
             parenBalance++;
         }
 
-        void AddRParenToExpr()
+        void AddRParenToExpr(int index)
         {
             // Because a right parenthesis can follow a number, commit collected single digits as a number token.
             AddNumToExpr();
 
-            exprList.Add( ")" );
+            exprList.Add( CalcToken.ParenClose(index) );
             // Record the closing of a subexpression to the parentheses balance.
             parenBalance--;
         }
 
-        void AddOperatorToExpr(char token)
+        void AddOperatorToExpr(char token, int index)
         {
             // Because an operator can follow a number, commit collected single digits as a number token.
             AddNumToExpr();
 
-            exprList.Add( token.ToString() );
+            exprList.Add( CalcToken.Operator(token, index) );
         }
 
 
@@ -201,8 +198,8 @@ namespace Calculation
             if (tmpNum.Count == 0)
                 return;
 
-            var numString = new string( tmpNum.ToArray() );
-            exprList.Add(numString);
+            var num = new string( tmpNum.ToArray() );
+            exprList.Add( CalcToken.Number(num, -1) );
 
             tmpNum.Clear();
             decimalPoint = false;
