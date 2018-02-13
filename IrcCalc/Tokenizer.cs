@@ -28,6 +28,8 @@ namespace Calculation
         // Also keep track if the number has a decimal point, to make sure it only has one.
         List<char> tmpNum;
         bool decimalPoint;
+        // CalcToken needs to know the original starting index of tokens, keep track of it for numbers.
+        int numberStart;
 
         // For keeping track of the number of opening and closing parentheses.
         int parenBalance;
@@ -41,6 +43,7 @@ namespace Calculation
             // Set initial values of control and housekeeping variables.
             TokenTypes allowedTokens = TokenTypes.ExprBegin;
             decimalPoint = false;
+            numberStart = -1;
             parenBalance = 0;
 
             for (int i = 0; i < expr.Length; i++)
@@ -54,7 +57,7 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.Number))
                     {
-                        tmpNum.Add(c);
+                        AddDigitToNum(c, i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number | TokenTypes.ExprEnd;
                     }
@@ -157,6 +160,14 @@ namespace Calculation
         }
 
 
+        void AddDigitToNum(char c, int index)
+        {
+            if (tmpNum.Count == 0)
+                numberStart = index;
+
+            tmpNum.Add(c);
+        }
+
         void AddDotToNum()
         {
             if (tmpNum.Count == 0)
@@ -199,10 +210,11 @@ namespace Calculation
                 return;
 
             var num = new string( tmpNum.ToArray() );
-            exprList.Add( CalcToken.Number(num, -1) );
+            exprList.Add( CalcToken.Number(num, numberStart) );
 
             tmpNum.Clear();
             decimalPoint = false;
+            numberStart = -1;
         }
     }
 }
