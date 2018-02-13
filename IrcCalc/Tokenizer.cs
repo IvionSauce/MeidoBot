@@ -7,13 +7,18 @@ namespace Calculation
     class Tokenizer
     {
         [Flags]
-        private enum TokenTypes
+        enum TokenTypes
         {
             Number = 1,
             UnaryMinus = 2,
             Operator = 4,
             L_Paren = 8,
-            R_Paren = 16
+            R_Paren = 16,
+            Symbol = 32,
+
+            Operand = Number | Symbol,
+            ExprBegin = Operand | UnaryMinus | L_Paren,
+            ExprEnd = Operator | R_Paren
         }
 
         static readonly HashSet<char> opChars =
@@ -33,13 +38,11 @@ namespace Calculation
 
         public TokenizedExpression Tokenize(string expr)
         {
-            // Initialize new list to store store our tokenized expression in.
             exprList = new List<string>();
-            // Initialize new list to store digits/dot in.
             tmpNum = new List<char>();
 
             // Set initial values of control and housekeeping variables.
-            TokenTypes allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
+            TokenTypes allowedTokens = TokenTypes.ExprBegin;
             decimalPoint = false;
             parenBalance = 0;
 
@@ -56,7 +59,7 @@ namespace Calculation
                     {
                         tmpNum.Add(c);
                         // Set the allowed tokens for the next character.
-                        allowedTokens = TokenTypes.Number | TokenTypes.Operator | TokenTypes.R_Paren;
+                        allowedTokens = TokenTypes.Number | TokenTypes.ExprEnd;
                     }
                     else
                         return new TokenizedExpression("Unexpected number: " + c, i);
@@ -70,7 +73,7 @@ namespace Calculation
 
                         AddDotToNum();
                         // Set the allowed tokens for the next character.
-                        allowedTokens = TokenTypes.Number | TokenTypes.Operator | TokenTypes.R_Paren;
+                        allowedTokens = TokenTypes.Number;
                     }
                     else
                         return new TokenizedExpression("Unexpected decimal point", i);
@@ -91,7 +94,7 @@ namespace Calculation
                     {
                         AddLParenToExpr();
                         // Set the allowed tokens for the next character.
-                        allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
+                        allowedTokens = TokenTypes.ExprBegin;
                     }
                     else
                         return new TokenizedExpression("Unexpected left parenthesis", i);
@@ -109,7 +112,7 @@ namespace Calculation
 
                         AddRParenToExpr();
                         // Set the allowed tokens for the next character.
-                        allowedTokens = TokenTypes.Operator | TokenTypes.R_Paren;
+                        allowedTokens = TokenTypes.ExprEnd;
                     }
                     else
                         return new TokenizedExpression("Unexpected right parenthesis", i);
@@ -124,7 +127,7 @@ namespace Calculation
                     {
                         AddOperatorToExpr(c);
                         // Set the allowed tokens for the next character.
-                        allowedTokens = TokenTypes.Number | TokenTypes.UnaryMinus | TokenTypes.L_Paren;
+                        allowedTokens = TokenTypes.ExprBegin;
                     }
                     else
                         return new TokenizedExpression("Unexpected operator: " + c, i);
@@ -153,7 +156,7 @@ namespace Calculation
             if (allowedTokens.HasFlag(TokenTypes.Operator))
                 return new TokenizedExpression(exprList);
             else
-                return new TokenizedExpression("Expression did not end with a number or closing parenthesis.");
+                return new TokenizedExpression("Expression did not end with a number or closing parenthesis");
         }
 
 
@@ -176,7 +179,7 @@ namespace Calculation
 
         void AddRParenToExpr()
         {
-            // Because a left parenthesis can follow a number, commit collected single digits as a number token.
+            // Because a right parenthesis can follow a number, commit collected single digits as a number token.
             AddNumToExpr();
 
             exprList.Add( ")" );
