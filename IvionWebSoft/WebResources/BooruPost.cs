@@ -21,6 +21,11 @@ namespace IvionWebSoft
         /// Will be empty if no general tags.
         /// </summary>
         public string[] GeneralTags { get; private set; }
+        /// <summary>
+        /// Meta tags, tags pertaining to the picture's meta qualities.
+        /// Will be empty if no meta tags.
+        /// </summary>
+        public string[] MetaTags { get; private set; }
 
 
         internal DanboPost(WebResource resource) : base(resource) {}
@@ -34,6 +39,7 @@ namespace IvionWebSoft
             string characterTags,
             string artistTags,
             string generalTags,
+            string metaTags,
             string allTags,
             string rated) : base(uri, postNo, allTags, rated)
         {
@@ -41,6 +47,7 @@ namespace IvionWebSoft
             CharacterTags = Split(characterTags);
             ArtistTags = Split(artistTags);
             GeneralTags = Split(generalTags);
+            MetaTags = Split(metaTags);
         }
     }
 

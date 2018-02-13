@@ -72,11 +72,12 @@ namespace IvionWebSoft
             string characters = postJson.tag_string_character;
             string artists = postJson.tag_string_artist;
             string general = postJson.tag_string_general;
+            string meta = postJson.tag_string_meta;
             string all = postJson.tag_string;
             string rating = postJson.rating;
             
             return new DanboPost(json.Location, postNo,
-                copyrights, characters, artists, general, all, rating);
+                                 copyrights, characters, artists, general, meta, all, rating);
         }
 
         
