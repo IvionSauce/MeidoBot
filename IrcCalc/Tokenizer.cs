@@ -149,6 +149,9 @@ namespace Calculation
                 {
                     if (allowedTokens.HasFlag(TokenTypes.R_Paren))
                     {
+                        if (depthMeter.Count == 0 || depthMeter.Peek() == false)
+                            return new TokenExpression("Illegal argument seperator", i);
+
                         AddSepToExpr(i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.ExprBegin;
