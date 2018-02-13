@@ -6,7 +6,7 @@ namespace Calculation
     // For more information: http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     public static class ShuntingYard
     {
-        private enum Associativity
+        enum Associativity
         {
             Left,
             Neutral,
@@ -14,29 +14,29 @@ namespace Calculation
         }
 
         // First item in the tuple is an int representing the precedence of the operator, second item is the associativity.
-        static readonly Dictionary<string, Tuple<int, Associativity>> operators =
-            new Dictionary<string, Tuple<int, Associativity>>()
+        static readonly Dictionary<OperatorType, Tuple<int, Associativity>> operators =
+            new Dictionary<OperatorType, Tuple<int, Associativity>>()
         {
-            { "+", Tuple.Create(0, Associativity.Left) },
-            { "-", Tuple.Create(0, Associativity.Left) },
-            { "*", Tuple.Create(1, Associativity.Left) },
-            { "/", Tuple.Create(1, Associativity.Left) },
-            { "u-", Tuple.Create(2, Associativity.Right) },
-            { "^", Tuple.Create(2, Associativity.Right) }
+            { OperatorType.Add,         Tuple.Create(0, Associativity.Left) },
+            { OperatorType.Sub,         Tuple.Create(0, Associativity.Left) },
+            { OperatorType.Mult,        Tuple.Create(1, Associativity.Left) },
+            { OperatorType.Div,         Tuple.Create(1, Associativity.Left) },
+            { OperatorType.UnaryMinus,  Tuple.Create(2, Associativity.Right) },
+            { OperatorType.Pow,         Tuple.Create(2, Associativity.Right) }
         };
 
 
-        public static double Calculate(TokenizedExpression expr)
+        public static double Calculate(VerifiedExpression expr)
         {
             if (expr == null)
-                throw new ArgumentNullException("expr");
+                throw new ArgumentNullException(nameof(expr));
             else if (!expr.Success)
                 throw new ArgumentException("Expression must be successfully parsed.");
 
-            var opStack = new Stack<string>();
+            var opStack = new Stack<CalcToken>();
             var output = new Stack<double>();
 
-            foreach (string token in expr.Expression)
+            foreach (var token in expr.Expression)
             {
                 if (operators.ContainsKey(token))
                 {
@@ -76,103 +76,103 @@ namespace Calculation
         }
 
 
-        static int GetPrecedence(string op)
+        static int GetPrecedence(OperatorType op)
         {
             Tuple<int,Associativity> opInfo;
 
             if (operators.TryGetValue(op, out opInfo))
                 return opInfo.Item1;
             else
-                throw new ArgumentException("Operator not supported: " + op, "op");
+                throw new ArgumentException("Operator not supported: " + op, nameof(op));
         }
 
-        static Associativity GetAssociativity(string op)
+        static Associativity GetAssociativity(OperatorType op)
         {
             Tuple<int,Associativity> opInfo;
 
             if (operators.TryGetValue(op, out opInfo))
                 return opInfo.Item2;
             else
-                throw new ArgumentException("Operator not supported: " + op, "op");
+                throw new ArgumentException("Operator not supported: " + op, nameof(op));
         }
 
         // Return -1 if `op1` has a higher precedence, 0 if equal, and 1 if `op2` has a higher precedence.
-        static int ComparePrecedence(string op1, string op2)
+        static int ComparePrecedence(OperatorType op1, OperatorType op2)
         {
             int op1Precedence = GetPrecedence(op1);
             int op2Precedence = GetPrecedence(op2);
 
             if ( op1Precedence > op2Precedence )
                 return -1;
-            else if ( op1Precedence < op2Precedence )
+            if ( op1Precedence < op2Precedence )
                 return 1;
-            else
-                return 0;
+            
+            return 0;
         }
 
-        static bool ToPopStack(string incOp, string stackOp)
+        static bool ToPopStack(OperatorType newOp, OperatorType stackOp)
         {
             // While consuming operators from the stack, make sure it stops short of the left parenthesis.
-            if (stackOp == "(")
-                return false;
+            //if (stackOp == "(")
+            //    return false;
 
             // If op on the stack has higher precedence, it needs to get popped.
-            if (ComparePrecedence(incOp, stackOp) == 1)
+            if (ComparePrecedence(newOp, stackOp) == 1)
                 return true;
             // It also needs to get popped when they have equal precedence and the op is left-associative.
-            else if (ComparePrecedence(incOp, stackOp) == 0 &&
-                     GetAssociativity(incOp) == Associativity.Left)
+            if (ComparePrecedence(newOp, stackOp) == 0 &&
+                     GetAssociativity(newOp) == Associativity.Left)
                 return true;
-            else
-                return false;
+            
+            return false;
         }
 
         // Does calculation, conform the passed operator, on the output stack and pushes the result back on the stack.
         // It consumes the numbers used for the calculation.
-        static void DoCalculation(Stack<double> output, string op)
+        static void DoCalculation(Stack<double> output, OperatorType op)
         {
             double right, left;
             double result;
 
             switch (op)
             {
-            case "+":
+                case OperatorType.Add:
                 right = output.Pop();
                 left = output.Pop();
-
                 result = left + right;
                 break;
-            case "-":
+
+                case OperatorType.Sub:
                 right = output.Pop();
                 left = output.Pop();
-
                 result = left - right;
                 break;
-            case "*":
+
+                case OperatorType.Mult:
                 right = output.Pop();
                 left = output.Pop();
-
                 result = left * right;
                 break;
-            case "/":
+
+                case OperatorType.Div:
                 right = output.Pop();
                 left = output.Pop();
-
                 result = left / right;
                 break;
-            case "u-":
-                right = output.Pop();
 
+                case OperatorType.UnaryMinus:
+                right = output.Pop();
                 result = right * -1;
                 break;
-            case "^":
+
+                case OperatorType.Pow:
                 right = output.Pop();
                 left = output.Pop();
-
                 result = Math.Pow(left, right);
                 break;
+
             default:
-                throw new ArgumentException("Operator not supported: " + op, "op");
+                throw new ArgumentException("Operator not supported: " + op, nameof(op));
             }
 
             output.Push(result);
