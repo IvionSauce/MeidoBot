@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Calculation.ExtensionMethods;
 
 namespace Calculation
 {
@@ -13,7 +14,8 @@ namespace Calculation
             Right
         }
 
-        // First item in the tuple is an int representing the precedence of the operator, second item is the associativity.
+        // First item in the tuple is an int representing the precedence of the operator,
+        // second item is the associativity.
         static readonly Dictionary<OperatorType, Tuple<int, Associativity>> operators =
             new Dictionary<OperatorType, Tuple<int, Associativity>>()
         {
@@ -30,7 +32,7 @@ namespace Calculation
         {
             if (expr == null)
                 throw new ArgumentNullException(nameof(expr));
-            else if (!expr.Success)
+            if (!expr.Success)
                 throw new ArgumentException("Expression must be successfully parsed.");
 
             var opStack = new Stack<CalcToken>();
@@ -38,35 +40,51 @@ namespace Calculation
 
             foreach (var token in expr.Expression)
             {
-                if (operators.ContainsKey(token))
+                switch (token.Type)
                 {
-                    // First check is to make sure it doesn't try to peek if the opStack is exhausted.
-                    while ( opStack.Count != 0 && ToPopStack(token, opStack.Peek()) )
+                    case TokenType.Number:
+                    case TokenType.Symbol:
+                    output.Push( ((INumberValue)token).NumberValue );
+                    break;
+
+                    case TokenType.Operator:
+                    while (ToPopStack(opStack, (CalcOpToken)token))
+                    {
                         DoCalculation(output, opStack.Pop());
-
+                    }
                     opStack.Push(token);
-                }
+                    break;
 
-                else if (token == "(")
+                    case TokenType.Function:
+                    case TokenType.ParenOpen:
                     opStack.Push(token);
+                    break;
 
-                else if (token == ")")
-                {
+                    case TokenType.ArgSeperator:
                     // Keep consuming operators from the opStack until left parenthesis is encountered.
-                    while (opStack.Peek() != "(")
+                    while (opStack.PeekType() != TokenType.ParenOpen)
+                    {
                         DoCalculation(output, opStack.Pop());
+                    }
+                    // Afterwards don't discard it.
+                    break;
 
-                    // Operator at the top of the stack is now "(", pop and discard it.
+                    case TokenType.ParenClose:
+                    // Keep consuming operators from the opStack until left parenthesis is encountered,
+                    // afterwards discard it.
+                    while (opStack.PeekType() != TokenType.ParenOpen)
+                    {
+                        DoCalculation(output, opStack.Pop());
+                    }
                     opStack.Pop();
-                }
-                // If not an operator or parenthesis, the remaining option is token being a number. Convert and push
-                // onto the output stack.
-                else
-                {
-                    var number = double.Parse(token);
-                    output.Push(number);
+                    if (opStack.Count != 0 && opStack.PeekType() == TokenType.Function)
+                    {
+                        DoFunction(output, (CalcFuncToken)token);
+                    }
+                    break;
                 }
             }
+
             // If there are still operators on the opStack, consume them until stack is exhausted.
             while (opStack.Count != 0)
                 DoCalculation(output, opStack.Pop());
@@ -76,55 +94,62 @@ namespace Calculation
         }
 
 
-        static int GetPrecedence(OperatorType op)
+        static bool ToPopStack(Stack<CalcToken> opStack, CalcOpToken newToken)
         {
-            Tuple<int,Associativity> opInfo;
+            if (opStack.Count > 0)
+            {
+                var stackToken = opStack.Peek();
+                // Only pop operators from the stack.
+                if (stackToken.Type == TokenType.Operator)
+                {
+                    var stackOp = ((CalcOpToken)stackToken).OpType;
+                    var newOp = newToken.OpType;
+                    return ToPopStack(newOp, stackOp);
+                }
+            }
 
-            if (operators.TryGetValue(op, out opInfo))
-                return opInfo.Item1;
-            else
-                throw new ArgumentException("Operator not supported: " + op, nameof(op));
-        }
-
-        static Associativity GetAssociativity(OperatorType op)
-        {
-            Tuple<int,Associativity> opInfo;
-
-            if (operators.TryGetValue(op, out opInfo))
-                return opInfo.Item2;
-            else
-                throw new ArgumentException("Operator not supported: " + op, nameof(op));
-        }
-
-        // Return -1 if `op1` has a higher precedence, 0 if equal, and 1 if `op2` has a higher precedence.
-        static int ComparePrecedence(OperatorType op1, OperatorType op2)
-        {
-            int op1Precedence = GetPrecedence(op1);
-            int op2Precedence = GetPrecedence(op2);
-
-            if ( op1Precedence > op2Precedence )
-                return -1;
-            if ( op1Precedence < op2Precedence )
-                return 1;
-            
-            return 0;
+            return false;
         }
 
         static bool ToPopStack(OperatorType newOp, OperatorType stackOp)
         {
-            // While consuming operators from the stack, make sure it stops short of the left parenthesis.
-            //if (stackOp == "(")
-            //    return false;
-
             // If op on the stack has higher precedence, it needs to get popped.
             if (ComparePrecedence(newOp, stackOp) == 1)
                 return true;
             // It also needs to get popped when they have equal precedence and the op is left-associative.
             if (ComparePrecedence(newOp, stackOp) == 0 &&
-                     GetAssociativity(newOp) == Associativity.Left)
+                GetAssociativity(newOp) == Associativity.Left)
                 return true;
-            
+
             return false;
+        }
+
+
+        static void DoCalculation(Stack<double> output, CalcToken token)
+        {
+            switch (token.Type)
+            {
+                case TokenType.Operator:
+                var opToken = (CalcOpToken)token;
+                DoCalculation(output, opToken.OpType);
+                break;
+
+                case TokenType.Function:
+                throw new InvalidOperationException("WAKE ME UP");
+                default:
+                throw new InvalidOperationException("CAN'T WAKE UP");
+            }
+        }
+
+        static void DoFunction(Stack<double> output, CalcFuncToken token)
+        {
+            var func = token.Func;
+            double[] args = new double[func.ArgCount];
+            for (int i = 0; i < func.ArgCount; i++)
+            {
+                args[i] = output.Pop();
+            }
+            output.Push(func.Apply(args));
         }
 
         // Does calculation, conform the passed operator, on the output stack and pushes the result back on the stack.
@@ -176,6 +201,43 @@ namespace Calculation
             }
 
             output.Push(result);
+        }
+
+
+        // ----- Helper functions -----
+
+        // Return -1 if `op1` has a higher precedence, 0 if equal, and 1 if `op2` has a higher precedence.
+        static int ComparePrecedence(OperatorType op1, OperatorType op2)
+        {
+            int op1Precedence = GetPrecedence(op1);
+            int op2Precedence = GetPrecedence(op2);
+
+            if ( op1Precedence > op2Precedence )
+                return -1;
+            if ( op1Precedence < op2Precedence )
+                return 1;
+
+            return 0;
+        }
+
+        static int GetPrecedence(OperatorType op)
+        {
+            Tuple<int,Associativity> opInfo;
+
+            if (operators.TryGetValue(op, out opInfo))
+                return opInfo.Item1;
+            else
+                throw new ArgumentException("Operator not supported: " + op, nameof(op));
+        }
+
+        static Associativity GetAssociativity(OperatorType op)
+        {
+            Tuple<int,Associativity> opInfo;
+
+            if (operators.TryGetValue(op, out opInfo))
+                return opInfo.Item2;
+            else
+                throw new ArgumentException("Operator not supported: " + op, nameof(op));
         }
     }
 }
