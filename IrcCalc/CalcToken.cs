@@ -181,15 +181,24 @@ namespace Calculation
     // --- Specific Tokens ---
     // -----------------------
 
-    public class CalcNumberToken : CalcToken
+    interface INumberValue
     {
-        public readonly double NumberValue;
+        double NumberValue { get; }
+    }
+
+    public class CalcNumberToken : CalcToken, INumberValue
+    {
+        public double NumberValue
+        {
+            get { return num; }
+        }
+        readonly double num;
 
 
         public CalcNumberToken(double num, string val, int originIdx) :
         base(TokenType.Number, val, originIdx)
         {
-            NumberValue = num;
+            this.num = num;
         }
     }
 
@@ -210,7 +219,18 @@ namespace Calculation
 
     public class CalcFuncToken : CalcToken
     {
-        public readonly CalcFunction Func;
+        public CalcFunction Func
+        {
+            get
+            {
+                if (f != null)
+                    return f;
+                else
+                    throw new InvalidOperationException(
+                        "No value, function symbol hasn't been evaluated.");
+            }
+        }
+        readonly CalcFunction f;
 
 
         public CalcFuncToken(string val, int originIdx) :
@@ -219,7 +239,7 @@ namespace Calculation
         public CalcFuncToken(CalcFunction func, string val, int originIdx) :
         base(TokenType.Function, val, originIdx)
         {
-            Func = func;
+            f = func;
         }
 
 
@@ -230,9 +250,20 @@ namespace Calculation
     }
 
 
-    public class CalcSymbolToken : CalcToken
+    public class CalcSymbolToken : CalcToken, INumberValue
     {
-        public readonly double? NumberValue;
+        public double NumberValue
+        {
+            get
+            {
+                if (numval.HasValue)
+                    return numval.Value;
+                else
+                    throw new InvalidOperationException(
+                        "No value, symbol hasn't been evaluated.");
+            }
+        }
+        readonly double? numval;
 
 
         public CalcSymbolToken(string val, int originIdx) :
@@ -241,7 +272,7 @@ namespace Calculation
         public CalcSymbolToken(double num, string val, int originIdx) :
         base(TokenType.Symbol, val, originIdx)
         {
-            NumberValue = num;
+            numval = num;
         }
 
 
