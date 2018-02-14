@@ -37,7 +37,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="IrcCalc.cs" />
-    <Compile Include="TokenizedExpression.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="ShuntingYard.cs" />
     <Compile Include="CalcToken.cs" />
