@@ -28,6 +28,8 @@ public class Calc : IMeidoHook
         }
     }
 
+    static CalcEnvironment CalcEnv = new CalcEnvironment();
+
 
     public void Stop()
     {}
@@ -45,7 +47,7 @@ public class Calc : IMeidoHook
         if (e.MessageArray.Length > 1)
         {
             var exprStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-            var expr = TokenizedExpression.Parse(exprStr);
+            var expr = VerifiedExpression.Parse(exprStr, CalcEnv);
 
             if (expr.Success)
             {
@@ -60,7 +62,7 @@ public class Calc : IMeidoHook
 
     public static void HandleMessage(IIrcMessage e)
     {
-        var expr = TokenizedExpression.Parse(e.Message);
+        var expr = VerifiedExpression.Parse(e.Message, CalcEnv);
         // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
         // to be a calculation (not just a single number). A minimal calculation will involve at least 3 tokens:
         // `number operator number`.
@@ -73,7 +75,7 @@ public class Calc : IMeidoHook
     }
 
 
-    static void OutputError(IIrcMessage e, TokenizedExpression expr)
+    static void OutputError<T>(IIrcMessage e, GenericExpression<T> expr)
     {
         string error = expr.ErrorMessage;
         if (expr.ErrorPosition >= 0)
