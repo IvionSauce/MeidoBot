@@ -42,11 +42,21 @@ namespace Calculation
             {
                 switch (token.Type)
                 {
+                    // --- Simple pushing cases ---
+
                     case TokenType.Number:
                     case TokenType.Symbol:
                     output.Push( ((INumberValue)token).NumberValue );
                     break;
 
+                    case TokenType.Function:
+                    case TokenType.ParenOpen:
+                    opStack.Push(token);
+                    break;
+
+                    // --- Do the ShuntingYard ---
+
+                    // Apply the operators as described by the algorithm, see `ToPopStack` for more details.
                     case TokenType.Operator:
                     while (ToPopStack(opStack, (CalcOpToken)token))
                     {
@@ -55,45 +65,33 @@ namespace Calculation
                     opStack.Push(token);
                     break;
 
-                    case TokenType.Function:
-                    case TokenType.ParenOpen:
-                    opStack.Push(token);
-                    break;
-
+                    // Behaves like a closing parenthesis, but don't discard the opening parenthesis.
                     case TokenType.ArgSeperator:
-                    // Keep consuming operators from the opStack until left parenthesis is encountered.
-                    while (opStack.PeekType() != TokenType.ParenOpen)
-                    {
-                        DoCalculation(output, opStack.Pop());
-                    }
-                    // Afterwards don't discard it.
+                    ConsumeTillOpenParen(opStack, output, false);
                     break;
 
+                    // Apply all the remaining operators until we encounter the opening parenthesis,
+                    // discard it afterwards.
                     case TokenType.ParenClose:
-                    // Keep consuming operators from the opStack until left parenthesis is encountered,
-                    // afterwards discard it.
-                    while (opStack.PeekType() != TokenType.ParenOpen)
+                    ConsumeTillOpenParen(opStack, output, true);
+                    // If after that the top of the stack is a function, apply it.
+                    if (FunctionNext(opStack))
                     {
-                        DoCalculation(output, opStack.Pop());
-                    }
-                    opStack.Pop();
-                    if (opStack.Count != 0 && opStack.PeekType() == TokenType.Function)
-                    {
-                        DoFunction(output, (CalcFuncToken)token);
+                        DoFunction(output, (CalcFuncToken)opStack.Pop());
                     }
                     break;
                 }
             }
 
             // If there are still operators on the opStack, consume them until stack is exhausted.
-            while (opStack.Count != 0)
+            while (opStack.Count > 0)
                 DoCalculation(output, opStack.Pop());
 
             // There should be only 1 value left, the final result. Pop and return that.
             return output.Pop();
         }
 
-
+        // Mostly boilerplate, the heart of the ToPopStack-decision is contained in the next function.
         static bool ToPopStack(Stack<CalcToken> opStack, CalcOpToken newToken)
         {
             if (opStack.Count > 0)
@@ -122,6 +120,25 @@ namespace Calculation
                 return true;
 
             return false;
+        }
+
+
+        static bool FunctionNext(Stack<CalcToken> opStack)
+        {
+            if (opStack.Count > 0)
+                return opStack.PeekType() == TokenType.Function;
+
+            return false;
+        }
+
+        static void ConsumeTillOpenParen(Stack<CalcToken> opStack, Stack<double> output, bool discardParen)
+        {
+            while (opStack.PeekType() != TokenType.ParenOpen)
+            {
+                DoCalculation(output, opStack.Pop());
+            }
+            if (discardParen)
+                opStack.Pop();
         }
 
 
@@ -156,49 +173,41 @@ namespace Calculation
         // It consumes the numbers used for the calculation.
         static void DoCalculation(Stack<double> output, OperatorType op)
         {
-            double right, left;
             double result;
 
-            switch (op)
+            if (op != OperatorType.UnaryMinus)
             {
-                case OperatorType.Add:
-                right = output.Pop();
-                left = output.Pop();
-                result = left + right;
-                break;
+                double right = output.Pop();
+                double left = output.Pop();
+                switch (op)
+                {
+                    case OperatorType.Add:
+                    result = left + right;
+                    break;
 
-                case OperatorType.Sub:
-                right = output.Pop();
-                left = output.Pop();
-                result = left - right;
-                break;
+                    case OperatorType.Sub:
+                    result = left - right;
+                    break;
 
-                case OperatorType.Mult:
-                right = output.Pop();
-                left = output.Pop();
-                result = left * right;
-                break;
+                    case OperatorType.Mult:
+                    result = left * right;
+                    break;
 
-                case OperatorType.Div:
-                right = output.Pop();
-                left = output.Pop();
-                result = left / right;
-                break;
+                    case OperatorType.Div:
+                    result = left / right;
+                    break;
 
-                case OperatorType.UnaryMinus:
-                right = output.Pop();
-                result = right * -1;
-                break;
+                    case OperatorType.Pow:
+                    result = Math.Pow(left, right);
+                    break;
 
-                case OperatorType.Pow:
-                right = output.Pop();
-                left = output.Pop();
-                result = Math.Pow(left, right);
-                break;
-
-            default:
-                throw new ArgumentException("Operator not supported: " + op, nameof(op));
+                    default:
+                    throw new ArgumentException("Operator not supported: " + op, nameof(op));
+                }
             }
+            // UnaryMinus
+            else
+                result = output.Pop() * -1;
 
             output.Push(result);
         }
