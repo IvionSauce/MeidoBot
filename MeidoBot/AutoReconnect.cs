@@ -7,6 +7,9 @@ namespace MeidoBot
 {
     class AutoReconnect
     {
+        public bool Enabled { get; set; }
+
+
         readonly static TimeSpan minInterval = TimeSpan.FromSeconds(15);
         readonly static TimeSpan maxInterval = TimeSpan.FromMinutes(32);
         TimeSpan currentInterval = minInterval;
@@ -30,6 +33,8 @@ namespace MeidoBot
             serverAddresses = new string[irc.AddressList.Length];
             irc.AddressList.CopyTo(serverAddresses, 0);
             serverPort = irc.Port;
+
+            Enabled = true;
         }
 
         void OnConnectionError(object sender, EventArgs e)
@@ -47,7 +52,7 @@ namespace MeidoBot
 
         void EndlessReconnect()
         {
-            while (!irc.IsConnected)
+            while (Enabled && !irc.IsConnected)
             {
                 var reconnectInterval = currentInterval;
                 currentInterval = NewInterval(currentInterval);

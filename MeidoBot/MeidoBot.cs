@@ -185,7 +185,8 @@ namespace MeidoBot
                 irc.RfcQuit();
             else
                 irc.RfcQuit(quitMsg);
-            
+
+            reconnect.Enabled = false;
             irc.Disconnect();
         }
 
