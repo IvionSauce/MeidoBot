@@ -162,7 +162,8 @@ namespace Calculation
         {
             var func = token.Func;
             double[] args = new double[func.ArgCount];
-            for (int i = 0; i < func.ArgCount; i++)
+            // Reverse, since the first out was the last argument in.
+            for (int i = func.ArgCount - 1; i >= 0; i--)
             {
                 args[i] = output.Pop();
             }

@@ -75,7 +75,7 @@ namespace Calculation
                         if (decimalPoint)
                             return new TokenExpression("More than one decimal point detected", i);
 
-                        AddDotToNum();
+                        AddDotToNum(i);
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.Number;
                     }
@@ -246,10 +246,13 @@ namespace Calculation
             tmpToken.Add(c);
         }
 
-        void AddDotToNum()
+        void AddDotToNum(int index)
         {
             if (tmpToken.Count == 0)
+            {
+                numberStart = index;
                 tmpToken.Add('0');
+            }
 
             decimalPoint = true;
             tmpToken.Add('.');
