@@ -37,7 +37,14 @@ namespace Calculation
         public readonly string Value;
         public readonly int OriginIndex;
 
-        static readonly HashSet<char> opChars = new HashSet<char>("+-*/^");
+        static readonly Dictionary<char, OperatorType> opChars = new Dictionary<char, OperatorType>()
+        {
+            {'+', OperatorType.Add},
+            {'-', OperatorType.Sub},
+            {'*', OperatorType.Mult},
+            {'/', OperatorType.Div},
+            {'^', OperatorType.Pow}
+        };
 
 
         public CalcToken(TokenType t, string val, int originIdx)
@@ -74,28 +81,12 @@ namespace Calculation
         public static CalcOpToken Operator(char op, int originIndex)
         {
             OperatorType opType;
-            switch (op)
+            if (opChars.TryGetValue(op, out opType))
             {
-                case '+':
-                opType = OperatorType.Add;
-                break;
-                case '-':
-                opType = OperatorType.Sub;
-                break;
-                case '*':
-                opType = OperatorType.Mult;
-                break;
-                case '/':
-                opType = OperatorType.Div;
-                break;
-                case '^':
-                opType = OperatorType.Pow;
-                break;
-                default:
-                throw new ArgumentException("Not a valid operator: " + op, nameof(op));
+                return new CalcOpToken(opType, op.ToString(), originIndex);
             }
-
-            return new CalcOpToken(opType, op.ToString(), originIndex);
+            else
+                throw new ArgumentException("Not a valid operator: " + op, nameof(op));
         }
 
         public static CalcOpToken Operator(string op, int originIndex)
@@ -160,7 +151,7 @@ namespace Calculation
 
         public static bool IsOperatorChar(char c)
         {
-            return opChars.Contains(c);
+            return opChars.ContainsKey(c);
         }
 
         public static bool IsDoubleOperator(char opc1, char opc2)
