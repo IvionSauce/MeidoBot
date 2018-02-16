@@ -163,6 +163,11 @@ namespace Calculation
             return opChars.Contains(c);
         }
 
+        public static bool IsDoubleOperator(char opc1, char opc2)
+        {
+            return opc1 == opc2 && opc1 == '*';
+        }
+
         public static bool IsOperator(string op)
         {
             op.ThrowIfNullOrWhiteSpace(nameof(op));

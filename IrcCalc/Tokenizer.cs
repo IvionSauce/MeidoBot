@@ -49,6 +49,8 @@ namespace Calculation
             numberStart = -1;
             symbolStart = -1;
             depthMeter = new Stack<bool>();
+            // Look-behind 1 character for double char ops.
+            char prevc = '\0';
 
             for (int i = 0; i < expr.Length; i++)
             {
@@ -133,6 +135,13 @@ namespace Calculation
                         // Set the allowed tokens for the next character.
                         allowedTokens = TokenTypes.ExprBegin;
                     }
+                    else if (CalcToken.IsDoubleOperator(prevc, c))
+                    {
+                        UpdateLastOperator(c);
+                        // Monkey with the `c` variable, and thus the next `prevc` character.
+                        // This is to prevent operators longer than 2 chars to pass inspection.
+                        c = '\0';
+                    }
                     else
                         return new TokenExpression("Unexpected operator: " + c, i);
                 }
@@ -173,6 +182,8 @@ namespace Calculation
                 // ----- [9] Unexpected Character -----
                 else
                     return new TokenExpression("Unexpected character: " + c, i);
+
+                prevc = c;
             }
 
             // Abort on unclosed subexpression(s) / too many left parentheses.
@@ -235,6 +246,15 @@ namespace Calculation
         // --- Methods for multicharacter tokens ---
         // -----------------------------------------
 
+
+        void UpdateLastOperator(char c)
+        {
+            int lastIdx = exprList.Count - 1;
+            var last = exprList[lastIdx];
+            string newOp = last.Value + c;
+
+            exprList[lastIdx] = CalcToken.Operator(newOp, last.OriginIndex);
+        }
 
         // --- Collecting single chars in temporary storage `tmpToken` ----
 
