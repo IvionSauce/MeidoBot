@@ -14,8 +14,7 @@ namespace Calculation
             if (!expr.Success)
                 throw new ArgumentException("Expression must be successfully parsed.");
 
-            var opStack = new Stack<CalcToken>();
-            var output = new Stack<double>();
+            var state = new SmashTheState(); // But not really :(
 
             foreach (var token in expr.Expression)
             {
@@ -25,109 +24,67 @@ namespace Calculation
 
                     case TokenType.Number:
                     case TokenType.Symbol:
-                    output.Push( ((INumberValue)token).NumberValue );
+                    state.Push( ((INumberValue)token).NumberValue );
                     break;
 
                     case TokenType.Function:
                     case TokenType.ParenOpen:
-                    opStack.Push(token);
+                    state.Push(token);
                     break;
 
                     // --- Do the ShuntingYard ---
 
                     // Apply the operators as described by the algorithm, see `ToPopStack` for more details.
                     case TokenType.Operator:
-                    while (ToPopStack(opStack, (CalcOpToken)token))
+                    while ( state.ToPopStack((CalcOpToken)token) )
                     {
-                        DoCalculation(output, opStack.Pop());
+                        DoCalculation(state);
                     }
-                    opStack.Push(token);
+                    state.Push(token);
                     break;
 
                     // Behaves like a closing parenthesis, but don't discard the opening parenthesis.
                     case TokenType.ArgSeperator:
-                    ConsumeTillOpenParen(opStack, output, false);
+                    ConsumeTillOpenParen(state, false);
                     break;
 
                     // Apply all the remaining operators until we encounter the opening parenthesis,
                     // discard it afterwards.
                     case TokenType.ParenClose:
-                    ConsumeTillOpenParen(opStack, output, true);
+                    ConsumeTillOpenParen(state, true);
                     // If after that the top of the stack is a function, apply it.
-                    if (FunctionNext(opStack))
-                    {
-                        DoFunction(output, (CalcFuncToken)opStack.Pop());
-                    }
+                    if (state.NextIsFunction)
+                        DoFunction(state);
                     break;
                 }
             }
-
             // If there are still operators on the opStack, consume them until stack is exhausted.
-            while (opStack.Count > 0)
-                DoCalculation(output, opStack.Pop());
+            while (state.OpCount > 0)
+                DoCalculation(state);
 
             // There should be only 1 value left, the final result. Pop and return that.
-            return output.Pop();
+            return state.PopOutput();
         }
 
-        // Mostly boilerplate, the heart of the ToPopStack-decision is contained in the next function.
-        static bool ToPopStack(Stack<CalcToken> opStack, CalcOpToken newToken)
+        static void ConsumeTillOpenParen(SmashTheState state, bool discardParen)
         {
-            if (opStack.Count > 0)
+            while (state.OpPeekType() != TokenType.ParenOpen)
             {
-                var stackToken = opStack.Peek();
-                // Only pop operators from the stack.
-                if (stackToken.Type == TokenType.Operator)
-                {
-                    var stackOp = ((CalcOpToken)stackToken).OpType;
-                    var newOp = newToken.OpType;
-                    return ToPopStack(newOp, stackOp);
-                }
-            }
-
-            return false;
-        }
-
-        static bool ToPopStack(OperatorType newOp, OperatorType stackOp)
-        {
-            // If op on the stack has higher precedence, it needs to get popped.
-            if (ComparePrecedence(newOp, stackOp) == 1)
-                return true;
-            // It also needs to get popped when they have equal precedence and the op is left-associative.
-            if (ComparePrecedence(newOp, stackOp) == 0 &&
-                GetAssociativity(newOp) == Associativity.Left)
-                return true;
-
-            return false;
-        }
-
-
-        static bool FunctionNext(Stack<CalcToken> opStack)
-        {
-            if (opStack.Count > 0)
-                return opStack.PeekType() == TokenType.Function;
-
-            return false;
-        }
-
-        static void ConsumeTillOpenParen(Stack<CalcToken> opStack, Stack<double> output, bool discardParen)
-        {
-            while (opStack.PeekType() != TokenType.ParenOpen)
-            {
-                DoCalculation(output, opStack.Pop());
+                DoCalculation(state);
             }
             if (discardParen)
-                opStack.Pop();
+                state.PopOpStack();
         }
 
 
-        static void DoCalculation(Stack<double> output, CalcToken token)
+        static void DoCalculation(SmashTheState state)
         {
+            var token = state.PopOpStack();
             switch (token.Type)
             {
                 case TokenType.Operator:
                 var opToken = (CalcOpToken)token;
-                DoCalculation(output, opToken.OpType);
+                DoCalculation(state, opToken.OpType);
                 break;
 
                 case TokenType.Function:
@@ -137,28 +94,28 @@ namespace Calculation
             }
         }
 
-        static void DoFunction(Stack<double> output, CalcFuncToken token)
+        static void DoFunction(SmashTheState state)
         {
+            var token = (CalcFuncToken)state.PopOpStack();
             var func = token.Func;
+
             double[] args = new double[func.ArgCount];
             // Reverse, since the first out was the last argument in.
             for (int i = func.ArgCount - 1; i >= 0; i--)
             {
-                args[i] = output.Pop();
+                args[i] = state.PopOutput();
             }
-            output.Push(func.Apply(args));
+            state.Push(func.Apply(args));
         }
 
-        // Does calculation, conform the passed operator, on the output stack and pushes the result back on the stack.
-        // It consumes the numbers used for the calculation.
-        static void DoCalculation(Stack<double> output, OperatorType op)
+        static void DoCalculation(SmashTheState state, OperatorType op)
         {
             double result;
 
             if (op != OperatorType.UnaryMinus)
             {
-                double right = output.Pop();
-                double left = output.Pop();
+                double right = state.PopOutput();
+                double left = state.PopOutput();
                 switch (op)
                 {
                     case OperatorType.Add:
@@ -185,12 +142,11 @@ namespace Calculation
                     throw new ArgumentException("Operator not supported: " + op, nameof(op));
                 }
             }
-            // UnaryMinus
+            // OperatorType.UnaryMinus
             else
-                result = output.Pop() * -1;
+                result = state.PopOutput() * -1;
 
-            output.Push(result);
-
+            state.Push(result);
         }
     }
 }
