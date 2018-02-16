@@ -44,6 +44,8 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Expressions.cs" />
     <Compile Include="Verifier.cs" />
+    <Compile Include="ShuntingYardOperators.cs" />
+    <Compile Include="ShuntingYardState.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
