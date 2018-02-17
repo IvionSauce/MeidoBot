@@ -45,6 +45,7 @@ public class WebSearches : IMeidoHook
         meido.RegisterTrigger("anidb", AnidbSearch);
         meido.RegisterTrigger("mu", MuSearch);
         meido.RegisterTrigger("vndb", VndbSearch);
+        meido.RegisterTrigger("steam", SteamSearch);
         // maybe: urbandict, dict, animenewsnetwork
     }
 
@@ -82,6 +83,11 @@ public class WebSearches : IMeidoHook
     void VndbSearch(IIrcMessage e)
     {
         ExecuteSearch(e, Site.VnDb);
+    }
+
+    void SteamSearch(IIrcMessage e)
+    {
+        ExecuteSearch(e, Site.Steam);
     }
 
 

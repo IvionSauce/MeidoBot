@@ -26,6 +26,7 @@ public class Site
     public static readonly Site AniDb;
     public static readonly Site MangaUpdates;
     public static readonly Site VnDb;
+    public static readonly Site Steam;
 
 
 
@@ -37,7 +38,7 @@ public class Site
         Wikipedia = new Site("https://en.wikipedia.org/", 3)
         { SiteNameRegexp = new Regex(" - Wikipedia, the free encyclopedia$") };
 
-        MyAnimeList = new Site("http://myanimelist.net/", 2);
+        MyAnimeList = new Site("https://myanimelist.net/", 2);
         AniDb = new Site("https://anidb.net/", 2);
 
         MangaUpdates = new Site("https://www.mangaupdates.com/", 2)
@@ -45,6 +46,9 @@ public class Site
 
         VnDb = new Site("https://vndb.org/", 2)
         { SiteNameRegexp = new Regex(" - The Visual Novel Database$") };
+
+        Steam = new Site("http://store.steampowered.com/", 2)
+        { SiteNameRegexp = new Regex("on Steam$") };
     }
 
     internal Site(string url, int displayMax) : this(new Uri(url), displayMax) {}
