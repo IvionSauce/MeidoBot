@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using MeidoCommon.Throttle;
 
 namespace MeidoBot
 {

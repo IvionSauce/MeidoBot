@@ -34,8 +34,6 @@
     <Compile Include="Authentication.cs" />
     <Compile Include="MessageTools.cs" />
     <Compile Include="Admin.cs" />
-    <Compile Include="Throttling\Control.cs" />
-    <Compile Include="Throttling\ThrottleManager.cs" />
     <Compile Include="Triggers.cs" />
     <Compile Include="Configuration\MeidoConfig.cs" />
     <Compile Include="Configuration\Parsing.cs" />
@@ -51,6 +49,7 @@
     <Compile Include="Logging\ChatlogMetaData.cs" />
     <Compile Include="Logging\ChatWriter.cs" />
     <Compile Include="AutoReconnect.cs" />
+    <Compile Include="ThrottleManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -68,7 +67,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Throttling\" />
     <Folder Include="Configuration\" />
     <Folder Include="Logging\" />
   </ItemGroup>

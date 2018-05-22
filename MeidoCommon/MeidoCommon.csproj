@@ -41,5 +41,11 @@
     <Compile Include="EventsInterfaces.cs" />
     <Compile Include="MiscInterfaces.cs" />
     <Compile Include="Formatting.cs" />
+    <Compile Include="Throttling\RateControl.cs" />
+    <Compile Include="Throttling\ThrottleControl.cs" />
+    <Compile Include="Throttling\ThrottleInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Throttling\" />
   </ItemGroup>
 </Project>
