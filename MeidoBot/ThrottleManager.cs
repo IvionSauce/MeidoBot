@@ -42,7 +42,7 @@ namespace MeidoBot
                 var report =
                     string.Format( "Ignoring trigger calls from {0} for {1}. ({2} calls in {3})",
                         msg.ReturnTo, Short(info.ThrottleDuration),
-                        info.Limit, Short(info.Interval) );
+                        info.MessageLimit, Short(info.Interval) );
                 
                 log.Message(report);
                 msg.Reply(report);
@@ -112,11 +112,11 @@ namespace MeidoBot
             {
                 log.Message( "Halting messages and notices to {0} for {1}. ({2} messages in {3})",
                     target, Short(info.ThrottleDuration),
-                    info.Limit, Short(info.Interval) );
+                    info.MessageLimit, Short(info.Interval) );
 
                 notify( string.Format("Sorry for the spam, either something went wrong or I'm being abused. " +
                     "Going silent for {0}. ({1} messages in {2})",
-                    Short(info.ThrottleDuration), info.Limit, Short(info.Interval)) );
+                    Short(info.ThrottleDuration), info.MessageLimit, Short(info.Interval)) );
 
                 return true;
             }
@@ -162,24 +162,23 @@ namespace MeidoBot
 
         public SourceEntry(string source)
         {
-            var triggerRates = new RateControl[]
-            {
-                new RateControl(6, 30),
-                new RateControl(8, 60)
+            var triggerRates = new RateControl[] {
+                RateControl.FromSeconds(6, 30),
+                RateControl.FromSeconds(8, 60)
             };
 
             RateControl[] outputRates;
             if (MessageTools.IsChannel(source))
             {
                 outputRates = new RateControl[] {
-                    new RateControl(8, 5),
-                    new RateControl(12, 10)
+                    RateControl.FromSeconds(8, 5),
+                    RateControl.FromSeconds(12, 10)
                 };
             }
             else
             {
                 outputRates = new RateControl[] {
-                    new RateControl(30, 20)
+                    RateControl.FromSeconds(30, 20)
                 };
             }
 
