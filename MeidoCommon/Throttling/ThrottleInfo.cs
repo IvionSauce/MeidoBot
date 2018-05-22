@@ -5,13 +5,13 @@ namespace MeidoCommon.Throttle
 {
     public class ThrottleInfo
     {
-        public readonly int Limit;
+        public readonly int MessageLimit;
         public readonly TimeSpan Interval;
         public readonly TimeSpan ThrottleDuration;
 
         public ThrottleInfo(RateControl control, TimeSpan duration)
         {
-            Limit = control.Limit;
+            MessageLimit = control.MessageLimit;
             Interval = control.Interval;
             ThrottleDuration = duration;
         }

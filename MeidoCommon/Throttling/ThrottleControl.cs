@@ -1,6 +1,5 @@
 ﻿using System;
 
-
 namespace MeidoCommon.Throttle
 {
     public class ThrottleControl
@@ -33,18 +32,24 @@ namespace MeidoCommon.Throttle
         readonly TimeSpan duration;
 
 
-        public ThrottleControl(RateControl[] controlRates, double throttleMinutes) :
-        this(controlRates, TimeSpan.FromMinutes(throttleMinutes)) {}
-
         public ThrottleControl(RateControl[] controlRates, TimeSpan throttleDuration)
         {
             if (controlRates == null)
                 throw new ArgumentNullException(nameof(controlRates));
-            else if (throttleDuration <= TimeSpan.Zero)
+            if (throttleDuration <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(throttleDuration), "Cannot be 0 or negative.");
 
             this.controlRates = controlRates;
             duration = throttleDuration;
+        }
+
+
+        public static ThrottleControl FromMinutes(RateControl[] controlRates, double throttleMins)
+        {
+            if (throttleMins <= 0)
+                throw new ArgumentOutOfRangeException(nameof(throttleMins), "Cannot be 0 or negative.");
+
+            return new ThrottleControl(controlRates, TimeSpan.FromMinutes(throttleMins));
         }
 
 

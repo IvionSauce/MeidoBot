@@ -1,28 +1,44 @@
 ﻿using System;
 
-
 namespace MeidoCommon.Throttle
 {
     public class RateControl
     {
-        public readonly int Limit;
+        public readonly int MessageLimit;
         public readonly TimeSpan Interval;
 
-        int counter = 0;
+        int counter;
         DateTime firstTime;
 
 
-        public RateControl(int limit, double intervalSecs) : this(limit, TimeSpan.FromSeconds(intervalSecs)) {}
-
-        public RateControl(int limit, TimeSpan interval)
+        public RateControl(int msgLimit, TimeSpan interval)
         {
-            if (limit < 2)
-                throw new ArgumentOutOfRangeException(nameof(limit), "Cannot be smaller than 2.");
-            else if (interval <= TimeSpan.Zero)
+            if (msgLimit < 2)
+                throw new ArgumentOutOfRangeException(nameof(msgLimit), "Cannot be smaller than 2.");
+            if (interval <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(interval), "Cannot be 0 or negative.");
 
-            Limit = limit;
+            MessageLimit = msgLimit;
             Interval = interval;
+            counter = 0;
+            firstTime = DateTime.MinValue;
+        }
+
+
+        public static RateControl FromSeconds(int msgLimit, double intervalSecs)
+        {
+            if (intervalSecs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(intervalSecs), "Cannot be 0 or negative.");
+
+            return new RateControl(msgLimit, TimeSpan.FromSeconds(intervalSecs));
+        }
+
+        public static RateControl FromMinutes(int msgLimit, double intervalMins)
+        {
+            if (intervalMins <= 0)
+                throw new ArgumentOutOfRangeException(nameof(intervalMins), "Cannot be 0 or negative.");
+
+            return new RateControl(msgLimit, TimeSpan.FromMinutes(intervalMins));
         }
 
 
@@ -34,7 +50,7 @@ namespace MeidoCommon.Throttle
             if (counter == 1)
                 firstTime = DateTime.UtcNow;
 
-            else if (counter == Limit)
+            else if (counter == MessageLimit)
             {
                 counter = 0;
                 now = DateTime.UtcNow;
