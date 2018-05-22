@@ -14,7 +14,7 @@ namespace IvionWebSoft
         // above the normal results, in a seperate box. This happens, for example, when searching for certain
         // well-known youtube video's.
         static readonly Regex resultsRegexp = new Regex(
-            @"<h3 class=""(?:r|_X8d)"">\s*<a href=""/url\?q=([^<>""]*)&amp;sa[^<>""]*""[^<>]*>(.*?)</a>\s*</h3>");
+            @"<h3 class=""(?:r|_X8d)""[^<>]*>\s*<a href=""/url\?q=([^<>""]*)&amp;sa[^<>""]*""[^<>]*>(.*?)</a>\s*</h3>");
 
         static readonly Regex boldRegExp = new Regex(
             @"(<b>)(.*?)(</b>)");
