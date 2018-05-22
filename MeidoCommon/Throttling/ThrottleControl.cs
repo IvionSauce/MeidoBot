@@ -9,10 +9,11 @@ namespace MeidoCommon.Throttle
         {
             get
             {
-                if (DateTime.UtcNow < stopThrottle)
+                if (stopThrottle > DateTime.MinValue && DateTime.UtcNow < stopThrottle)
                     return true;
-                else
-                    return false;
+                
+                stopThrottle = DateTime.MinValue;
+                return false;
             }
         }
 
