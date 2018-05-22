@@ -113,6 +113,34 @@ namespace Calculation
             // and the functions were supplied the correct number of arguments. Hurray!
             return new VerifiedExpression(tokens);
         }
+
+
+        public static bool VerifySymbol(string symbol)
+        {
+            // Cannot contain certain reserverd characters. Or whitespace.
+            foreach (char c in symbol)
+            {
+                if (CalcToken.IsOperatorChar(c) ||
+                    char.IsWhiteSpace(c))
+                {
+                    return false;
+                }
+
+                switch (c)
+                {
+                    case '(':
+                    case ')':
+                    case '.':
+                    case ',':
+                    return false;
+                }
+            }
+            // It also can't be empty or start with a digit.
+            if (symbol.Length > 0 && !char.IsDigit(symbol[0]))
+                return true;
+
+            return false;
+        }
     }
 
 

@@ -44,6 +44,13 @@ namespace Calculation
         }
 
 
+        public bool Variable(string symbol, out double number)
+        {
+            symbol.ThrowIfNullOrWhiteSpace(nameof(symbol));
+
+            return variables.TryGetValue(symbol, out number);
+        }
+
         public bool VarOrConst(string symbol, out double number)
         {
             symbol.ThrowIfNullOrWhiteSpace(nameof(symbol));
@@ -59,18 +66,15 @@ namespace Calculation
         public bool Function(string symbol, out CalcFunction function)
         {
             symbol.ThrowIfNullOrWhiteSpace(nameof(symbol));
-            
-            if (functions.TryGetValue(symbol, out function))
-                return true;
 
-            return false;
+            return functions.TryGetValue(symbol, out function);
         }
 
 
         public double AssignVariable(string symbol, double number)
         {
             symbol.ThrowIfNullOrWhiteSpace(nameof(symbol));
-            
+
             variables[symbol] = number;
             return number;
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Calculation;
 // Using directives for plugin use.
@@ -39,6 +40,9 @@ public class Calc : IMeidoHook
     {
         meido.RegisterTrigger("calc", HandleTrigger);
         irc.AddQueryMessageHandler(HandleMessage);
+
+        meido.RegisterTrigger("defvar", DefVar);
+        meido.RegisterTrigger("var", DefVar);
     }
 
 
@@ -82,5 +86,61 @@ public class Calc : IMeidoHook
             error += " | Postion: " + expr.ErrorPosition;
 
         e.Reply(error);
+    }
+
+
+    static void DefVar(IIrcMessage e)
+    {
+        string symbol;
+        string expression;
+        if (TryGetArgs(e.MessageArray, out symbol, out expression))
+        {
+            var expr = VerifiedExpression.Parse(expression, CalcEnv);
+            if (CheckPreconditions(e, expr, symbol))
+            {
+                double result = ShuntingYard.Calculate(expr);
+                double previous;
+                if (CalcEnv.Variable(symbol, out previous))
+                {
+                    e.Reply("{0} = {1} (Previous value: {2})", symbol, result, previous);
+                }
+                else
+                    e.Reply("{0} = {1}", symbol, result);
+
+                CalcEnv.AssignVariable(symbol, result);
+            }
+        }
+    }
+
+    static bool CheckPreconditions(IIrcMessage e, VerifiedExpression expr, string symbol)
+    {
+        if (!expr.Success)
+        {
+            OutputError(e, expr);
+            return false;
+        }
+        if (!Verifier.VerifySymbol(symbol))
+        {
+            e.Reply("Symbol contains illegal characters.");
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool TryGetArgs(string[] msg, out string symbol, out string expression)
+    {
+        if (msg.Length > 2)
+        {
+            symbol = msg[1];
+            expression = string.Join(" ", msg, 2, msg.Length - 2);
+
+            if (symbol != string.Empty)
+                return true;
+        }
+
+        symbol = null;
+        expression = null;
+        return false;
     }
 }
