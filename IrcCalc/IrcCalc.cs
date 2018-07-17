@@ -39,6 +39,7 @@ public class Calc : IMeidoHook
     public Calc(IIrcComm irc, IMeidoComm meido)
     {
         meido.RegisterTrigger("calc", HandleTrigger);
+        meido.RegisterTrigger("c", HandleTrigger);
         irc.AddQueryMessageHandler(HandleMessage);
 
         meido.RegisterTrigger("defvar", DefVar);
