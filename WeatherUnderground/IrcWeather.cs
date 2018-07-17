@@ -86,14 +86,26 @@ public class IrcWeather : IMeidoHook
                 e.Reply(cond.Exception.Message);
         }
         else
-            e.Reply("Either specify a location or set your default location with the 'W' trigger.");
+            e.Reply("Either specify a location or set your default location with the 'W' trigger. " +
+                    "(That is a upper case W)");
     }
 
     string GetLocation(IIrcMessage e)
     {
         string location;
         if (e.MessageArray.Length > 1)
+        {
+            // w <location>
             location = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+
+            // w @<nick>
+            // Special form to query weather location associated with `nick`.
+            if (location.Length > 1 && location[0] == '@')
+            {
+                var nick = location.Substring(1, location.Length - 1);
+                location = defaultLocations.Get(nick);
+            }
+        }
         else
             location = defaultLocations.Get(e.Nick);
 
