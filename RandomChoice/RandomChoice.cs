@@ -32,7 +32,7 @@ public class IrcRandom : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"c", "c <options> - Takes either a range of numbers (c x-y) or a list of options seperated by" +
+                {"d", "d <options> - Takes either a range of numbers (c x-y) or a list of options seperated by" +
                      @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
 
                 {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking cd " +
@@ -54,7 +54,7 @@ public class IrcRandom : IMeidoHook
         conf = new Config(Path.Combine(meido.ConfDir, "RandomChoice.xml"), meido.CreateLogger(this));
 
         irc = ircComm;
-        meido.RegisterTrigger("c", Choose);
+        meido.RegisterTrigger("d", Choose);
         meido.RegisterTrigger("cd", Countdown);
         meido.RegisterTrigger("8ball", EightBall);
     }
