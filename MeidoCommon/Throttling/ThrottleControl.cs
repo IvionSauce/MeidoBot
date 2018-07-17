@@ -53,6 +53,14 @@ namespace MeidoCommon.Throttle
             return new ThrottleControl(controlRates, TimeSpan.FromMinutes(throttleMins));
         }
 
+        public static ThrottleControl FromHours(RateControl[] controlRates, double throttleHours)
+        {
+            if (throttleHours <= 0)
+                throw new ArgumentOutOfRangeException(nameof(throttleHours), "Cannot be 0 or negative.");
+
+            return new ThrottleControl(controlRates, TimeSpan.FromHours(throttleHours));
+        }
+
 
         public ThrottleInfo Check()
         {

@@ -41,6 +41,14 @@ namespace MeidoCommon.Throttle
             return new RateControl(msgLimit, TimeSpan.FromMinutes(intervalMins));
         }
 
+        public static RateControl FromHours(int msgLimit, double intervalHours)
+        {
+            if (intervalHours <= 0)
+                throw new ArgumentOutOfRangeException(nameof(intervalHours), "Cannot be 0 or negative.");
+
+            return new RateControl(msgLimit, TimeSpan.FromHours(intervalHours));
+        }
+
 
         public bool Check(out DateTime now)
         {
