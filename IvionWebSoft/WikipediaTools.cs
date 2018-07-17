@@ -9,7 +9,7 @@ namespace IvionWebSoft
     {
         static readonly Regex titleRegexp =
             new Regex(@"(?i)<h1 id=""firstHeading"" class=""firstHeading"" lang=""([^""]+)"">" +
-                      @"<span dir=""auto"">([^>]+)</span></h1>");
+                      @"([^>]+)</h1>");
 
         // Regexp that matches pesky parts of the html document that get in my way.
         // It sure is ugly, let's hope not many other exceptions show up...
@@ -17,7 +17,7 @@ namespace IvionWebSoft
             @"(?i)<td[^>]*>.*|" +
             @"<span id=""coordinates"">.*");
 
-        static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=</p>)");
+        static readonly Regex paragraphRegexp = new Regex(@"(?i)(?<=<p>).+(?=\n?</p>)");
 
         static readonly Regex sectionRegexp =
             new Regex(@"(?i)<span class=""mw-headline"" id=""([^""]+)"">([^<]+)</span>");
