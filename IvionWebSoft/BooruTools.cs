@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using System.ComponentModel;
 // JSON.NET
 using Newtonsoft.Json;
 
@@ -55,12 +53,12 @@ namespace IvionWebSoft
         /// Get info of a Danbooru post.
         /// </summary>
         /// <returns><see cref="DanboPost">DanboPost</see> detailing a post.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt;= 0.</exception>
         /// <param name="postNo">Post number.</param>
         public static DanboPost GetPostInfo(int postNo)
         {
             if (postNo < 1)
-                throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
+                throw new ArgumentOutOfRangeException(nameof(postNo), "Can't be 0 or negative.");
             
             var jsonReq = string.Format("https://danbooru.donmai.us/posts/{0}.json", postNo);
             var json = WebString.Download(jsonReq);
@@ -93,9 +91,9 @@ namespace IvionWebSoft
         public static void CleanupCharacterTags(string[] charTags, string[] copyrightTags)
         {
             if (charTags == null)
-                throw new ArgumentNullException("charTags");
-            else if (copyrightTags == null)
-                throw new ArgumentNullException("copyrightTags");
+                throw new ArgumentNullException(nameof(charTags));
+            if (copyrightTags == null)
+                throw new ArgumentNullException(nameof(copyrightTags));
 
             // Return early if there's nothing to be done.
             if (charTags.Length == 0 || copyrightTags.Length == 0)
@@ -221,12 +219,12 @@ namespace IvionWebSoft
         /// Get info of a Gelbooru post.
         /// </summary>
         /// <returns><see cref="BooruPost">BooruPost</see> detailing a post.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt= 0.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if postNo is &lt;= 0.</exception>
         /// <param name="postNo">Post number.</param>
         public static BooruPost GetPostInfo(int postNo)
         {
             if (postNo < 1)
-                throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
+                throw new ArgumentOutOfRangeException(nameof(postNo), "Can't be 0 or negative.");
 
             var xmlReq = string.Format("https://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
             var xml = WebString.Download(xmlReq);
