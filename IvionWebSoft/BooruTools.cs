@@ -62,7 +62,7 @@ namespace IvionWebSoft
             if (postNo < 1)
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
             
-            var jsonReq = string.Format("http://sonohara.donmai.us/posts/{0}.json", postNo);
+            var jsonReq = string.Format("https://danbooru.donmai.us/posts/{0}.json", postNo);
             var json = WebString.Download(jsonReq);
             if (!json.Success)
                 return new DanboPost(json);
@@ -228,7 +228,7 @@ namespace IvionWebSoft
             if (postNo < 1)
                 throw new ArgumentOutOfRangeException("postNo", "Can't be 0 or negative.");
 
-            var xmlReq = string.Format("http://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
+            var xmlReq = string.Format("https://gelbooru.com/index.php?page=dapi&s=post&q=index&id={0}", postNo);
             var xml = WebString.Download(xmlReq);
             if (!xml.Success)
                 return new BooruPost(xml);
