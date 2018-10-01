@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Collections.Generic;
 // Using directives for plugin use.
@@ -55,13 +54,18 @@ public class UrlTitler : IMeidoHook
     public UrlTitler(IIrcComm irc, IMeidoComm meido)
     {
         var log = meido.CreateLogger(this);
-        var conf = new Config(meido.ConfPathTo("UrlTitling.xml"), log);
 
         // Sharing stuff with all the ChannelThreads.
-        manager = new ChannelThreadManager(irc, log, conf);
-        SetupBWLists(conf, log);
+        manager = new ChannelThreadManager(irc, log);
+        //SetupBWLists(conf, log);
 
-        qTriggers = new QueryTriggers(conf);
+        qTriggers = new QueryTriggers();
+
+        var xmlConf = new XmlConfig2<Config>(
+            Config.DefaultConfig(), (xml) => new Config(xml), log);
+        
+        xmlConf.AddCallbacks(manager.Configure, qTriggers.Configure);
+        meido.LoadAndWatchConfig("UrlTitling.xml", xmlConf.LoadConfig);
 
         // For handling messages/actions that can potentially containg URL(s).
         irc.AddChannelMessageHandler(UrlHandler);
