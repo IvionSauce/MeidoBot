@@ -27,28 +27,35 @@ class WebToIrcConfig
 }
 
 
-class Config : XmlConfig
+class Config
 {
     // Global settings.
     public string BlacklistLocation { get; set; }
     public string WhitelistLocation { get; set; }
-    public CookieCollection CookieColl { get; set; }
-    
+    CookieCollection cookieColl;
+
     // Channel specific settings, or at least the possibility thereof.
-    public Dictionary<string, WebToIrcConfig> WebIrcSettings { get; private set; }
+    Dictionary<string, WebToIrcConfig> webIrcSettings;
     
     
-    public Config(string file, ILog log) : base(file, log) {}
+    public Config(XElement xmlConfig)
+    {
+        BlacklistLocation = (string)xmlConfig.Element("blacklist-location");
+        WhitelistLocation = (string)xmlConfig.Element("whitelist-location");
+
+        LoadCookies(xmlConfig);
+        LoadIntoWebIrcSettings(xmlConfig);
+    }
 
 
     public WebToIrc ConstructWebToIrc(string channel)
     {
         var webIrc = new WebToIrc();
-        webIrc.Cookies.Add(CookieColl);
+        webIrc.Cookies.Add(cookieColl);
 
-        var global = WebIrcSettings.GetOrAdd("_all");
+        var global = webIrcSettings.GetOrAdd("_all");
         WebToIrcConfig specific;
-        if ( !WebIrcSettings.TryGetValue(channel, out specific) )
+        if ( !webIrcSettings.TryGetValue(channel, out specific) )
             specific = new WebToIrcConfig();
 
         // Threshold
@@ -110,21 +117,11 @@ class Config : XmlConfig
         
         return webIrc;
     }
-
-
-    public override void LoadConfig()
-    {
-        BlacklistLocation = (string)Config.Element("blacklist-location");
-        WhitelistLocation = (string)Config.Element("whitelist-location");
-        
-        LoadCookies();
-        LoadIntoWebIrcSettings();
-    }
     
-    void LoadCookies()
+    void LoadCookies(XElement config)
     {
-        CookieColl = new CookieCollection();
-        XElement cookies = Config.Element("cookies");
+        cookieColl = new CookieCollection();
+        XElement cookies = config.Element("cookies");
         if (cookies == null)
             return;
         foreach (XElement cookie in cookies.Elements())
@@ -141,33 +138,33 @@ class Config : XmlConfig
                 !string.IsNullOrEmpty(content) &&
                 !string.IsNullOrEmpty(path) &&
                 !string.IsNullOrEmpty(host))
-                CookieColl.Add(new Cookie(name, content, path, host));
+                cookieColl.Add(new Cookie(name, content, path, host));
         }
     }
     
-    void LoadIntoWebIrcSettings()
+    void LoadIntoWebIrcSettings(XElement config)
     {
-        WebIrcSettings = new Dictionary<string, WebToIrcConfig>(StringComparer.OrdinalIgnoreCase);
+        webIrcSettings = new Dictionary<string, WebToIrcConfig>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (XElement thresh in Config.Elements("threshold"))
+        foreach (XElement thresh in config.Elements("threshold"))
         {
-            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(thresh) );
+            var settings = webIrcSettings.GetOrAdd( GetChannelAttr(thresh) );
             settings.Threshold = (double?)thresh;
         }
 
-        foreach (XElement parse in Config.Elements("parse-media"))
+        foreach (XElement parse in config.Elements("parse-media"))
         {
-            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(parse) );
+            var settings = webIrcSettings.GetOrAdd( GetChannelAttr(parse) );
             settings.ParseMedia = (bool?)parse;
         }
 
-        foreach (XElement danbo in Config.Elements("danbooru"))
+        foreach (XElement danbo in config.Elements("danbooru"))
             LoadDanbo(danbo);
         
-        foreach (XElement chan in Config.Elements("chan-foolz"))
+        foreach (XElement chan in config.Elements("chan-foolz"))
             LoadChan(chan);
 
-        foreach (XElement wiki in Config.Elements("wikipedia"))
+        foreach (XElement wiki in config.Elements("wikipedia"))
             LoadWiki(wiki);
     }
 
@@ -176,7 +173,7 @@ class Config : XmlConfig
         if (!danbo.HasElements)
             return;
         
-        var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(danbo) );
+        var settings = webIrcSettings.GetOrAdd( GetChannelAttr(danbo) );
         
         settings.MaxTags = (int?)danbo.Element("max-tags-displayed");
         settings.DanboContSym = (string)danbo.Element("continuation-symbol");
@@ -197,7 +194,7 @@ class Config : XmlConfig
     {
         if (chan.HasElements)
         {
-            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(chan) );
+            var settings = webIrcSettings.GetOrAdd( GetChannelAttr(chan) );
             
             settings.MaxLines = (int?)chan.Element("max-lines");
             settings.ChanMaxChars = (int?)chan.Element("max-characters");
@@ -210,7 +207,7 @@ class Config : XmlConfig
     {
         if (wiki.HasElements)
         {
-            var settings = WebIrcSettings.GetOrAdd( GetChannelAttr(wiki) );
+            var settings = webIrcSettings.GetOrAdd( GetChannelAttr(wiki) );
 
             settings.WikiMaxChars = (int?)wiki.Element("max-characters");
             settings.WikiContSym = (string)wiki.Element("continuation-symbol");
@@ -228,7 +225,7 @@ class Config : XmlConfig
     }
 
     
-    public override XElement DefaultConfig()
+    public static XElement DefaultConfig()
     {
         var config =
             new XElement ("config",
