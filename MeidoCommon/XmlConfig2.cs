@@ -8,7 +8,7 @@ namespace MeidoCommon
 {
     public class XmlConfig2<T>
     {
-        public delegate T XmlParser(XElement root);
+        public delegate T XmlParser(XElement xml);
 
         readonly XElement defaultConfig;
         readonly XmlParser parser;
@@ -41,7 +41,7 @@ namespace MeidoCommon
         }
 
 
-        public void ReadConfig(string path)
+        public void LoadConfig(string path)
         {
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
