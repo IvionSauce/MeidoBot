@@ -8,8 +8,8 @@ using IvionSoft;
 
 class ChannelThreadManager
 {
-    public Blacklist Blacklist { get; private set; }
-    public Whitelist Whitelist { get; private set; }
+    public readonly Blacklist Blacklist;
+    public readonly Whitelist Whitelist;
     
     readonly IIrcComm irc;
     readonly ILog log;
@@ -47,10 +47,10 @@ class ChannelThreadManager
         var item = new MessageItem(nick, message);
         ChannelThread thread = GetThread(channel);
         
-        lock (thread._channelLock)
+        lock (thread.ChannelLock)
         {
             thread.MessageQueue.Enqueue(item);
-            Monitor.Pulse(thread._channelLock);
+            Monitor.Pulse(thread.ChannelLock);
         }
     }
 
@@ -61,10 +61,10 @@ class ChannelThreadManager
         {
             foreach (ChannelThread thread in channelThreads.Values)
             {
-                lock (thread._channelLock)
+                lock (thread.ChannelLock)
                 {
                     thread.MessageQueue.Enqueue(null);
-                    Monitor.Pulse(thread._channelLock);
+                    Monitor.Pulse(thread.ChannelLock);
                 }
             }
         }
@@ -76,7 +76,7 @@ class ChannelThreadManager
         ChannelThread thread = GetThread(channel);
 
         // Hijack the channelLock to serialize modifications (Add/Remove) to DisabledNicks.
-        lock (thread._channelLock)
+        lock (thread.ChannelLock)
         {
             return thread.DisabledNicks.Add(nick);
         }
@@ -86,7 +86,7 @@ class ChannelThreadManager
     {
         ChannelThread thread = GetThread(channel);
         
-        lock (thread._channelLock)
+        lock (thread.ChannelLock)
         {
             return thread.DisabledNicks.Remove(nick);
         }
@@ -117,11 +117,11 @@ class ChannelThread
     public readonly string Channel;
     public volatile WebToIrc WebToIrc;
 
-    public Queue<MessageItem> MessageQueue { get; private set; }
-    public HashSet<string> DisabledNicks { get; private set; }
-    
-    public object _channelLock { get; private set; }
-    
+    public readonly object ChannelLock;
+    public readonly Queue<MessageItem> MessageQueue;
+    public readonly HashSet<string> DisabledNicks;
+
+
     readonly IIrcComm irc;
     readonly ILog log;
 
@@ -148,7 +148,7 @@ class ChannelThread
         Channel = channel;
         MessageQueue = new Queue<MessageItem>();
         DisabledNicks = new HashSet<string>();
-        _channelLock = new object();
+        ChannelLock = new object();
         
         new Thread(Consume).Start();
     }
@@ -161,10 +161,10 @@ class ChannelThread
         MessageItem item;
         while (true)
         {
-            lock (_channelLock)
+            lock (ChannelLock)
             {
                 while (MessageQueue.Count == 0)
-                    Monitor.Wait(_channelLock);
+                    Monitor.Wait(ChannelLock);
                 
                 item = MessageQueue.Dequeue();
             }

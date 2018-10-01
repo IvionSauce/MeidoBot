@@ -2,7 +2,6 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Xml.Linq;
-using MeidoCommon;
 using IvionSoft;
 using WebIrc;
 

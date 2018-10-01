@@ -6,6 +6,7 @@ using IvionWebSoft;
 using WebIrc;
 using MeidoCommon;
 
+
 class QueryTriggers
 {
     volatile Config config;
