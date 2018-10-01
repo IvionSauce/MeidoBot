@@ -50,6 +50,7 @@
     <Compile Include="Logging\ChatWriter.cs" />
     <Compile Include="AutoReconnect.cs" />
     <Compile Include="ThrottleManager.cs" />
+    <Compile Include="WatchConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

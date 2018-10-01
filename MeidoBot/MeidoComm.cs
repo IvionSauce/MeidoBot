@@ -13,6 +13,7 @@ namespace MeidoBot
 
         readonly LogFactory logFac;
         readonly Triggers triggers;
+        readonly WatchConfig watcher;
         readonly UserAuthManager userAuths;
 
 
@@ -23,6 +24,7 @@ namespace MeidoBot
 
             logFac = factory;
             triggers = new Triggers(tManager, logFac.CreateLogger("Meido"));
+            watcher = new WatchConfig(ConfDir, logFac.CreateLogger("Meido"));
 
             string authPath = ConfPathTo("Auth.xml");
             userAuths = new UserAuthManager(authPath, logFac.CreateLogger("Auth"));
@@ -68,6 +70,11 @@ namespace MeidoBot
         public string DataPathTo(string filename)
         {
             return Path.Combine(DataDir, filename);
+        }
+
+        public void LoadAndWatchConfig(string filename, Action<string> loadConfig)
+        {
+            watcher.LoadAndWatch(filename, loadConfig);
         }
 
 
