@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using MeidoCommon;
 
 
@@ -34,7 +33,7 @@ namespace MeidoBot
         public ILog CreateLogger(IMeidoHook plugin)
         {
             if (plugin == null)
-                throw new ArgumentNullException("plugin");
+                throw new ArgumentNullException(nameof(plugin));
 
             return logFac.CreateLogger(plugin);
         }
@@ -48,11 +47,11 @@ namespace MeidoBot
         public void RegisterTrigger(string trigger, Action<IIrcMessage> callback, bool needChannel)
         {
             if (trigger == null)
-                throw new ArgumentNullException("trigger");
-            else if (trigger == string.Empty)
-                throw new ArgumentException("Cannot be an empty string.", "trigger");
-            else if (callback == null)
-                throw new ArgumentNullException("callback");
+                throw new ArgumentNullException(nameof(trigger));
+            if (trigger == string.Empty)
+                throw new ArgumentException("Cannot be an empty string.", nameof(trigger));
+            if (callback == null)
+                throw new ArgumentNullException(nameof(callback));
 
             triggers.RegisterTrigger(trigger, new Trigger(callback, needChannel));
         }
@@ -74,6 +73,13 @@ namespace MeidoBot
 
         public void LoadAndWatchConfig(string filename, Action<string> loadConfig)
         {
+            if (filename == null)
+                throw new ArgumentNullException(nameof(filename));
+            if (loadConfig == null)
+                throw new ArgumentNullException(nameof(loadConfig));
+            if (filename.Trim() == string.Empty)
+                throw new ArgumentException("Cannot be empty or whitespace.", nameof(filename));
+            
             watcher.LoadAndWatch(filename, loadConfig);
         }
 
@@ -81,7 +87,7 @@ namespace MeidoBot
         public bool Auth(string nick, string pass)
         {
             if (nick == null)
-                throw new ArgumentNullException("nick");
+                throw new ArgumentNullException(nameof(nick));
 
             return userAuths.Authenticate(nick, pass);
         }
@@ -89,7 +95,7 @@ namespace MeidoBot
         public int AuthLevel(string nick)
         {
             if (nick == null)
-                throw new ArgumentNullException("nick");
+                throw new ArgumentNullException(nameof(nick));
 
             return userAuths.AuthLevel(nick);
         }
