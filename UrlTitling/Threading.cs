@@ -13,20 +13,32 @@ class ChannelThreadManager
     
     readonly IIrcComm irc;
     readonly ILog log;
-    readonly Config conf;
+    Config conf;
 
     readonly Dictionary<string, ChannelThread> channelThreads =
         new Dictionary<string, ChannelThread>(StringComparer.OrdinalIgnoreCase);
     
     
-    public ChannelThreadManager(IIrcComm irc, ILog log, Config conf)
+    public ChannelThreadManager(IIrcComm irc, ILog log)
     {
         this.irc = irc;
         this.log = log;
-        this.conf = conf;
         
         Blacklist = new Blacklist();
         Whitelist = new Whitelist();
+    }
+
+
+    public void Configure(Config conf)
+    {
+        this.conf = conf;
+        lock (channelThreads)
+        {
+            foreach (ChannelThread thread in channelThreads.Values)
+            {
+                thread.WebToIrc = conf.ConstructWebToIrc(thread.Channel);
+            }
+        }
     }
     
     
@@ -41,16 +53,19 @@ class ChannelThreadManager
             Monitor.Pulse(thread._channelLock);
         }
     }
-    
-    
+
+
     public void StopAll()
     {
-        foreach (ChannelThread thread in channelThreads.Values)
+        lock (channelThreads)
         {
-            lock (thread._channelLock)
+            foreach (ChannelThread thread in channelThreads.Values)
             {
-                thread.MessageQueue.Enqueue(null);
-                Monitor.Pulse(thread._channelLock);
+                lock (thread._channelLock)
+                {
+                    thread.MessageQueue.Enqueue(null);
+                    Monitor.Pulse(thread._channelLock);
+                }
             }
         }
     }
@@ -81,14 +96,16 @@ class ChannelThreadManager
     ChannelThread GetThread(string channel)
     {
         ChannelThread thread;
-        if (channelThreads.TryGetValue(channel, out thread))
-            return thread;
-        else
+
+        lock (channelThreads)
         {
-            var wIrc = conf.ConstructWebToIrc(channel);
-            thread = new ChannelThread(irc, log, Blacklist, Whitelist, wIrc, channel);
-            
-            channelThreads.Add(channel, thread);
+            if (!channelThreads.TryGetValue(channel, out thread))
+            {
+                var wIrc = conf.ConstructWebToIrc(channel);
+                thread = new ChannelThread(irc, log, Blacklist, Whitelist, wIrc, channel);
+                channelThreads[channel] = thread;
+            }
+
             return thread;
         }
     }
@@ -98,6 +115,7 @@ class ChannelThreadManager
 class ChannelThread
 {
     public readonly string Channel;
+    public volatile WebToIrc WebToIrc;
 
     public Queue<MessageItem> MessageQueue { get; private set; }
     public HashSet<string> DisabledNicks { get; private set; }
@@ -110,8 +128,6 @@ class ChannelThread
     readonly Blacklist blacklist;
     readonly Whitelist whitelist;
     readonly ShortHistory<string> urlHistory = new ShortHistory<string>(3);
-    
-    readonly WebToIrc webToIrc;
     
     
     public ChannelThread(IIrcComm irc,
@@ -127,7 +143,7 @@ class ChannelThread
         blacklist = black;
         whitelist = white;
 
-        webToIrc = wIrc;
+        WebToIrc = wIrc;
         
         Channel = channel;
         MessageQueue = new Queue<MessageItem>();
@@ -210,7 +226,7 @@ class ChannelThread
     
     void OutputUrl(string url)
     {
-        var result = webToIrc.WebInfo(url);
+        var result = WebToIrc.WebInfo(url);
 
         if (result.Success)
         {

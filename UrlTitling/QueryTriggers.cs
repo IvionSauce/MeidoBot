@@ -8,10 +8,10 @@ using MeidoCommon;
 
 class QueryTriggers
 {
-    Config config;
+    volatile Config config;
 
 
-    public QueryTriggers(Config conf)
+    public void Configure(Config conf)
     {
         config = conf;
     }
