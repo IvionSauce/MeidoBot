@@ -53,6 +53,7 @@ namespace MeidoBot
                     var now = DateTimeOffset.Now;
                     if ((now - config.PreviousLoad) > gracePeriod)
                     {
+                        log.Message("Detected change in '{0}', reloading configuration...", filename);
                         config.Load(fullPath);
                         config.PreviousLoad = now;
                     }
