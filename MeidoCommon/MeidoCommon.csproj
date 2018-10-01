@@ -44,6 +44,7 @@
     <Compile Include="Throttling\RateControl.cs" />
     <Compile Include="Throttling\ThrottleControl.cs" />
     <Compile Include="Throttling\ThrottleInfo.cs" />
+    <Compile Include="XmlConfig2.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
