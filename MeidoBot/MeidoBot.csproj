@@ -52,6 +52,7 @@
     <Compile Include="WatchConfig.cs" />
     <Compile Include="Authentication\UserAuthManager.cs" />
     <Compile Include="Authentication\UserAuth.cs" />
+    <Compile Include="Authentication\AuthDictionary.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
