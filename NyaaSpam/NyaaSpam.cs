@@ -60,13 +60,20 @@ public class NyaaSpam : IMeidoHook
         log = meido.CreateLogger(this);
 
         // Setting up configuration.
-        // TODO
+        var xmlConf = new XmlConfig2<Config>(
+            Config.DefaultConfig(),
+            (xml) => new Config(xml),
+            log,
+            Configure
+        );
+        meido.LoadAndWatchConfig("NyaaSpam.xml", xmlConf);
 
         meido.RegisterTrigger("nyaa", Nyaa, true);
     }
 
     void Configure(Config config)
     {
+        // Let's stop the reader asap, just to be safe.
         if (feedReader != null)
             feedReader.Stop();
         
@@ -74,7 +81,7 @@ public class NyaaSpam : IMeidoHook
         if (conf.Feed != null)
         {
             SetupPatterns();
-            SetupReader(config);
+            SetupReader();
         }
         else
             log.Error("Disabled due to invalid or missing feed address.");
@@ -95,14 +102,14 @@ public class NyaaSpam : IMeidoHook
         }
     }
 
-    void SetupReader(Config config)
+    void SetupReader()
     {
         if (feedReader == null)
         {
             feedReader = new FeedReader(irc, log, feedPatterns);
         }
 
-        feedReader.Configure(config);
+        feedReader.Configure(conf);
         feedReader.Start();
     }
 
