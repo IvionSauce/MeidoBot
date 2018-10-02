@@ -17,6 +17,8 @@ public class NyaaSpam : IMeidoHook
     Patterns feedPatterns;
     FeedReader feedReader;
 
+    const string feedError = "Disabled due to invalid or missing feed address.";
+
 
     public string Name
     {
@@ -84,7 +86,7 @@ public class NyaaSpam : IMeidoHook
             SetupReader();
         }
         else
-            log.Error("Disabled due to invalid or missing feed address.");
+            log.Error(feedError);
     }
 
     void SetupPatterns()
@@ -116,15 +118,23 @@ public class NyaaSpam : IMeidoHook
 
     public void Nyaa(IIrcMessage e)
     {
+        // Some early return conditions.
+        if (conf.Feed == null)
+        {
+            e.Reply(feedError);
+            return;
+        }
+        if (e.MessageArray.Length == 1)
+        {
+            e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
+                    conf.Feed, conf.Interval);
+
+            return;
+        }
+
+        // The real deal.
         if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
         {
-            if (e.MessageArray.Length == 1)
-            {
-                e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
-                        conf.Feed, conf.Interval);
-                return;
-            }
-
             string command = e.MessageArray[1];
             string input = string.Empty;
             int? assocPat = null;
