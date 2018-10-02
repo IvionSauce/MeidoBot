@@ -20,20 +20,36 @@ namespace MeidoCommon
 
         public XmlConfig2(XElement defaultConfig, XmlParser parser, ILog log)
         {
+            if (defaultConfig == null)
+                throw new ArgumentNullException(nameof(defaultConfig));
+            if (parser == null)
+                throw new ArgumentNullException(nameof(parser));
+            if (log == null)
+                throw new ArgumentNullException(nameof(log));
+            
             this.defaultConfig = defaultConfig;
             this.parser = parser;
             this.log = log;
         }
 
-
-        public void AddCallbacks(params Action<T>[] callbacks)
+        public XmlConfig2(
+            XElement defaultConfig,
+            XmlParser parser,
+            ILog log,
+            params Action<T>[] configCallbacks) : this(defaultConfig, parser, log)
         {
-            if (callbacks == null)
-                throw new ArgumentNullException(nameof(callbacks));
+            AddCallbacks(configCallbacks);
+        }
+
+
+        public void AddCallbacks(params Action<T>[] configCallbacks)
+        {
+            if (configCallbacks == null)
+                throw new ArgumentNullException(nameof(configCallbacks));
             
             lock (_locker)
             {
-                foreach (var cb in callbacks)
+                foreach (var cb in configCallbacks)
                 {
                     OnConfigChange += cb;
                 }
@@ -65,19 +81,19 @@ namespace MeidoCommon
             XmlParser parser,
             ILog log)
         {
+            if (parser == null)
+                throw new ArgumentNullException(nameof(parser));
+            // GetOrCreateConfig checks the other parameters.
             var xmlConfig = XmlConfig.GetOrCreateConfig(path, defaultConfig, log);
 
             T config;
-            if (TryParseConfig(xmlConfig, path, parser, log, out config))
-            {
-                return config;
-            }
-            else
+            if (!TryParseConfig(xmlConfig, path, parser, log, out config))
             {
                 log.Message("-> Loading values from default config.");
                 config = parser(defaultConfig);
-                return config;
             }
+
+            return config;
         }
 
         static bool TryParseConfig(
