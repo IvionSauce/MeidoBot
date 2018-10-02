@@ -29,8 +29,6 @@ class WebToIrcConfig
 class Config
 {
     // Global settings.
-    public string BlacklistLocation { get; set; }
-    public string WhitelistLocation { get; set; }
     CookieCollection cookieColl;
 
     // Channel specific settings, or at least the possibility thereof.
@@ -39,9 +37,6 @@ class Config
     
     public Config(XElement xmlConfig)
     {
-        BlacklistLocation = (string)xmlConfig.Element("blacklist-location");
-        WhitelistLocation = (string)xmlConfig.Element("whitelist-location");
-
         LoadCookies(xmlConfig);
         LoadIntoWebIrcSettings(xmlConfig);
     }
@@ -228,9 +223,6 @@ class Config
     {
         var config =
             new XElement ("config",
-                new XElement ("blacklist-location", "conf/blacklist"),
-                new XElement ("whitelist-location", "conf/whitelist"),
-
                 new XComment ("For elements with the `channel` attribute you can have channel specific options.\n" +
                 "Just create another one with appropriate value in the `channel` attribute."),
 

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 // Using directives for plugin use.
@@ -9,6 +10,7 @@ using System.ComponentModel.Composition;
 public class UrlTitler : IMeidoHook
 {
     readonly IMeidoComm meido;
+    readonly ILog log;
 
     readonly ChannelThreadManager manager;
     readonly QueryTriggers qTriggers;
@@ -53,19 +55,24 @@ public class UrlTitler : IMeidoHook
     [ImportingConstructor]
     public UrlTitler(IIrcComm irc, IMeidoComm meido)
     {
-        var log = meido.CreateLogger(this);
+        log = meido.CreateLogger(this);
 
-        // Sharing stuff with all the ChannelThreads.
         manager = new ChannelThreadManager(irc, log);
-        //SetupBWLists(conf, log);
-
         qTriggers = new QueryTriggers();
 
+        // Setting up main configuration.
         var xmlConf = new XmlConfig2<Config>(
-            Config.DefaultConfig(), (xml) => new Config(xml), log);
+            Config.DefaultConfig(),
+            (xml) => new Config(xml),
+            log,
+            manager.Configure, qTriggers.Configure
+        );
         
-        xmlConf.AddCallbacks(manager.Configure, qTriggers.Configure);
         meido.LoadAndWatchConfig("UrlTitling.xml", xmlConf.LoadConfig);
+
+        // Setting up black- and whitelist configuration.
+        meido.LoadAndWatchConfig("blacklist", WrappedIO(LoadBlacklist));
+        meido.LoadAndWatchConfig("whitelist", WrappedIO(LoadWhitelist));
 
         // For handling messages/actions that can potentially containg URL(s).
         irc.AddChannelMessageHandler(UrlHandler);
@@ -84,24 +91,38 @@ public class UrlTitler : IMeidoHook
         this.meido = meido;
     }
 
-    void SetupBWLists(Config conf, ILog log)
+
+    static Action<string> WrappedIO(Action<string> loader)
     {
-        try
+        Action<string> wrappedFunc = (path) =>
         {
-            if (!string.IsNullOrWhiteSpace(conf.BlacklistLocation))
+            try
             {
-                manager.Blacklist.LoadFromFile(conf.BlacklistLocation);
-                log.Message("-> Loaded blacklist from " + conf.BlacklistLocation);
+                loader(path);
             }
-            if (!string.IsNullOrWhiteSpace(conf.WhitelistLocation))
+            catch (IOException)
             {
-                manager.Whitelist.LoadFromFile(conf.WhitelistLocation);
-                log.Message("-> Loaded whitelist from " + conf.WhitelistLocation);
+                // Ignore IO errors.
             }
+        };
+
+        return wrappedFunc;
+    }
+
+    void LoadBlacklist(string path)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            manager.Blacklist.LoadFromFile(path);
+            log.Message("-> Loaded blacklist from " + path);
         }
-        catch (IOException)
+    }
+    void LoadWhitelist(string path)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
         {
-            // Ignore IO errors.
+            manager.Whitelist.LoadFromFile(path);
+            log.Message("-> Loaded whitelist from " + path);
         }
     }
 
