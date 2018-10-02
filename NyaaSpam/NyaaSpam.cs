@@ -10,11 +10,12 @@ public class NyaaSpam : IMeidoHook
 {
     readonly IIrcComm irc;
     readonly IMeidoComm meido;
+    readonly ILog log;
 
-    readonly Config conf;
+    volatile Config conf;
 
-    readonly Patterns feedPatterns;
-    readonly FeedReader feedReader;
+    Patterns feedPatterns;
+    FeedReader feedReader;
 
 
     public string Name
@@ -55,10 +56,33 @@ public class NyaaSpam : IMeidoHook
     public NyaaSpam(IIrcComm ircComm, IMeidoComm meidoComm)
     {
         meido = meidoComm;
-        var log = meido.CreateLogger(this);
-        conf = new Config(meido.ConfPathTo("NyaaSpam.xml"), log);
+        irc = ircComm;
+        log = meido.CreateLogger(this);
 
+        // Setting up configuration.
+        // TODO
+
+        meido.RegisterTrigger("nyaa", Nyaa, true);
+    }
+
+    void Configure(Config config)
+    {
+        if (feedReader != null)
+            feedReader.Stop();
+        
+        conf = config;
         if (conf.Feed != null)
+        {
+            SetupPatterns();
+            SetupReader(config);
+        }
+        else
+            log.Error("Disabled due to invalid or missing feed address.");
+    }
+
+    void SetupPatterns()
+    {
+        if (feedPatterns == null)
         {
             string patternsFile = meido.DataPathTo("nyaapatterns.xml");
             feedPatterns = new Patterns( TimeSpan.FromMinutes(1) ) { FileLocation = patternsFile };
@@ -68,16 +92,20 @@ public class NyaaSpam : IMeidoHook
             }
             catch (System.IO.FileNotFoundException)
             {}
-
-            feedReader = new FeedReader(ircComm, log, conf, feedPatterns);
-            feedReader.Start();
-
-            irc = ircComm;
-            meido.RegisterTrigger("nyaa", Nyaa, true);
         }
-        else
-            log.Error("Disabled due to invalid or missing feed address.");
     }
+
+    void SetupReader(Config config)
+    {
+        if (feedReader == null)
+        {
+            feedReader = new FeedReader(irc, log, feedPatterns);
+        }
+
+        feedReader.Configure(config);
+        feedReader.Start();
+    }
+
 
     public void Nyaa(IIrcMessage e)
     {
