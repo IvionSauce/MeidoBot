@@ -31,7 +31,6 @@
     <Compile Include="Main.cs" />
     <Compile Include="MeidoComm.cs" />
     <Compile Include="PluginManager.cs" />
-    <Compile Include="Authentication.cs" />
     <Compile Include="MessageTools.cs" />
     <Compile Include="Admin.cs" />
     <Compile Include="Triggers.cs" />
@@ -51,6 +50,8 @@
     <Compile Include="AutoReconnect.cs" />
     <Compile Include="ThrottleManager.cs" />
     <Compile Include="WatchConfig.cs" />
+    <Compile Include="Authentication\UserAuthManager.cs" />
+    <Compile Include="Authentication\UserAuth.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -70,5 +71,6 @@
   <ItemGroup>
     <Folder Include="Configuration\" />
     <Folder Include="Logging\" />
+    <Folder Include="Authentication\" />
   </ItemGroup>
 </Project>
