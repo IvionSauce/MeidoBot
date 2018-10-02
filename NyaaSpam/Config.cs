@@ -1,31 +1,35 @@
 using System;
 using System.Collections.Generic;
-using System.Xml;
 using System.Xml.Linq;
 using MeidoCommon;
 
 
-class Config : XmlConfig
+class Config
 {
     public Uri Feed { get; set; }
-    public int Interval { get; set; }
+    public TimeSpan Interval { get; set; }
     public HashSet<string> ActiveChannels { get; set; }
     public HashSet<string> SkipCategories { get; set; }
     
     
-    public Config(string file, ILog log) : base(file, log) {}
-    
-    public override void LoadConfig()
+    public Config(XElement xml)
     {
         Uri feed;
-        if ( Uri.TryCreate(Config.Element("feed").Value, UriKind.Absolute, out feed) )
+        if ( Uri.TryCreate(xml.Element("feed").Value, UriKind.Absolute, out feed) )
         {
             Feed = feed;
         }
-        Interval = (int)Config.Element("interval");
+
+        var interval = (int)xml.Element("interval");
+        if (interval < 1)
+            Interval = TimeSpan.FromMinutes(15);
+        else if (interval > 60)
+            Interval = TimeSpan.FromMinutes(60);
+        else
+            Interval = TimeSpan.FromMinutes(interval);
 
         ActiveChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        XElement activeChannels = Config.Element("active-channels");
+        XElement activeChannels = xml.Element("active-channels");
         if (activeChannels != null)
         {
             foreach (XElement chan in activeChannels.Elements())
@@ -34,9 +38,9 @@ class Config : XmlConfig
                     ActiveChannels.Add(chan.Value);
             }
         }
-        
+
         SkipCategories = new HashSet<string>();
-        XElement skipCategories = Config.Element("skip-categories");
+        XElement skipCategories = xml.Element("skip-categories");
         if (skipCategories != null)
         {
             foreach (XElement cat in skipCategories.Elements())
@@ -46,8 +50,9 @@ class Config : XmlConfig
             }
         }
     }
+
     
-    public override XElement DefaultConfig()
+    public static XElement DefaultConfig()
     {
         var config =
             new XElement ("config",
