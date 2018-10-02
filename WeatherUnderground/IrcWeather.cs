@@ -32,10 +32,15 @@ public class IrcWeather : IMeidoHook
     }
 
     readonly IIrcComm irc;
-    readonly WeatherUnderground weather;
+    readonly ILog log;
+
+    readonly object _locker = new object();
+    WeatherUnderground weather;
 
     readonly string storagePath;
     readonly Storage<string> defaultLocations;
+
+    const string weatherError = "Weather querying disabled due to missing API key.";
 
 
     public void Stop()
@@ -45,6 +50,8 @@ public class IrcWeather : IMeidoHook
     [ImportingConstructor]
     public IrcWeather(IIrcComm irc, IMeidoComm meido)
     {
+        this.irc = irc;
+
         storagePath = meido.DataPathTo("_weatherunderground.xml");
         try
         {
@@ -55,22 +62,32 @@ public class IrcWeather : IMeidoHook
             defaultLocations = new Storage<string>();
         }
 
+        log = meido.CreateLogger(this);
+        // Setting up configuration.
+        // TODO
 
-        var log = meido.CreateLogger(this);
-        var conf = new Config(meido.ConfPathTo("WeatherUnderground.xml"), log);
-
-        if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
-        {
-            weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
-            meido.RegisterTrigger("w", WeatherSearch);
-        }
-        else
-            log.Message("Weather querying disabled due to missing API key.");
-
-        this.irc = irc;
+        meido.RegisterTrigger("w", WeatherSearch);
         meido.RegisterTrigger("W", SetWeatherLocation);
     }
 
+    void Configure(Config conf)
+    {
+        lock (_locker)
+        {
+            if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
+            {
+                weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
+            }
+            else
+            {
+                log.Error(weatherError);
+                weather = null;
+            }
+        }
+    }
+
+
+    // --- Weather Search, 'w' trigger ---
 
     void WeatherSearch(IIrcMessage e)
     {
@@ -78,17 +95,24 @@ public class IrcWeather : IMeidoHook
 
         if (!string.IsNullOrWhiteSpace(location))
         {
-            var cond = weather.GetConditions(location);
-
-            if (cond.Success)
-                irc.SendMessage(e.ReturnTo, Format(cond));
+            WeatherConditions cond;
+            if (TryGetConditions(location, out cond))
+            {
+                if (cond.Success)
+                    irc.SendMessage(e.ReturnTo, Format(cond));
+                else
+                    e.Reply(cond.Exception.Message);
+            }
             else
-                e.Reply(cond.Exception.Message);
+                e.Reply(weatherError);
         }
         else
             e.Reply("Either specify a location or set your default location with the 'W' trigger. " +
                     "(That is a upper case W)");
     }
+
+
+    // --- Helper functions for WeatherSearch ---
 
     string GetLocation(IIrcMessage e)
     {
@@ -112,7 +136,24 @@ public class IrcWeather : IMeidoHook
         return location;
     }
 
-    string Format(WeatherConditions cond)
+    // Wraps locking and null-checking.
+    bool TryGetConditions(string location, out WeatherConditions cond)
+    {
+        cond = null;
+
+        lock (_locker)
+        {
+            if (weather != null)
+            {
+                cond = weather.GetConditions(location);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static string Format(WeatherConditions cond)
     {
         // Only put Wind Gust in if it has a sensible value, ie higher than the normal Wind Speed.
         string wind;
@@ -134,6 +175,8 @@ public class IrcWeather : IMeidoHook
                              cond.WindDirection, wind);
     }
 
+
+    // --- Set Weather Location, 'W' trigger ---
 
     void SetWeatherLocation(IIrcMessage e)
     {
