@@ -51,7 +51,18 @@ public class IrcWeather : IMeidoHook
     public IrcWeather(IIrcComm irc, IMeidoComm meido)
     {
         this.irc = irc;
+        log = meido.CreateLogger(this);
 
+        // Setting up configuration.
+        var xmlConf = new XmlConfig2<Config>(
+            Config.DefaultConfig(),
+            (xml) => new Config(xml),
+            log,
+            Configure
+        );
+        meido.LoadAndWatchConfig("WeatherUnderground.xml", xmlConf);
+
+        // Setting up locations database/dict.
         storagePath = meido.DataPathTo("_weatherunderground.xml");
         try
         {
@@ -61,10 +72,6 @@ public class IrcWeather : IMeidoHook
         {
             defaultLocations = new Storage<string>();
         }
-
-        log = meido.CreateLogger(this);
-        // Setting up configuration.
-        // TODO
 
         meido.RegisterTrigger("w", WeatherSearch);
         meido.RegisterTrigger("W", SetWeatherLocation);

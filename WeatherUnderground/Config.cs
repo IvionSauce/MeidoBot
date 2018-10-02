@@ -1,21 +1,18 @@
-using System.Xml;
 using System.Xml.Linq;
-using MeidoCommon;
 
 
-public class Config : XmlConfig
+public class Config
 {
     public string WeatherUndergroundApiKey { get; set; }
 
 
-    public Config(string file, ILog log) : base(file, log) {}
-
-    public override void LoadConfig()
+    public Config(XElement xml)
     {
-        WeatherUndergroundApiKey = (string)Config.Element("wu-api-key") ?? string.Empty;
+        WeatherUndergroundApiKey = (string)xml.Element("wu-api-key") ?? string.Empty;
     }
 
-    public override XElement DefaultConfig()
+
+    public static XElement DefaultConfig()
     {
         var config =
             new XElement("config", new XElement("wu-api-key", string.Empty));
