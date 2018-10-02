@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Collections.Generic;
+using System.Threading;
 using IvionSoft;
 using IvionWebSoft;
 // Using directives for plugin use.
@@ -102,20 +103,27 @@ public class IrcWeather : IMeidoHook
 
         if (!string.IsNullOrWhiteSpace(location))
         {
-            WeatherConditions cond;
-            if (TryGetConditions(location, out cond))
-            {
-                if (cond.Success)
-                    irc.SendMessage(e.ReturnTo, Format(cond));
-                else
-                    e.Reply(cond.Exception.Message);
-            }
-            else
-                e.Reply(weatherError);
+            ThreadPool.QueueUserWorkItem( (state) => WeatherSearch(e, location) );
         }
         else
+        {
             e.Reply("Either specify a location or set your default location with the 'W' trigger. " +
                     "(That is a upper case W)");
+        }
+    }
+
+    void WeatherSearch(IIrcMessage e, string location)
+    {
+        WeatherConditions cond;
+        if (TryGetConditions(location, out cond))
+        {
+            if (cond.Success)
+                irc.SendMessage(e.ReturnTo, Format(cond));
+            else
+                e.Reply(cond.Exception.Message);
+        }
+        else
+            e.Reply(weatherError);
     }
 
 
