@@ -25,8 +25,7 @@ namespace MeidoBot
             triggers = new Triggers(tManager, logFac.CreateLogger("Meido"));
             watcher = new WatchConfig(ConfDir, logFac.CreateLogger("Meido"));
 
-            string authPath = ConfPathTo("Auth.xml");
-            userAuths = new UserAuthManager(authPath, logFac.CreateLogger("Auth"));
+            userAuths = new UserAuthManager("Auth.xml", watcher, logFac.CreateLogger("Auth"));
         }
 
 

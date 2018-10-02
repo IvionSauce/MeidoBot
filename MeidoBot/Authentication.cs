@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 using MeidoCommon;
-using Meebey.SmartIrc4net;
 
 
 namespace MeidoBot
@@ -11,7 +10,7 @@ namespace MeidoBot
     {
         readonly Logger log;
 
-        readonly Dictionary<string, UserAuth> auths =
+        volatile Dictionary<string, UserAuth> auths =
             new Dictionary<string, UserAuth>(StringComparer.OrdinalIgnoreCase);
 
         static readonly XElement defaultConfig =
@@ -24,17 +23,37 @@ namespace MeidoBot
             );
 
 
-        public UserAuthManager(string path, Logger log)
+        public UserAuthManager(string filename, WatchConfig watcher, Logger log)
         {
             this.log = log;
-
-            XElement authConfig = XmlConfig.GetOrCreateConfig(path, defaultConfig, log);
-
-            foreach (XElement entry in authConfig.Elements("entry"))             
-                ParseEntry(entry);
+            var xmlConf = new XmlConfig2< Dictionary<string, UserAuth> >(
+                defaultConfig,
+                Parse,
+                log,
+                Configure
+            );
+            watcher.LoadAndWatch(filename, xmlConf.LoadConfig);
         }
 
-        void ParseEntry(XElement entry)
+        void Configure(Dictionary<string, UserAuth> authDict)
+        {
+            auths = authDict;
+        }
+
+
+        Dictionary<string, UserAuth> Parse(XElement xml)
+        {
+            var authDict = new Dictionary<string, UserAuth>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (XElement entry in xml.Elements("entry"))
+            {
+                ParseEntry(entry, authDict);
+            }
+
+            return authDict;
+        }
+
+        void ParseEntry(XElement entry, Dictionary<string, UserAuth> dict)
         {
             var pass = (string)entry.Element("pass");
             int level = ParseLevel(entry.Element("level"));
@@ -48,7 +67,7 @@ namespace MeidoBot
                     var user = new UserAuth(pass, level);
 
                     log.Verbose("Registering user '{0}' with level {1}.", nick, user.Level);
-                    auths[nick] = user;
+                    dict[nick] = user;
                 }
             }
         }
