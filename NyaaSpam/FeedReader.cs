@@ -8,33 +8,39 @@ using MeidoCommon;
 
 class FeedReader
 {
-    public Uri Feed { get; private set; }
-    public TimeSpan Interval { get; private set; }
-    public Patterns Patterns { get; private set; }
-    public HashSet<string> SkipCategories { get; private set; }
-
-    Timer tmr;
-    
     readonly IIrcComm irc;
     readonly ILog log;
-    
+
+    readonly Patterns patterns;
+    volatile Timer tmr;
     DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
+
+    volatile Config conf;
     
     
-    public FeedReader(IIrcComm irc, ILog log, Config conf, Patterns patterns)
+    public FeedReader(IIrcComm irc, ILog log, Patterns patterns)
     {
         this.irc = irc;
         this.log = log;
-
-        Feed = conf.Feed;
-        Interval = TimeSpan.FromMinutes(conf.Interval);
-        SkipCategories = conf.SkipCategories;
-        Patterns = patterns;
+        this.patterns = patterns;
     }
+
+    public void Configure(Config conf)
+    {
+        this.conf = conf;
+    }
+
     
     public void Start()
     {
-        tmr = new Timer(ReadFeed, null, DetermineDueTime(Interval), Interval);
+        var period = conf.Interval;
+
+        tmr = new Timer(
+            ReadFeed,
+            null,
+            DetermineDueTime(period),
+            period
+        );
     }
 
     public static TimeSpan DetermineDueTime(TimeSpan intervalTs)
@@ -62,18 +68,22 @@ class FeedReader
 
         return dueTime;
     }
-    
+
+
     public void Stop()
     {
         tmr.Dispose();
     }
-    
+
+
     void ReadFeed(object data)
-    {        
+    {
         SyndicationFeed feed;
         try
         {
-            XmlReader reader = XmlReader.Create(Feed.OriginalString);
+            var feedUri = conf.Feed;
+
+            XmlReader reader = XmlReader.Create(feedUri.OriginalString);
             feed = SyndicationFeed.Load(reader);
         }
         catch (System.Net.WebException ex)
@@ -105,10 +115,10 @@ class FeedReader
             if (item.PublishDate <= lastPrintedTime)
                 break;
             // Skip processing items in categories we don't care about.
-            if (Skip(item))
+            if (Skip(item, conf.SkipCategories))
                 continue;
             
-            string[] channels = Patterns.PatternMatch(item.Title.Text);
+            string[] channels = patterns.PatternMatch(item.Title.Text);
             foreach (string channel in channels)
             {
                 irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
@@ -117,11 +127,11 @@ class FeedReader
         lastPrintedTime = latestPublish;
     }
 
-    bool Skip(SyndicationItem item)
+    static bool Skip(SyndicationItem item, HashSet<string> skipCategories)
     {
         foreach (SyndicationCategory cat in item.Categories)
         {
-            if (SkipCategories.Contains(cat.Name))
+            if (skipCategories.Contains(cat.Name))
                 return true;
         }
 
