@@ -32,14 +32,17 @@ namespace MeidoCommon
             }
         }
 
+
         public static XElement GetOrCreateConfig(string path, XElement defaultConfig, ILog log)
         {
             if (path == null)
-                throw new ArgumentNullException("path");
-            else if (log == null)
-                throw new ArgumentNullException("log");
-            else if (path.Trim() == string.Empty)
-                throw new ArgumentException("Cannot be empty or whitespace.", "path");
+                throw new ArgumentNullException(nameof(path));
+            if (defaultConfig == null)
+                throw new ArgumentNullException(nameof(defaultConfig));
+            if (log == null)
+                throw new ArgumentNullException(nameof(log));
+            if (path.Trim() == string.Empty)
+                throw new ArgumentException("Cannot be empty or whitespace.", nameof(path));
 
 
             try

@@ -15,7 +15,7 @@ namespace MeidoCommon
         readonly ILog log;
 
         readonly object _locker = new object();
-        Action<T> OnConfigChange;
+        Action<T> ConfigCallbacks;
 
 
         public XmlConfig2(XElement defaultConfig, XmlParser parser, ILog log)
@@ -51,7 +51,7 @@ namespace MeidoCommon
             {
                 foreach (var cb in configCallbacks)
                 {
-                    OnConfigChange += cb;
+                    ConfigCallbacks += cb;
                 }
             }
         }
@@ -66,10 +66,10 @@ namespace MeidoCommon
 
             lock (_locker)
             {
-                if (OnConfigChange != null)
+                if (ConfigCallbacks != null)
                 {
                     T parsedConf = DWIM(path, defaultConfig, parser, log);
-                    OnConfigChange(parsedConf);
+                    ConfigCallbacks(parsedConf);
                 }
             }
         }
