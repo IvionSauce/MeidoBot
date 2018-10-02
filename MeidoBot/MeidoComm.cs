@@ -71,6 +71,15 @@ namespace MeidoBot
             return Path.Combine(DataDir, filename);
         }
 
+
+        public void LoadAndWatchConfig<T>(string filename, XmlConfig2<T> xmlConf)
+        {
+            if (xmlConf == null)
+                throw new ArgumentNullException(nameof(xmlConf));
+            
+            LoadAndWatchConfig(filename, xmlConf.LoadConfig);
+        }
+
         public void LoadAndWatchConfig(string filename, Action<string> loadConfig)
         {
             if (filename == null)

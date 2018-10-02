@@ -45,6 +45,13 @@ namespace MeidoCommon
         void LoadAndWatchConfig(string filename, Action<string> loadConfig);
 
         /// <summary>
+        /// Loads configuration and watches the file for changes.
+        /// </summary>
+        /// <param name="filename">Filename.</param>
+        /// <param name="xmlConf">XML Configuration callback facility.</param>
+        void LoadAndWatchConfig<T>(string filename, XmlConfig2<T> xmlConf);
+
+        /// <summary>
         /// Gives authentication level for nick.
         /// </summary>
         /// <returns>The authentication level.</returns>
