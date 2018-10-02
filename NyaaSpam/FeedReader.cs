@@ -34,7 +34,33 @@ class FeedReader
     
     public void Start()
     {
-        tmr = new Timer(ReadFeed, null, Interval, Interval);
+        tmr = new Timer(ReadFeed, null, DetermineDueTime(Interval), Interval);
+    }
+
+    public static TimeSpan DetermineDueTime(TimeSpan intervalTs)
+    {
+        const int hour = 60;
+        var dueTime = intervalTs;
+
+        int interval = intervalTs.Minutes;
+        // If an hour is cleanly divided by specified interval, make the interval/period align on
+        // multiples of the interval.
+        if ((hour % interval) == 0)
+        {
+            var now = DateTimeOffset.Now;
+            int mult = (now.Minute / interval) + 1;
+
+            var wholeHour = new DateTimeOffset(
+                now.Year, now.Month,
+                now.Day, now.Hour,
+                0, 0, now.Offset
+            );
+            var projected = wholeHour + TimeSpan.FromMinutes(interval * mult);
+
+            dueTime = projected - now;
+        }
+
+        return dueTime;
     }
     
     public void Stop()
