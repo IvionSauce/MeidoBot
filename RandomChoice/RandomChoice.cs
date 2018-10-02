@@ -1,9 +1,7 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Xml.Linq;
 using IvionSoft;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -14,7 +12,7 @@ using System.ComponentModel.Composition;
 public class IrcRandom : IMeidoHook
 {
     readonly IIrcComm irc;
-    readonly Config conf;
+    volatile Config conf;
 
 
     public string Name
@@ -51,12 +49,25 @@ public class IrcRandom : IMeidoHook
     [ImportingConstructor]
     public IrcRandom(IIrcComm ircComm, IMeidoComm meido)
     {
-        conf = new Config(Path.Combine(meido.ConfDir, "RandomChoice.xml"), meido.CreateLogger(this));
-
         irc = ircComm;
+
+        // Setting up configuration.
+        var xmlConf = new XmlConfig2<Config>(
+            Config.DefaultConfig(),
+            (xml) => new Config(xml),
+            meido.CreateLogger(this),
+            Configure
+        );
+        meido.LoadAndWatchConfig("RandomChoice.xml", xmlConf);
+
         meido.RegisterTrigger("d", Choose);
         meido.RegisterTrigger("cd", Countdown);
         meido.RegisterTrigger("8ball", EightBall);
+    }
+
+    void Configure(Config config)
+    {
+        conf = config;
     }
 
 
@@ -239,51 +250,4 @@ static class RandomChoice
         return options;
     }
 
-}
-
-
-class Config : XmlConfig
-{
-    public List<string> LaunchChoices { get; set; }
-
-
-    public Config(string file, ILog log) : base(file, log) {}
-
-
-    public override void LoadConfig()
-    {
-        XElement countdownOptions = Config.Element("countdown");
-        LaunchChoices = new List<string>();
-
-        if (countdownOptions != null)
-        {
-            foreach (XElement option in countdownOptions.Elements())
-            {
-                if (!string.IsNullOrWhiteSpace(option.Value))
-                    LaunchChoices.Add(option.Value);
-            }
-        }
-    }
-
-    public override XElement DefaultConfig()
-    {
-        var config = 
-            new XElement("config",
-                         new XElement("countdown",
-                            new XElement("option", "Launch!"),
-                            new XElement("option", "Hasshin!"),
-                            new XElement("option", "Gasshin!"),
-                            new XElement("option", "Gattai!"),
-                            new XElement("option", "Rider Kick!"),
-                            new XElement("option", "Clock Up!"),
-                            new XElement("option", "Are you Ready? We are l@dy!"),
-                            new XElement("option", "Heaven or Hell!"),
-                            new XElement("option", "Let's Rock!"),
-                            new XElement("option", "Apprivoise!!"),
-                            new XElement("option", "Kiraboshi!"),
-                            new XElement("option", "Fight!")
-                            )
-                         );
-        return config;
-    }
 }
