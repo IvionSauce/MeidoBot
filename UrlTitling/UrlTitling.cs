@@ -67,8 +67,7 @@ public class UrlTitler : IMeidoHook
             log,
             manager.Configure, qTriggers.Configure
         );
-        
-        meido.LoadAndWatchConfig("UrlTitling.xml", xmlConf.LoadConfig);
+        meido.LoadAndWatchConfig("UrlTitling.xml", xmlConf);
 
         // Setting up black- and whitelist configuration.
         meido.LoadAndWatchConfig("blacklist", WrappedIO(LoadBlacklist));
