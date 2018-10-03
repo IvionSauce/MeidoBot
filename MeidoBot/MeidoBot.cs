@@ -10,20 +10,6 @@ namespace MeidoBot
 {
     class Meido : IDisposable
     {
-        volatile Ignores _ignores;
-        public Ignores OtherBots
-        {
-            get { return _ignores; }
-            set
-            {
-                if (value == null)
-                    _ignores = new Ignores();
-                else
-                    _ignores = value;
-            }
-        }
-
-
         readonly IrcClient irc = new IrcClient();
         // Auto-reconnect handling.
         readonly AutoReconnect reconnect;
@@ -48,6 +34,9 @@ namespace MeidoBot
         // Configuration fields, used for initializing various helper classes and for events.
         readonly MeidoConfig conf;
         readonly List<string> currentChannels;
+
+        // Contains nicks to ignore, whether due to abuse or them being other bots.
+        volatile Ignores ignore;
 
 
         public Meido(MeidoConfig config)
@@ -77,7 +66,8 @@ namespace MeidoBot
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
 
-            OtherBots = Ignores.FromFile(meidoComm.ConfPathTo("OtherBots"), log);
+            // Setup autoloading of ignores.
+            meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
 
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
@@ -104,11 +94,10 @@ namespace MeidoBot
             // Only load plugins if IO checks succeed.
             if (PathTools.CheckPluginIO(conf, log))
             {
-                // Load plugins and announce we're doing so.
                 log.Message("Loading plugins...");
                 plugins.LoadPlugins(ircComm, meidoComm);
                 help.RegisterHelp( plugins.GetHelpDicts() );
-                // Print number and descriptions of loaded plugins.
+
                 log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
                 foreach (string s in plugins.GetDescriptions())
                     log.Message("- " + s);
@@ -118,6 +107,11 @@ namespace MeidoBot
                 log.Error("Not loading plugins due to failed IO checks.");
                 plugins.DummyInit();
             }
+        }
+
+        void LoadIgnores(string path)
+        {
+            ignore = Ignores.FromFile(path, log);
         }
 
 
@@ -269,7 +263,7 @@ namespace MeidoBot
         {
             var msg = new IrcMessage(ircComm, e.Data, conf.TriggerPrefix);
 
-            if (!OtherBots.Contains(msg.Nick))
+            if (!ignore.Contains(msg.Nick))
             {
                 if (msg.Trigger != null)
                     meidoComm.FireTrigger(msg);

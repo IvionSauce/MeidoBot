@@ -34,23 +34,20 @@ namespace MeidoBot
 
         public static Ignores FromFile(string path, Logger log)
         {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentException("Cannot be null, empty or whitespace.", "path");
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+            if (path.Trim() == string.Empty)
+                throw new ArgumentException("Cannot be empty or whitespace.", nameof(path));
 
             string[] lines;
             try
             {
                 lines = File.ReadAllLines(path);
             }
-            catch (Exception ex)
+            catch (IOException ex)
             {
-                if (ex is IOException || ex is AccessViolationException)
-                {
-                    log.Verbose("Error loading ignores from {0} ({1})", path, ex.Message);
-                    return new Ignores();
-                }
-                else
-                    throw;
+                log.Verbose("Error loading ignores from {0} ({1})", path, ex.Message);
+                return new Ignores();
             }
 
             var tmp = new List<string>(lines.Length);
