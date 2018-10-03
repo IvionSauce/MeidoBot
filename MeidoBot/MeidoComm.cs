@@ -29,6 +29,8 @@ namespace MeidoBot
         }
 
 
+        // --- Methods made available to both Meido and plugins ---
+
         public ILog CreateLogger(IMeidoHook plugin)
         {
             if (plugin == null)
@@ -53,17 +55,6 @@ namespace MeidoBot
                 throw new ArgumentNullException(nameof(callback));
 
             triggers.RegisterTrigger(trigger, new Trigger(callback, needChannel));
-        }
-
-        public void SpecialTrigger(string trigger, Action<IIrcMessage> callback)
-        {
-            triggers.SpecialTrigger(trigger, callback);
-        }
-
-
-        public void FireTrigger(IrcMessage msg)
-        {
-            triggers.FireTrigger(msg);
         }
 
 
@@ -98,20 +89,35 @@ namespace MeidoBot
         }
 
 
-        public bool Auth(string nick, string pass)
-        {
-            if (nick == null)
-                throw new ArgumentNullException(nameof(nick));
-
-            return userAuths.Authenticate(nick, pass);
-        }
-
         public int AuthLevel(string nick)
         {
             if (nick == null)
                 throw new ArgumentNullException(nameof(nick));
 
             return userAuths.AuthLevel(nick);
+        }
+
+
+        // --- Methods made available only to the Meido ---
+
+        public void SpecialTrigger(string trigger, Action<IIrcMessage> callback)
+        {
+            triggers.SpecialTrigger(trigger, callback);
+        }
+
+
+        public void FireTrigger(IrcMessage msg)
+        {
+            triggers.FireTrigger(msg);
+        }
+
+
+        public bool Auth(string nick, string pass)
+        {
+            if (nick == null)
+                throw new ArgumentNullException(nameof(nick));
+
+            return userAuths.Authenticate(nick, pass);
         }
     }
 }
