@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Linq;
 
 namespace MeidoBot
 {
-    class AuthDictionary
+    class AuthDictionary : IEnumerable<KeyValuePair<string, UserAuth>>
     {
         readonly Dictionary<string, UserAuth> auths;
 
@@ -63,6 +64,17 @@ namespace MeidoBot
                             );
 
             return config;
+        }
+
+
+        public IEnumerator<KeyValuePair<string, UserAuth>> GetEnumerator()
+        {
+            return auths.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
