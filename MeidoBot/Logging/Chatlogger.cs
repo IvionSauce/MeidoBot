@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Meebey.SmartIrc4net;
 
 
@@ -50,6 +49,8 @@ namespace MeidoBot
              * abstraction because otherwise we'd have to maintain our own tracking. While not ideal I like it better
              * than keeping a tracking structure parallel to IrcClient's. */
             irc.OnRawMessage += RawQuit;
+            irc.OnDisconnected += Disconnect;
+            irc.OnConnectionError += ConnectionError;
         }
 
 
@@ -200,6 +201,22 @@ namespace MeidoBot
                 }
 
                 writer.CloseLog(e.Data.Nick);
+            }
+        }
+
+        void Disconnect(object s, EventArgs e)
+        {
+            foreach (var channel in irc.GetChannels())
+            {
+                writer.Log(channel, "-!- Disconnected from {0}", irc.Address);
+            }
+        }
+
+        void ConnectionError(object s, EventArgs e)
+        {
+            foreach (var channel in irc.GetChannels())
+            {
+                writer.Log(channel, "-!- Error in connection to {0}", irc.Address);
             }
         }
 
