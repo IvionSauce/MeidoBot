@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Xml.Linq;
-using MeidoCommon;
+﻿using MeidoCommon;
 
 
 namespace MeidoBot
@@ -28,6 +25,10 @@ namespace MeidoBot
         void Configure(AuthDictionary dict)
         {
             auths = dict;
+            foreach (var pair in auths)
+            {
+                log.Verbose("Registering user '{0}' with level {1}.", pair.Key, pair.Value.Level);
+            }
         }
 
 
