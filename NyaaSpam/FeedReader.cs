@@ -86,24 +86,9 @@ class FeedReader
 
     void ReadFeed(object data)
     {
-        SyndicationFeed feed;
-        try
-        {
-            var feedUri = conf.Feed;
-
-            XmlReader reader = XmlReader.Create(feedUri.OriginalString);
-            feed = SyndicationFeed.Load(reader);
-        }
-        catch (System.Net.WebException ex)
-        {
-            log.Error("WebException in ReadFeed: " + ex.Message);
+        var feed = OpenFeed();
+        if (feed == null)
             return;
-        }
-        catch (XmlException ex)
-        {
-            log.Error("XmlException in ReadFeed: " + ex.Message);
-            return;
-        }
         
         bool latestItem = true;
         // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. But it _does_ get
@@ -134,6 +119,29 @@ class FeedReader
         }
         lastPrintedTime = latestPublish;
         dtFile.Write(latestPublish);
+    }
+
+    SyndicationFeed OpenFeed()
+    {
+        SyndicationFeed feed = null;
+
+        try
+        {
+            var feedUri = conf.Feed;
+
+            XmlReader reader = XmlReader.Create(feedUri.OriginalString);
+            feed = SyndicationFeed.Load(reader);
+        }
+        catch (System.Net.WebException ex)
+        {
+            log.Error("WebException in ReadFeed: " + ex.Message);
+        }
+        catch (XmlException ex)
+        {
+            log.Error("XmlException in ReadFeed: " + ex.Message);
+        }
+
+        return feed;
     }
 
     static bool Skip(SyndicationItem item, HashSet<string> skipCategories)
