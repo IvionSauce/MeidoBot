@@ -44,9 +44,9 @@ namespace MeidoBot
 
             if (conf != null)
             {
+                var now = DateTimeOffset.Now;
                 lock (conf)
                 {
-                    var now = DateTimeOffset.Now;
                     if ((now - conf.PreviousLoad) > gracePeriod)
                     {
                         log.Message("Detected change in '{0}', reloading configuration...", filename);
