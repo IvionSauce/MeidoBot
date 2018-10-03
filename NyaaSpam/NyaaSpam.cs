@@ -108,7 +108,8 @@ public class NyaaSpam : IMeidoHook
     {
         if (feedReader == null)
         {
-            feedReader = new FeedReader(irc, log, feedPatterns);
+            var dtFile = new DateTimeFile( meido.DataPathTo("nyaa-last") );
+            feedReader = new FeedReader(irc, log, dtFile, feedPatterns);
         }
 
         feedReader.Configure(conf);

@@ -11,18 +11,26 @@ class FeedReader
     readonly IIrcComm irc;
     readonly ILog log;
 
+    readonly DateTimeFile dtFile;
     readonly Patterns patterns;
+
     volatile Timer tmr;
-    DateTimeOffset lastPrintedTime = DateTimeOffset.Now;
+    DateTimeOffset lastPrintedTime;
 
     volatile Config conf;
     
     
-    public FeedReader(IIrcComm irc, ILog log, Patterns patterns)
+    public FeedReader(IIrcComm irc, ILog log, DateTimeFile dtFile, Patterns patterns)
     {
         this.irc = irc;
         this.log = log;
+        this.dtFile = dtFile;
         this.patterns = patterns;
+
+        // Do not accept a DateTime too far in the past, to prevent flooding/spam.
+        lastPrintedTime = dtFile.Read();
+        var maxElapsed = TimeSpan.FromHours(1);
+        lastPrintedTime = DateTimeFile.SanityCheck(lastPrintedTime, maxElapsed);
     }
 
     public void Configure(Config conf)
@@ -125,6 +133,7 @@ class FeedReader
             }
         }
         lastPrintedTime = latestPublish;
+        dtFile.Write(latestPublish);
     }
 
     static bool Skip(SyndicationItem item, HashSet<string> skipCategories)
