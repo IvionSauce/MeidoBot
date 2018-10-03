@@ -22,9 +22,27 @@ namespace MeidoBot
 
         public void RegisterTrigger(string identifier, Trigger trigger)
         {
+            switch (identifier)
+            {
+                case "h":
+                case "help":
+                case "auth":
+                case "admin":
+                log.Error(
+                    "A plugin tried to register reserved trigger '{0}', this is not allowed.",
+                    identifier);
+                return;
+            }
+
             log.Verbose("Registering trigger '{0}'.", identifier);
             triggers[identifier] = trigger;
         }
+
+        public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
+        {
+            triggers[identifier] = new Trigger(callback, false);
+        }
+
 
         public void FireTrigger(IrcMessage msg)
         {

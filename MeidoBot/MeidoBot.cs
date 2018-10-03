@@ -300,11 +300,11 @@ namespace MeidoBot
 
         void RegisterSpecialTriggers()
         {
-            meidoComm.RegisterTrigger("h", help.Trigger);
-            meidoComm.RegisterTrigger("help", help.Trigger);
+            meidoComm.SpecialTrigger("h", help.Trigger);
+            meidoComm.SpecialTrigger("help", help.Trigger);
 
-            meidoComm.RegisterTrigger("auth", admin.AuthTrigger);
-            meidoComm.RegisterTrigger("admin", admin.AdminTrigger);
+            meidoComm.SpecialTrigger("auth", admin.AuthTrigger);
+            meidoComm.SpecialTrigger("admin", admin.AdminTrigger);
         }
 
     }

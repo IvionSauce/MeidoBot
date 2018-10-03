@@ -55,6 +55,12 @@ namespace MeidoBot
             triggers.RegisterTrigger(trigger, new Trigger(callback, needChannel));
         }
 
+        public void SpecialTrigger(string trigger, Action<IIrcMessage> callback)
+        {
+            triggers.SpecialTrigger(trigger, callback);
+        }
+
+
         public void FireTrigger(IrcMessage msg)
         {
             triggers.FireTrigger(msg);
@@ -109,4 +115,3 @@ namespace MeidoBot
         }
     }
 }
-
