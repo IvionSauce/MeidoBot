@@ -40,22 +40,18 @@ namespace MeidoBot
 
         void ConfigChange(string filename, string fullPath)
         {
-            ConfigItem config = null;
-            lock (trackedConfigs)
-            {
-                trackedConfigs.TryGetValue(filename, out config);
-            }
+            var conf = Get(filename);
 
-            if (config != null)
+            if (conf != null)
             {
-                lock (config)
+                lock (conf)
                 {
                     var now = DateTimeOffset.Now;
-                    if ((now - config.PreviousLoad) > gracePeriod)
+                    if ((now - conf.PreviousLoad) > gracePeriod)
                     {
                         log.Message("Detected change in '{0}', reloading configuration...", filename);
-                        config.Load(fullPath);
-                        config.PreviousLoad = now;
+                        conf.Load(fullPath);
+                        conf.PreviousLoad = now;
                     }
                 }
             }
@@ -69,17 +65,43 @@ namespace MeidoBot
             loadConfig(path);
 
             // Watch
+            ConfigItem conf;
             lock (trackedConfigs)
             {
-                trackedConfigs[filename] = new ConfigItem(loadConfig);
+                conf = Get(filename);
+                if (conf == null)
+                {
+                    trackedConfigs[filename] = new ConfigItem(loadConfig);
+                    return;
+                }
             }
+
+            lock (conf)
+            {
+                conf.Load += loadConfig;
+            }
+        }
+
+
+        ConfigItem Get(string filename)
+        {
+            lock (trackedConfigs)
+            {
+                ConfigItem conf;
+                if (trackedConfigs.TryGetValue(filename, out conf))
+                {
+                    return conf;
+                }
+            }
+
+            return null;
         }
     }
 
 
     class ConfigItem
     {
-        public Action<string> Load { get; private set; }
+        public Action<string> Load { get; set; }
         public DateTimeOffset PreviousLoad { get; set; }
 
 
