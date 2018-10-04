@@ -12,6 +12,8 @@ namespace MeidoBot
 
         readonly Dictionary<string, ConfigItem> trackedConfigs = new Dictionary<string, ConfigItem>();
 
+        // Creating or writing to a file often raises multiple Created/Changed events, so have a grace period
+        // wherein we ignore events for a file.
         static readonly TimeSpan gracePeriod = TimeSpan.FromSeconds(2);
 
 
@@ -26,19 +28,21 @@ namespace MeidoBot
             // _might_ be platform specific.
             watcher.Filter = "*";
 
-            watcher.Created += OnChanged;
-            watcher.Changed += OnChanged;
+            watcher.Created += OnChange;
+            watcher.Changed += OnChange;
             watcher.Renamed += OnRename;
             watcher.EnableRaisingEvents = true;
         }
 
 
-        void OnChanged(object sender, FileSystemEventArgs e)
+        void OnChange(object sender, FileSystemEventArgs e)
         {
+            //log.Verbose("OnChange ({0}) for {1}", e.ChangeType, e.Name);
             ConfigChange(e.Name, e.FullPath);
         }
         void OnRename(object sender, RenamedEventArgs e)
         {
+            //log.Verbose("OnRename ({0}) for {1} -> {2}", e.ChangeType, e.OldName, e.Name);
             ConfigChange(e.Name, e.FullPath);
         }
 
