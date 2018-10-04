@@ -21,6 +21,10 @@ namespace MeidoBot
             this.log = log;
 
             watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName;
+            // Without explicitly setting this filter to "*" (all files) it will only raise events for
+            // filenames containing a dot, ie with an extension. Whether this setting works and how it works
+            // _might_ be platform specific.
+            watcher.Filter = "*";
 
             watcher.Created += OnChanged;
             watcher.Changed += OnChanged;
