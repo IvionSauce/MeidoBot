@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 
@@ -15,6 +16,7 @@ class TellsInbox
     const int StdMaxMessages = 30;
     [DataMember]
     readonly TellEntry[] entries;
+    bool isSorted;
 
 
     static public TellsInbox Empty = new TellsInbox(string.Empty, 0);
@@ -28,6 +30,7 @@ class TellsInbox
         MessagesCount = 0;
         NewMessages = false;
         entries = new TellEntry[maxMessages];
+        isSorted = false;
     }
 
 
@@ -40,6 +43,7 @@ class TellsInbox
                 entries[i] = new TellEntry(from, tellMsg);
                 MessagesCount++;
                 NewMessages = true;
+                isSorted = false;
                 return true;
             }
         }
@@ -61,6 +65,9 @@ class TellsInbox
         // Index over outgoing 'read' messages.
         int messagesIdx = 0;
 
+        if (!isSorted)
+            Sort(entries);
+
         while (inboxIdx < entries.Length && messagesIdx < messages.Length)
         {
             if (entries[inboxIdx] != null)
@@ -75,6 +82,7 @@ class TellsInbox
 
         MessagesCount = MessagesCount - messages.Length;
         NewMessages = false;
+        isSorted = true;
 
         return messages;
     }
@@ -104,7 +112,31 @@ class TellsInbox
         }
 
         MessagesCount = MessagesCount - deleted;
+        isSorted = false;
         return deleted;
     }
 
+
+    static void Sort(TellEntry[] arr)
+    {
+        var compare = Comparer<TellEntry>.Create(
+            (a, b) => {
+                // Correctly handly if either, or both, are null.
+                if (a == null)
+                {
+                    if (b == null)
+                        return 0;
+                    
+                    return 1;
+                }
+                if (b == null)
+                    return -1;
+
+                // Otherwise just sort by SentDate.
+                return a.SentDateUtc.CompareTo(b.SentDateUtc);
+            }
+        );
+
+        Array.Sort(arr, compare);
+    }
 }
