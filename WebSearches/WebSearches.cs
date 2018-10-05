@@ -30,6 +30,8 @@ public class WebSearches : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {}
@@ -38,15 +40,20 @@ public class WebSearches : IMeidoHook
     public WebSearches(IIrcComm ircComm, IMeidoComm meido)
     {
         irc = ircComm;
-        meido.RegisterTrigger("g", GoogleSearch);
-        meido.RegisterTrigger("yt", YtSearch);
-        meido.RegisterTrigger("wiki", WikiSearch);
-        meido.RegisterTrigger("mal", MalSearch);
-        meido.RegisterTrigger("anidb", AnidbSearch);
-        meido.RegisterTrigger("mu", MuSearch);
-        meido.RegisterTrigger("vndb", VndbSearch);
-        meido.RegisterTrigger("steam", SteamSearch);
-        // maybe: urbandict, dict, animenewsnetwork
+
+        var t = TriggerThreading.Threadpool;
+
+        Triggers = new Trigger[] {
+            new Trigger("g", GoogleSearch, t),
+            new Trigger("yt", YtSearch, t),
+            new Trigger("wiki", WikiSearch, t),
+            new Trigger("mal", MalSearch, t),
+            new Trigger("anidb", AnidbSearch, t),
+            new Trigger("mu", MuSearch, t),
+            new Trigger("vndb", VndbSearch, t),
+            new Trigger("steam", SteamSearch, t)
+            // maybe: urbandict, dict, animenewsnetwork
+        };
     }
 
 
