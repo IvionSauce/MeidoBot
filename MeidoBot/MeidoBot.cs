@@ -50,8 +50,10 @@ namespace MeidoBot
             // Set aside some logging for ourself.
             log = logFac.CreateLogger("Meido");
 
+            // Throttling for triggers and outgoing messages.
             var tManager = new ThrottleManager(log);
 
+            // Setup chatlogger and underlying LogWriter.
             logWriter = new LogWriter();
             var chatLog = SetupChatlog();
             ircComm = new IrcComm(irc, tManager, chatLog);
@@ -60,7 +62,7 @@ namespace MeidoBot
             meidoComm = new MeidoComm(config, triggers, logFac, log);
 
             help = new Help(config.TriggerPrefix);
-            LoadPlugins();
+            LoadPlugins(triggers);
             // Setup non-plugin triggers and register them.
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
@@ -93,14 +95,16 @@ namespace MeidoBot
             return new DummyChatlogger();
         }
 
-        void LoadPlugins()
+        void LoadPlugins(Triggers triggers)
         {
             // Only load plugins if IO checks succeed.
             if (PathTools.CheckPluginIO(conf, log))
             {
                 log.Message("Loading plugins...");
                 plugins = new PluginManager(ircComm, meidoComm);
+
                 help.RegisterHelp( plugins.GetHelpDicts() );
+                triggers.RegisterTriggers( plugins.GetTriggers() );
 
                 log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
                 foreach (string s in plugins.GetDescriptions())
