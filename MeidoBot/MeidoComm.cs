@@ -114,7 +114,7 @@ namespace MeidoBot
         }
 
 
-        public void FireTrigger(IrcMessage msg)
+        public void FireTrigger(IIrcMessage msg)
         {
             triggers.FireTrigger(msg);
         }

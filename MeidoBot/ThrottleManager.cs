@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MeidoCommon;
 using MeidoCommon.Throttle;
 
 namespace MeidoBot
@@ -19,13 +20,13 @@ namespace MeidoBot
 
 
         // Returns true if trigger calls are allowed. Returns false otherwise.
-        public bool AllowTriggers(IrcMessage msg)
+        public bool AllowTriggers(IIrcMessage msg)
         {
             return !Triggers(msg);
         }
 
         // Returns true if trigger calls should be throttled. Returns false otherwise.
-        public bool Triggers(IrcMessage msg)
+        public bool Triggers(IIrcMessage msg)
         {
             var entry = GetOrAdd(msg.ReturnTo);
             // Trigger calling happens sequentially, no need for locking.
@@ -52,7 +53,7 @@ namespace MeidoBot
             return false;
         }
 
-        static bool ThrottleActive(IrcMessage msg, SourceEntry entry)
+        static bool ThrottleActive(IIrcMessage msg, SourceEntry entry)
         {
             if (entry.Triggers.ThrottleActive)
             {

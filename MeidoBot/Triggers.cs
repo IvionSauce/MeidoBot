@@ -44,7 +44,7 @@ namespace MeidoBot
         }
 
 
-        public void FireTrigger(IrcMessage msg)
+        public void FireTrigger(IIrcMessage msg)
         {
             Trigger tr;
             if (triggers.TryGetValue(msg.Trigger, out tr))
@@ -57,7 +57,7 @@ namespace MeidoBot
             }
         }
 
-        bool FirePredicate(IrcMessage msg, Trigger trigger)
+        bool FirePredicate(IIrcMessage msg, Trigger trigger)
         {
             // First clause: make sure the trigger only gets called in a context it supports (whether or not there's
             // a channel property).
