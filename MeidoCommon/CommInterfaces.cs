@@ -33,9 +33,6 @@ namespace MeidoCommon
         /// <param name="plugin">Plugin.</param>
         ILog CreateLogger(IMeidoHook plugin);
 
-        void RegisterTrigger(string trigger, Action<IIrcMessage> callback);
-        void RegisterTrigger(string trigger, Action<IIrcMessage> callback, bool needChannel);
-
         /// <summary>
         /// Loads configuration and watches the file for changes. The function gets called with the full path of the
         /// configuration file.
