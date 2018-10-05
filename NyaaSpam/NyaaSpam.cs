@@ -73,7 +73,7 @@ public class NyaaSpam : IMeidoHook
         meido.LoadAndWatchConfig("NyaaSpam.xml", xmlConf);
 
         Triggers = new Trigger[] {
-            new Trigger("nyaa", Nyaa, TriggerOptions.ChannelOnly)
+            new Trigger("nyaa", Nyaa, TriggerOption.ChannelOnly)
         };
     }
 

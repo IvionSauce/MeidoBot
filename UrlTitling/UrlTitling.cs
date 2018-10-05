@@ -80,8 +80,8 @@ public class UrlTitler : IMeidoHook
 
         // Trigger handling.
         Triggers = new Trigger[] {
-            new Trigger("disable", Disable, TriggerOptions.ChannelOnly),
-            new Trigger("enable", Enable, TriggerOptions.ChannelOnly),
+            new Trigger("disable", Disable, TriggerOption.ChannelOnly),
+            new Trigger("enable", Enable, TriggerOption.ChannelOnly),
 
             new Trigger("dump", Dump),
             new Trigger("query", qTriggers.Query),

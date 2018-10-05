@@ -10,7 +10,7 @@ namespace MeidoCommon
         Threadpool
     }
 
-    public enum TriggerOptions
+    public enum TriggerOption
     {
         None,
         ChannelOnly,
@@ -22,23 +22,23 @@ namespace MeidoCommon
     {
         public readonly string Identifier;
         public readonly Action<IIrcMessage> Call;
-        public readonly TriggerOptions Options;
+        public readonly TriggerOption Option;
         public readonly TriggerThreading Threading;
 
 
         public Trigger(string identifier, Action<IIrcMessage> call) :
-        this(identifier, call, TriggerOptions.None, TriggerThreading.Default) {}
+        this(identifier, call, TriggerOption.None, TriggerThreading.Default) {}
 
-        public Trigger(string identifier, Action<IIrcMessage> call, TriggerOptions opts) :
+        public Trigger(string identifier, Action<IIrcMessage> call, TriggerOption opts) :
         this(identifier, call, opts, TriggerThreading.Default) {}
 
         public Trigger(string identifier, Action<IIrcMessage> call, TriggerThreading threading) :
-        this(identifier, call, TriggerOptions.None, threading) {}
+        this(identifier, call, TriggerOption.None, threading) {}
 
         public Trigger(
             string identifier,
             Action<IIrcMessage> call,
-            TriggerOptions opts,
+            TriggerOption opt,
             TriggerThreading threading)
         {
             if (identifier == null)
@@ -52,7 +52,7 @@ namespace MeidoCommon
 
             Identifier = identifier;
             Call = call;
-            Options = opts;
+            Option = opt;
             Threading = threading;
         }
 
