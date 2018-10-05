@@ -32,6 +32,9 @@ public class IrcWeather : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
+
     readonly IIrcComm irc;
     readonly ILog log;
 
@@ -74,8 +77,10 @@ public class IrcWeather : IMeidoHook
             defaultLocations = new Storage<string>();
         }
 
-        meido.RegisterTrigger("w", WeatherSearch);
-        meido.RegisterTrigger("W", SetWeatherLocation);
+        Triggers = new Trigger[] {
+            new Trigger("w", WeatherSearch),
+            new Trigger("W", SetWeatherLocation)
+        };
     }
 
     void Configure(Config conf)
@@ -103,7 +108,7 @@ public class IrcWeather : IMeidoHook
 
         if (!string.IsNullOrWhiteSpace(location))
         {
-            ThreadPool.QueueUserWorkItem( (state) => WeatherSearch(e, location) );
+            WeatherSearch(e, location);
         }
         else
         {
