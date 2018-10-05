@@ -61,19 +61,21 @@ namespace MeidoBot
             var triggers = new Triggers(tManager, log);
             meidoComm = new MeidoComm(config, triggers, logFac, log);
 
-            help = new Help(config.TriggerPrefix);
-            LoadPlugins(triggers);
-            // Setup non-plugin triggers and register them.
-            admin = new Admin(this, irc, meidoComm);
-            RegisterSpecialTriggers();
-
             // Dispatches messages and trigger calls.
+            // This must be instantiated before loading plugins and their triggers.
             var dispatch = new MessageDispatcher(
                 ircComm,
                 triggers,
                 conf.TriggerPrefix,
                 log
             );
+
+            help = new Help(config.TriggerPrefix);
+            LoadPlugins(triggers);
+            // Setup non-plugin triggers and register them.
+            admin = new Admin(this, irc, meidoComm);
+            RegisterSpecialTriggers();
+
             // Setup autoloading of ignores.
             meidoComm.LoadAndWatchConfig("Ignore", dispatch.LoadIgnores);
 
