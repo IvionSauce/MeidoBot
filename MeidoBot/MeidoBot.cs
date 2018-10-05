@@ -58,7 +58,7 @@ namespace MeidoBot
             var chatLog = SetupChatlog();
 
             ircComm = new IrcComm(irc, tManager, chatLog);
-            meidoComm = new MeidoComm(config, tManager, logFac);
+            meidoComm = new MeidoComm(config, tManager, logFac, log);
 
             help = new Help(config.TriggerPrefix);
             LoadPlugins();

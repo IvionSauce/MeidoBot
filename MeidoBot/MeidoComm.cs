@@ -10,21 +10,29 @@ namespace MeidoBot
         public string ConfDir { get; private set; }
         public string DataDir { get; private set; }
 
+        // In an attempt to stop the proliferation of CreateLogger calls for the same name (Meido),
+        // here is a central point other parts of the MeidoBot can use/reference to.
+        public readonly Logger Log;
+
         readonly LogFactory logFac;
         readonly Triggers triggers;
         readonly WatchConfig watcher;
         readonly UserAuthManager userAuths;
 
 
-        public MeidoComm(MeidoConfig conf, ThrottleManager tManager, LogFactory factory)
+        public MeidoComm(
+            MeidoConfig conf,
+            ThrottleManager tManager,
+            LogFactory factory,
+            Logger meidoLog)
         {
             ConfDir = conf.ConfigurationDirectory;
             DataDir = conf.DataDirectory;
-
             logFac = factory;
-            triggers = new Triggers(tManager, logFac.CreateLogger("Meido"));
-            watcher = new WatchConfig(ConfDir, logFac.CreateLogger("Meido"));
+            Log = meidoLog;
 
+            triggers = new Triggers(tManager, Log);
+            watcher = new WatchConfig(ConfDir, Log);
             userAuths = new UserAuthManager("Auth.xml", watcher, logFac.CreateLogger("Auth"));
         }
 
