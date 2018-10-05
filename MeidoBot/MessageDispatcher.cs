@@ -20,6 +20,7 @@ namespace MeidoBot
         // Standard off-thread queue, to keep the main thread clear.
         readonly Queue<DispatchPackage> Standard;
 
+        // Queues, either on plugin level or seperate for each trigger.
         readonly Dictionary<string, Queue<DispatchPackage>> triggerQueues;
 
 
@@ -38,6 +39,7 @@ namespace MeidoBot
             StartConsumeThread(Standard);
 
             triggerQueues = new Dictionary<string, Queue<DispatchPackage>>();
+            triggers.PluginTriggersRegister += ProcessPluginTriggers;
         }
 
         public void LoadIgnores(string path)
@@ -83,6 +85,7 @@ namespace MeidoBot
             // Unique Queue: trigger -> Queue [one-to-one]
             // Shared Queue: triggers -> Queue [many-to-one]
             // Threadpool: Reentrant chaos
+            // Only the last 2 are implemented for now.
             switch ( triggers.GetThreading(msg.Trigger) )
             {
                 case TriggerThreading.Queue:
@@ -104,7 +107,7 @@ namespace MeidoBot
         }
 
 
-        // --- Enqueing and threading ---
+        // --- Enqueing, consuming and threading ---
 
         static void Push(IrcMessage msg, Action<IIrcMessage> action, Queue<DispatchPackage> q)
         {
@@ -114,6 +117,29 @@ namespace MeidoBot
                 q.Enqueue(package);
                 Monitor.Pulse(q);
             }
+        }
+
+
+        void ProcessPluginTriggers(IEnumerable<Trigger> pTriggers)
+        {
+            // Shared queue for all triggers declared by the plugin,
+            // that is if they have opted for Threading.Queue.
+            Queue<DispatchPackage> queue = null;
+
+            foreach (var tr in pTriggers)
+            {
+                if (tr.Threading == TriggerThreading.Queue)
+                {
+                    if (queue == null)
+                        queue = new Queue<DispatchPackage>();
+
+                    triggerQueues[tr.Identifier] = queue;
+                }
+                // We don't need to do anything for other types of threading.
+            }
+
+            if (queue != null)
+                StartConsumeThread(queue);
         }
 
 
@@ -139,7 +165,7 @@ namespace MeidoBot
                 }
 
                 if (pack != null)
-                    pack.Apply();
+                    pack.Invoke();
                 else
                     return;
             }
@@ -159,7 +185,7 @@ namespace MeidoBot
         }
 
 
-        public void Apply()
+        public void Invoke()
         {
             action(message);
         }
