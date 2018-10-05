@@ -10,8 +10,9 @@ namespace MeidoBot
     class MessageDispatcher
     {
         readonly IrcComm irc;
-        readonly MeidoComm meido;
+        readonly Triggers triggers;
         readonly string triggerPrefix;
+        readonly Logger log;
 
         // Contains nicks to ignore, whether due to abuse or them being other bots.
         volatile Ignores ignore;
@@ -20,11 +21,17 @@ namespace MeidoBot
         readonly Queue<DispatchPackage> Standard;
 
 
-        public MessageDispatcher(IrcComm ircComm, MeidoComm meidoComm, string triggerPrefix)
+
+        public MessageDispatcher(
+            IrcComm ircComm,
+            Triggers triggers,
+            string triggerPrefix,
+            Logger log)
         {
             irc = ircComm;
-            meido = meidoComm;
+            this.triggers = triggers;
             this.triggerPrefix = triggerPrefix;
+            this.log = log;
 
             Standard = new Queue<DispatchPackage>();
             var t = new Thread(Consume);
@@ -33,7 +40,7 @@ namespace MeidoBot
 
         public void LoadIgnores(string path)
         {
-            ignore = Ignores.FromFile(path, meido.Log);
+            ignore = Ignores.FromFile(path, log);
         }
 
 

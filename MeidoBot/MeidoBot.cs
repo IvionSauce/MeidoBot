@@ -65,7 +65,13 @@ namespace MeidoBot
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
 
-            var dispatch = new MessageDispatcher(ircComm, meidoComm, conf.TriggerPrefix);
+            // Dispatches messages and trigger calls.
+            var dispatch = new MessageDispatcher(
+                ircComm,
+                triggers,
+                conf.TriggerPrefix,
+                log
+            );
             // Setup autoloading of ignores.
             meidoComm.LoadAndWatchConfig("Ignore", dispatch.LoadIgnores);
 
