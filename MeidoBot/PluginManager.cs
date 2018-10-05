@@ -18,7 +18,7 @@ namespace MeidoBot
         }
 
         [ImportMany(typeof(IMeidoHook))]
-        readonly IMeidoHook[] pluginContainer;
+        IMeidoHook[] pluginContainer;
 
 
         public PluginManager()
