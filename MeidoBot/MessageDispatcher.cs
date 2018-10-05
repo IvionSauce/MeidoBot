@@ -20,6 +20,7 @@ namespace MeidoBot
         // Standard off-thread queue, to keep the main thread clear.
         readonly Queue<DispatchPackage> Standard;
 
+        readonly Dictionary<string, Queue<DispatchPackage>> triggerQueues;
 
 
         public MessageDispatcher(
@@ -36,6 +37,8 @@ namespace MeidoBot
             Standard = new Queue<DispatchPackage>();
             var t = new Thread(Consume);
             t.Start();
+
+            triggerQueues = new Dictionary<string, Queue<DispatchPackage>>();
         }
 
         public void LoadIgnores(string path)
@@ -66,13 +69,39 @@ namespace MeidoBot
             if (!ignore.Contains(msg.Nick))
             {
                 if (msg.Trigger != null)
-                    Enqueue(msg, meido.FireTrigger);
+                    HandleTrigger(msg, TriggerThreading.Queue);
 
                 if (channelHandler != null && msg.Channel != null)
                     Enqueue(msg, channelHandler);
                 
                 else if (queryHandler != null)
                     Enqueue(msg, queryHandler);
+            }
+        }
+
+        void HandleTrigger(IrcMessage msg, TriggerThreading threading)
+        {
+            // Unique Queue: trigger -> Queue [one-to-one]
+            // Shared Queue: triggers -> Queue [many-to-one]
+            // Threadpool: Reentrant chaos
+            switch (threading)
+            {
+                case TriggerThreading.Queue:
+                Queue<DispatchPackage> queue;
+                if (triggerQueues.TryGetValue(msg.Trigger, out queue))
+                {
+                    Push(queue, msg, triggers.FireTrigger);
+                    break;
+                }
+                goto default;
+
+                case TriggerThreading.Threadpool:
+                ThreadPool.QueueUserWorkItem( (cb) => triggers.FireTrigger(msg) );
+                break;
+
+                default:
+                Push(Standard, msg, triggers.FireTrigger);
+                break;
             }
         }
 
@@ -107,6 +136,17 @@ namespace MeidoBot
                     pack.Apply();
                 else
                     return;
+            }
+        }
+
+
+        static void Push(Queue<DispatchPackage> q, IrcMessage msg, Action<IIrcMessage> action)
+        {
+            var package = new DispatchPackage(msg, action);
+            lock (q)
+            {
+                q.Enqueue(package);
+                Monitor.Pulse(q);
             }
         }
     }
