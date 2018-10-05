@@ -29,6 +29,9 @@ public class Calc : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
+
     static CalcEnvironment CalcEnv = new CalcEnvironment();
 
 
@@ -38,12 +41,14 @@ public class Calc : IMeidoHook
     [ImportingConstructor]
     public Calc(IIrcComm irc, IMeidoComm meido)
     {
-        meido.RegisterTrigger("calc", HandleTrigger);
-        meido.RegisterTrigger("c", HandleTrigger);
         irc.AddQueryMessageHandler(HandleMessage);
 
-        meido.RegisterTrigger("defvar", DefVar);
-        meido.RegisterTrigger("var", DefVar);
+        Triggers = new Trigger[] {
+            new Trigger("calc", HandleTrigger),
+            new Trigger("c", HandleTrigger),
+            new Trigger("defvar", DefVar),
+            new Trigger("var", DefVar)
+        };
     }
 
 

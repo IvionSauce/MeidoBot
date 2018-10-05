@@ -29,6 +29,12 @@ public class IrcSed : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers
+    {
+        get { return new Trigger[0]; }
+    }
+
+
     readonly IIrcComm irc;
     readonly ReplaceHistory history = new ReplaceHistory();
 

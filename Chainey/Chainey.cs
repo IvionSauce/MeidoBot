@@ -42,6 +42,9 @@ public class IrcChainey : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
+
     const string nickPlaceholder = "||NICK||";
 
 
@@ -73,8 +76,10 @@ public class IrcChainey : IMeidoHook
         irc = ircComm;
         irc.AddChannelMessageHandler(Handler);
 
-        meido.RegisterTrigger("markov", Markov);
-        meido.RegisterTrigger("remove", Remove);
+        Triggers = new Trigger[] {
+            new Trigger("markov", Markov),
+            new Trigger("remove", Remove)
+        };
     }
 
 

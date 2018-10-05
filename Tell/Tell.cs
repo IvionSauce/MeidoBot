@@ -33,6 +33,9 @@ public class IrcTell : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
+
     readonly IIrcComm irc;
     readonly Inboxes inboxes;
 
@@ -42,14 +45,15 @@ public class IrcTell : IMeidoHook
     [ImportingConstructor]
     public IrcTell(IIrcComm irc, IMeidoComm meido)
     {
+        this.irc = irc;
         inboxes = new Inboxes(meido.DataDir);
 
-        meido.RegisterTrigger("tell", Tell);
-        meido.RegisterTrigger("tell-read", Read);
-        meido.RegisterTrigger("tell-clear", Clear);
-
         irc.AddChannelMessageHandler(MessageHandler);
-        this.irc = irc;
+        Triggers = new Trigger[] {
+            new Trigger("tell", Tell),
+            new Trigger("tell-read", Read),
+            new Trigger("tell-clear", Clear)
+        };
     }
 
 

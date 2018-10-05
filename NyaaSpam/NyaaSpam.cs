@@ -44,6 +44,8 @@ public class NyaaSpam : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {
@@ -70,7 +72,9 @@ public class NyaaSpam : IMeidoHook
         );
         meido.LoadAndWatchConfig("NyaaSpam.xml", xmlConf);
 
-        meido.RegisterTrigger("nyaa", Nyaa, true);
+        Triggers = new Trigger[] {
+            new Trigger("nyaa", Nyaa, TriggerOptions.ChannelOnly)
+        };
     }
 
     void Configure(Config config)

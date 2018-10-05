@@ -46,6 +46,8 @@ public class TimeLeft : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {
@@ -69,7 +71,10 @@ public class TimeLeft : IMeidoHook
         cleaner = new Timer(Cleaner, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
 
         irc = ircComm;
-        meido.RegisterTrigger("timeleft", HandleTrigger);
+
+        Triggers = new Trigger[] {
+            new Trigger("timeleft", HandleTrigger)
+        };
     }
     
     public void HandleTrigger(IIrcMessage e)

@@ -41,6 +41,8 @@ public class MiscUtils : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {}
@@ -51,8 +53,10 @@ public class MiscUtils : IMeidoHook
         irc = ircComm;
         log = meido.CreateLogger(this);
 
-        meido.RegisterTrigger("timer", Timer);
-        meido.RegisterTrigger("say", Say);
+        Triggers = new Trigger[] {
+            new Trigger("timer", Timer),
+            new Trigger("say", Say)
+        };
     }
 
 
