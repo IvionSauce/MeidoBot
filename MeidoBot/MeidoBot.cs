@@ -35,9 +35,6 @@ namespace MeidoBot
         readonly MeidoConfig conf;
         readonly List<string> currentChannels;
 
-        // Contains nicks to ignore, whether due to abuse or them being other bots.
-        volatile Ignores ignore;
-
 
         public Meido(MeidoConfig config)
         {
@@ -66,12 +63,13 @@ namespace MeidoBot
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
 
+            var dispatch = new MessageDispatcher(ircComm, meidoComm, conf.TriggerPrefix);
             // Setup autoloading of ignores.
-            meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
+            meidoComm.LoadAndWatchConfig("Ignore", dispatch.LoadIgnores);
 
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
-            SetHandlers();
+            SetHandlers(dispatch);
             reconnect = new AutoReconnect(irc);
         }
 
@@ -109,11 +107,6 @@ namespace MeidoBot
             }
         }
 
-        void LoadIgnores(string path)
-        {
-            ignore = Ignores.FromFile(path, log);
-        }
-
 
         void SetProperties()
         {
@@ -123,16 +116,16 @@ namespace MeidoBot
             irc.Encoding = Encoding.UTF8;
         }
 
-        void SetHandlers()
+        void SetHandlers(MessageDispatcher dispatch)
         {
             irc.OnConnected += OnConnected;
             irc.OnInvite += OnInvited;
 
-            irc.OnChannelMessage += OnMessage;
-            irc.OnQueryMessage += OnMessage;
+            irc.OnChannelMessage += dispatch.OnMessage;
+            irc.OnQueryMessage += dispatch.OnMessage;
 
-            irc.OnChannelAction += OnAction;
-            irc.OnQueryAction += OnAction;
+            irc.OnChannelAction += dispatch.OnAction;
+            irc.OnQueryAction += dispatch.OnAction;
 
             irc.OnPart += OnPart;
             irc.OnKick += OnKick;
@@ -245,33 +238,6 @@ namespace MeidoBot
             {
                 log.Message("Kicked from {0} by {1}", e.Channel, e.Who);
                 currentChannels.Remove(e.Channel);
-            }
-        }
-
-
-        void OnMessage(object sender, IrcEventArgs e)
-        {
-            DoHandlers(e, ircComm.ChannelMessageHandlers, ircComm.QueryMessageHandlers);
-        }
-
-        void OnAction(object sender, ActionEventArgs e)
-        {
-            DoHandlers(e, ircComm.ChannelActionHandlers, ircComm.QueryActionHandlers);
-        }
-
-        void DoHandlers(IrcEventArgs e, Action<IIrcMessage> channelHandler, Action<IIrcMessage> queryHandler)
-        {
-            var msg = new IrcMessage(ircComm, e.Data, conf.TriggerPrefix);
-
-            if (!ignore.Contains(msg.Nick))
-            {
-                if (msg.Trigger != null)
-                    meidoComm.FireTrigger(msg);
-
-                if (channelHandler != null && msg.Channel != null)
-                    channelHandler(msg);
-                else if (queryHandler != null)
-                    queryHandler(msg);
             }
         }
 
