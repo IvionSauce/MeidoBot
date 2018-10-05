@@ -24,43 +24,43 @@ namespace MeidoBot
         }
 
 
-        public void RegisterTriggers(IEnumerable<Trigger>[] allTriggers)
+        public void RegisterTriggers(PluginTriggers[] allTriggers)
         {
-            foreach (IEnumerable<Trigger> trigs in allTriggers)
+            foreach (var trigs in allTriggers)
             {
                 RegisterTriggers(trigs);
                 if (PluginTriggersRegister != null)
                 {
-                    PluginTriggersRegister(trigs);
+                    PluginTriggersRegister(trigs.Triggers);
                 }
             }
         }
 
-        public void RegisterTriggers(IEnumerable<Trigger> triggersPerPlugin)
+        public void RegisterTriggers(PluginTriggers plugin)
         {
-            foreach (Trigger trig in triggersPerPlugin)
+            foreach (var trig in plugin.Triggers)
             {
-                RegisterTrigger(trig);
+                RegisterTrigger(trig, plugin.Name);
             }
         }
 
-        public void RegisterTrigger(Trigger trigger)
+        public void RegisterTrigger(Trigger tr, string pluginName)
         {
-            string identifier = trigger.Identifier;
-            switch (identifier)
+            switch (tr.Identifier)
             {
                 case "h":
                 case "help":
                 case "auth":
                 case "admin":
                 log.Error(
-                    "A plugin tried to register reserved trigger '{0}', this is not allowed.",
-                    identifier);
+                    "{0}: Tried to register reserved trigger '{1}', this is not allowed.",
+                    pluginName, tr.Identifier);
+                
                 return;
             }
 
-            log.Verbose("Registering trigger '{0}'.", identifier);
-            triggers[identifier] = trigger;
+            log.Verbose("{0}: Trigger '{1}'.", pluginName, tr.Identifier);
+            triggers[tr.Identifier] = tr;
         }
 
         public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)

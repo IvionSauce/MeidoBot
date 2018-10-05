@@ -58,13 +58,13 @@ namespace MeidoBot
         }
 
 
-        public IEnumerable<Trigger>[] GetTriggers()
+        public PluginTriggers[] GetTriggers()
         {
-            var triggers = new IEnumerable<Trigger>[Count];
+            var triggers = new PluginTriggers[Count];
 
             for (int i = 0; i < Count; i++)
             {
-                triggers[i] = pluginContainer[i].Triggers;
+                triggers[i] = new PluginTriggers(pluginContainer[i]);
             }
 
             return triggers;
