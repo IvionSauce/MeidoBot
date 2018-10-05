@@ -22,16 +22,17 @@ namespace MeidoBot
 
         public MeidoComm(
             MeidoConfig conf,
-            ThrottleManager tManager,
+            Triggers triggers,
             LogFactory factory,
             Logger meidoLog)
         {
             ConfDir = conf.ConfigurationDirectory;
             DataDir = conf.DataDirectory;
+
+            this.triggers = triggers;
             logFac = factory;
             Log = meidoLog;
 
-            triggers = new Triggers(tManager, Log);
             watcher = new WatchConfig(ConfDir, Log);
             userAuths = new UserAuthManager("Auth.xml", watcher, logFac.CreateLogger("Auth"));
         }
