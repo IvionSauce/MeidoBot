@@ -18,10 +18,15 @@ namespace MeidoBot
         }
 
         [ImportMany(typeof(IMeidoHook))]
-        IMeidoHook[] pluginContainer;
+        readonly IMeidoHook[] pluginContainer;
 
 
-        public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)
+        public PluginManager()
+        {
+            pluginContainer = new IMeidoHook[0];
+        }
+
+        public PluginManager(IIrcComm ircComm, IMeidoComm meidoComm)
         {
             // Create catalog and add our plugin-directory to it.
             var catalog = new AggregateCatalog();
@@ -38,11 +43,6 @@ namespace MeidoBot
             }
         }
 
-        public void DummyInit()
-        {
-            pluginContainer = new IMeidoHook[0];
-        }
-
 
         public string[] GetDescriptions()
         {
@@ -55,6 +55,19 @@ namespace MeidoBot
             }
 
             return descriptions;
+        }
+
+
+        public IEnumerable<Trigger>[] GetTriggers()
+        {
+            var triggers = new IEnumerable<Trigger>[Count];
+
+            for (int i = 0; i < Count; i++)
+            {
+                triggers[i] = pluginContainer[i].Triggers;
+            }
+
+            return triggers;
         }
 
 

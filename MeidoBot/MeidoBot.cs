@@ -95,13 +95,11 @@ namespace MeidoBot
 
         void LoadPlugins()
         {
-            plugins = new PluginManager();
-
             // Only load plugins if IO checks succeed.
             if (PathTools.CheckPluginIO(conf, log))
             {
                 log.Message("Loading plugins...");
-                plugins.LoadPlugins(ircComm, meidoComm);
+                plugins = new PluginManager(ircComm, meidoComm);
                 help.RegisterHelp( plugins.GetHelpDicts() );
 
                 log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
@@ -111,7 +109,7 @@ namespace MeidoBot
             else
             {
                 log.Error("Not loading plugins due to failed IO checks.");
-                plugins.DummyInit();
+                plugins = new PluginManager();
             }
         }
 
