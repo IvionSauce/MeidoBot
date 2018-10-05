@@ -34,8 +34,6 @@ public class UrlTitler : IMeidoHook
                 {"disable", "disable - Temporarily disable URL-Titling for you in current channel."},
                 {"enable", "enable - Re-enable (previously disabled) URL-Titling for you."},
 
-                {"reload_bw", "reload_bw - Reload black- and whitelist from disk. (Owner only)"},
-
                 {"query", "query <url...> - Query given URL(s) and return title or error."},
                 {"query-dbg", "query-dbg <url...> - Query given URL(s) and return title or error. " +
                     "(Includes extra information)"},
@@ -46,6 +44,8 @@ public class UrlTitler : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {
@@ -55,6 +55,7 @@ public class UrlTitler : IMeidoHook
     [ImportingConstructor]
     public UrlTitler(IIrcComm irc, IMeidoComm meido)
     {
+        this.meido = meido;
         log = meido.CreateLogger(this);
 
         manager = new ChannelThreadManager(irc, log);
@@ -78,16 +79,15 @@ public class UrlTitler : IMeidoHook
         irc.AddChannelActionHandler(UrlHandler);
 
         // Trigger handling.
-        meido.RegisterTrigger("disable", Disable, true);
-        meido.RegisterTrigger("enable", Enable, true);
-        meido.RegisterTrigger("reload_bw", ReloadBW);
+        Triggers = new Trigger[] {
+            new Trigger("disable", Disable, TriggerOptions.ChannelOnly),
+            new Trigger("enable", Enable, TriggerOptions.ChannelOnly),
 
-        meido.RegisterTrigger("dump", Dump);
-        meido.RegisterTrigger("query", qTriggers.Query);
-        meido.RegisterTrigger("q", qTriggers.Query);
-        meido.RegisterTrigger("query-dbg", qTriggers.QueryDebug);
-
-        this.meido = meido;
+            new Trigger("dump", Dump),
+            new Trigger("query", qTriggers.Query),
+            new Trigger("q", qTriggers.Query),
+            new Trigger("query-dbg", qTriggers.QueryDebug)
+        };
     }
 
 
@@ -144,17 +144,6 @@ public class UrlTitler : IMeidoHook
     {
         if ( manager.EnableNick(e.Channel, e.Nick) )
             e.SendNotice("Re-enabling URL-Titling for you.");
-    }
-
-
-    public void ReloadBW(IIrcMessage e)
-    {
-        if (meido.AuthLevel(e.Nick) == 3)
-        {
-            manager.Blacklist.ReloadFile();
-            manager.Whitelist.ReloadFile();
-            e.Reply("Black- and whitelist have been reloaded.");
-        }
     }
 
 
