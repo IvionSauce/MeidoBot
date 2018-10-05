@@ -42,6 +42,8 @@ public class IrcRandom : IMeidoHook
         }
     }
 
+    public IEnumerable<Trigger> Triggers { get; private set; }
+
 
     public void Stop()
     {}
@@ -60,9 +62,11 @@ public class IrcRandom : IMeidoHook
         );
         meido.LoadAndWatchConfig("RandomChoice.xml", xmlConf);
 
-        meido.RegisterTrigger("d", Choose);
-        meido.RegisterTrigger("cd", Countdown);
-        meido.RegisterTrigger("8ball", EightBall);
+        Triggers = new Trigger[] {
+            new Trigger("d", Choose),
+            new Trigger("cd", Countdown, TriggerThreading.Threadpool),
+            new Trigger("8ball", EightBall, TriggerThreading.Threadpool)
+        };
     }
 
     void Configure(Config config)
@@ -88,14 +92,14 @@ public class IrcRandom : IMeidoHook
         if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
         {
             if (tminus >= minCountdownSec && tminus <= maxCountdownSec)
-                ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.ReturnTo, tminus) );
+                Countdown(e.ReturnTo, tminus);
         }
         // cd
         else
-            ThreadPool.QueueUserWorkItem( (data) => IrcCountdown(e.ReturnTo, minCountdownSec) );
+            Countdown(e.ReturnTo, minCountdownSec);
     }
 
-    void IrcCountdown(string target, int seconds)
+    void Countdown(string target, int seconds)
     {
         const string stdLaunch = "Liftoff!";
         string launch = RandomChoice.ChooseRndItem(conf.LaunchChoices) ?? stdLaunch;
@@ -113,17 +117,12 @@ public class IrcRandom : IMeidoHook
 
     void EightBall(IIrcMessage e)
     {
-        ThreadPool.QueueUserWorkItem( (data) => EightBall(e.ReturnTo) );
-    }
-
-    void EightBall(string returnTo)
-    {
         string choice = RandomChoice.Shake8Ball();
 
-        irc.SendMessage(returnTo, "The Magic 8-Ball says...");
+        irc.SendMessage(e.ReturnTo, "The Magic 8-Ball says...");
         // Wait for 1.5 seconds.
         Thread.Sleep(1500);
-        irc.SendMessage(returnTo, choice + ".");
+        irc.SendMessage(e.ReturnTo, choice + ".");
     }
 }
 
