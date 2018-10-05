@@ -35,8 +35,7 @@ namespace MeidoBot
             this.log = log;
 
             Standard = new Queue<DispatchPackage>();
-            var t = new Thread(Consume);
-            t.Start();
+            StartConsumeThread(Standard);
 
             triggerQueues = new Dictionary<string, Queue<DispatchPackage>>();
         }
@@ -69,29 +68,28 @@ namespace MeidoBot
             if (!ignore.Contains(msg.Nick))
             {
                 if (msg.Trigger != null)
-                    HandleTrigger(msg, TriggerThreading.Queue);
+                    HandleTrigger(msg);
 
                 if (channelHandler != null && msg.Channel != null)
-                    Enqueue(msg, channelHandler);
+                    Push(msg, channelHandler, Standard);
                 
                 else if (queryHandler != null)
-                    Enqueue(msg, queryHandler);
+                    Push(msg, queryHandler, Standard);
             }
         }
 
-        void HandleTrigger(IrcMessage msg, TriggerThreading threading)
+        void HandleTrigger(IrcMessage msg)
         {
             // Unique Queue: trigger -> Queue [one-to-one]
             // Shared Queue: triggers -> Queue [many-to-one]
             // Threadpool: Reentrant chaos
-            switch (threading)
+            switch ( triggers.GetThreading(msg.Trigger) )
             {
                 case TriggerThreading.Queue:
                 Queue<DispatchPackage> queue;
                 if (triggerQueues.TryGetValue(msg.Trigger, out queue))
                 {
-                    Push(queue, msg, triggers.FireTrigger);
-                    break;
+                    Push(msg, triggers.FireTrigger, queue);
                 }
                 goto default;
 
@@ -100,7 +98,7 @@ namespace MeidoBot
                 break;
 
                 default:
-                Push(Standard, msg, triggers.FireTrigger);
+                Push(msg, triggers.FireTrigger, Standard);
                 break;
             }
         }
@@ -108,45 +106,42 @@ namespace MeidoBot
 
         // --- Enqueing and threading ---
 
-        void Enqueue(IrcMessage msg, Action<IIrcMessage> action)
-        {
-            var disPackage = new DispatchPackage(msg, action);
-            lock (Standard)
-            {
-                Standard.Enqueue(disPackage);
-                Monitor.Pulse(Standard);
-            }
-        }
-
-
-        void Consume()
-        {
-            DispatchPackage pack;
-            while (true)
-            {
-                lock (Standard)
-                {
-                    while (Standard.Count == 0)
-                        Monitor.Wait(Standard);
-
-                    pack = Standard.Dequeue();
-                }
-
-                if (pack != null)
-                    pack.Apply();
-                else
-                    return;
-            }
-        }
-
-
-        static void Push(Queue<DispatchPackage> q, IrcMessage msg, Action<IIrcMessage> action)
+        static void Push(IrcMessage msg, Action<IIrcMessage> action, Queue<DispatchPackage> q)
         {
             var package = new DispatchPackage(msg, action);
             lock (q)
             {
                 q.Enqueue(package);
                 Monitor.Pulse(q);
+            }
+        }
+
+
+        static void StartConsumeThread(Queue<DispatchPackage> queue)
+        {
+            var t = new Thread(Consume);
+            t.Start(queue);
+        }
+
+        static void Consume(object queueObj)
+        {
+            var q = (Queue<DispatchPackage>)queueObj;
+            DispatchPackage pack;
+
+            while (true)
+            {
+                lock (q)
+                {
+                    while (q.Count == 0)
+                        Monitor.Wait(q);
+
+                    pack = q.Dequeue();
+                }
+
+                if (pack != null)
+                    pack.Apply();
+                else
+                    return;
             }
         }
     }
