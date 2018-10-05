@@ -49,24 +49,6 @@ namespace MeidoBot
         }
 
 
-        public void RegisterTrigger(string trigger, Action<IIrcMessage> callback)
-        {
-            RegisterTrigger(trigger, callback, false);
-        }
-
-        public void RegisterTrigger(string trigger, Action<IIrcMessage> callback, bool needChannel)
-        {
-            if (trigger == null)
-                throw new ArgumentNullException(nameof(trigger));
-            if (trigger == string.Empty)
-                throw new ArgumentException("Cannot be an empty string.", nameof(trigger));
-            if (callback == null)
-                throw new ArgumentNullException(nameof(callback));
-
-            triggers.RegisterTrigger(trigger, new Trigger(callback, needChannel));
-        }
-
-
         public string ConfPathTo(string filename)
         {
             return Path.Combine(ConfDir, filename);
