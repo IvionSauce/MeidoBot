@@ -93,6 +93,7 @@ namespace MeidoBot
                 if (triggerQueues.TryGetValue(msg.Trigger, out queue))
                 {
                     Push(msg, triggers.FireTrigger, queue);
+                    break;
                 }
                 goto default;
 
