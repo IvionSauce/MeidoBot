@@ -15,7 +15,7 @@ public class WebSearches : IMeidoHook
     }
     public string Version
     {
-        get { return "0.30"; }
+        get { return "0.32"; }
     }
     
     public Dictionary<string,string> Help

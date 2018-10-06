@@ -16,7 +16,7 @@ public class IrcWeather : IMeidoHook
     }
     public string Version
     {
-        get { return "0.54"; }
+        get { return "0.56"; }
     }
 
     public Dictionary<string,string> Help

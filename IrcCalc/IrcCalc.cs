@@ -13,7 +13,7 @@ public class Calc : IMeidoHook
     }
     public string Version
     {
-        get { return "2.0a3"; }
+        get { return "2.0"; }
     }
 
     public Dictionary<string,string> Help

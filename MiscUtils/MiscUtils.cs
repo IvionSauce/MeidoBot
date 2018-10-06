@@ -14,7 +14,7 @@ public class MiscUtils : IMeidoHook
     }
     public string Version
     {
-        get { return "0.51"; }
+        get { return "0.52"; }
     }
 
     public Dictionary<string,string> Help

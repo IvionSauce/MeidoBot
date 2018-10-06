@@ -13,7 +13,7 @@ public class IrcSed : IMeidoHook
     }
     public string Version
     {
-        get { return "0.10"; }
+        get { return "0.11"; }
     }
 
     public Dictionary<string,string> Help
