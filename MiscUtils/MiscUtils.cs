@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -9,12 +8,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class MiscUtils : IMeidoHook
 {
-    readonly IIrcComm irc;
-    readonly ILog log;
-
-    readonly IrcTimers ircTimers = new IrcTimers();
-
-
     public string Name
     {
         get { return "MiscUtils"; }
@@ -42,6 +35,12 @@ public class MiscUtils : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+
+
+    readonly IIrcComm irc;
+    readonly ILog log;
+
+    readonly IrcTimers ircTimers = new IrcTimers();
 
 
     public void Stop()

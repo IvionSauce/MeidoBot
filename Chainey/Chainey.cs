@@ -11,20 +11,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class IrcChainey : IMeidoHook
 {
-    readonly IIrcComm irc;
-    readonly IMeidoComm meido;
-    readonly ILog log;
-
-    readonly BrainFrontend chainey;
-    readonly Random rnd = new Random();
-
-    readonly Config conf = new Config();
-
-    // Housekeeping for producer-consumer queue.
-    readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
-    readonly object _locker = new object();
-
-
     public string Name
     {
         get { return "Chainey"; }
@@ -44,6 +30,19 @@ public class IrcChainey : IMeidoHook
 
     public IEnumerable<Trigger> Triggers { get; private set; }
 
+
+    readonly IIrcComm irc;
+    readonly IMeidoComm meido;
+    readonly ILog log;
+
+    readonly BrainFrontend chainey;
+    readonly Random rnd = new Random();
+
+    readonly Config conf = new Config();
+
+    // Housekeeping for producer-consumer queue.
+    readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
+    readonly object _locker = new object();
 
     const string nickPlaceholder = "||NICK||";
 

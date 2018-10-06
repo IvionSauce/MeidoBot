@@ -11,10 +11,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class IrcRandom : IMeidoHook
 {
-    readonly IIrcComm irc;
-    volatile Config conf;
-
-
     public string Name
     {
         get { return "RandomChoice"; }
@@ -43,6 +39,10 @@ public class IrcRandom : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+
+
+    readonly IIrcComm irc;
+    volatile Config conf;
 
 
     public void Stop()

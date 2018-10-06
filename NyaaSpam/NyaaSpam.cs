@@ -8,18 +8,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class NyaaSpam : IMeidoHook
 {
-    readonly IIrcComm irc;
-    readonly IMeidoComm meido;
-    readonly ILog log;
-
-    volatile Config conf;
-
-    Patterns feedPatterns;
-    FeedReader feedReader;
-
-    const string feedError = "Disabled due to invalid or missing feed address.";
-
-
     public string Name
     {
         get { return "NyaaSpam"; }
@@ -45,6 +33,18 @@ public class NyaaSpam : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+
+
+    readonly IIrcComm irc;
+    readonly IMeidoComm meido;
+    readonly ILog log;
+
+    volatile Config conf;
+
+    Patterns feedPatterns;
+    FeedReader feedReader;
+
+    const string feedError = "Disabled due to invalid or missing feed address.";
 
 
     public void Stop()

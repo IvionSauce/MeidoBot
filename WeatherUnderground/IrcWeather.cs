@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Collections.Generic;
-using System.Threading;
 using IvionSoft;
 using IvionWebSoft;
 // Using directives for plugin use.

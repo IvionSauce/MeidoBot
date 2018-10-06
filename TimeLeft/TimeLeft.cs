@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Xml;
 using System.Linq;
 using System.Threading;
 using System.Runtime.Serialization;
@@ -13,15 +12,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class TimeLeft : IMeidoHook
 {
-    readonly IIrcComm irc;
-
-    readonly Storage<TimeLeftUnit> storage;
-    readonly Timer cleaner;
-    readonly object _locker = new object();
-
-    readonly string loc;
-
-
     public string Name
     {
         get { return "TimeLeft"; }
@@ -47,6 +37,15 @@ public class TimeLeft : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+
+
+    readonly IIrcComm irc;
+
+    readonly Storage<TimeLeftUnit> storage;
+    readonly Timer cleaner;
+    readonly object _locker = new object();
+
+    readonly string loc;
 
 
     public void Stop()

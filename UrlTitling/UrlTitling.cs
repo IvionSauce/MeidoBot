@@ -9,13 +9,6 @@ using System.ComponentModel.Composition;
 [Export(typeof(IMeidoHook))]
 public class UrlTitler : IMeidoHook
 {
-    readonly IMeidoComm meido;
-    readonly ILog log;
-
-    readonly ChannelThreadManager manager;
-    readonly QueryTriggers qTriggers;
-
-
     public string Name
     {
         get { return "URL Titling"; }
@@ -45,6 +38,13 @@ public class UrlTitler : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+
+
+    readonly IMeidoComm meido;
+    readonly ILog log;
+
+    readonly ChannelThreadManager manager;
+    readonly QueryTriggers qTriggers;
 
 
     public void Stop()
