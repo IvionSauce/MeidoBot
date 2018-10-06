@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MeidoCommon;
 using MeidoCommon.Throttle;
 
+
 namespace MeidoBot
 {
     class ThrottleManager
@@ -29,16 +30,21 @@ namespace MeidoBot
         public bool Triggers(IIrcMessage msg)
         {
             var entry = GetOrAdd(msg.ReturnTo);
-            // Trigger calling happens sequentially, no need for locking.
-
-            // Checks of both Triggers and Output if their throttle is active.
-            if (ThrottleActive(msg, entry))
-                return true;
-
             ThrottleInfo info;
-            // If this trigger call causes the throttle to activate, share information about why and how long trigger
-            // calling will be ignored.
-            if (entry.Triggers.Check(out info))
+            // Lock on trigger calling. Trigger calling is also possibly multithreaded,
+            // because of the varying threading models now offered in MessageDispatcher.
+            lock (entry.Triggers)
+            {
+                // Checks of both Triggers and Output if their throttle is active.
+                if (ThrottleActive(msg, entry))
+                    return true;
+
+                info = entry.Triggers.Check();
+            }
+
+            // If this trigger call causes the throttle to activate, share information about
+            // why and how long trigger calling will be ignored.
+            if (info != null)
             {
                 var report =
                     string.Format( "Ignoring trigger calls from {0} for {1}. ({2} calls in {3})",
@@ -98,7 +104,7 @@ namespace MeidoBot
             var entry = GetOrAdd(target);
             ThrottleInfo info;
             // Lock on output checks, since plugins can be multithreaded and therefore messages to be send can arrive
-            // simultaneously and cause OutputCheck to be called concurrently.
+            // simultaneously and cause Output.Check to be called concurrently.
             lock (entry.Output)
             {
                 if (entry.Output.ThrottleActive)
@@ -139,7 +145,7 @@ namespace MeidoBot
 
         SourceEntry GetOrAdd(string source)
         {
-            // Serialize access to the dictionary, courtesy of the possible concurrent use of OutputCheck.
+            // Serialize access to the dictionary.
             lock (sources)
             {
                 SourceEntry entry;
@@ -160,7 +166,8 @@ namespace MeidoBot
         public readonly ThrottleControl Triggers;
         public readonly ThrottleControl Output;
 
-
+        // Lots of magic numbers here, my apologies. These are subject to experimentation and refinement. Eventually
+        // they will be configurable, but I can't yet be arsed.
         public SourceEntry(string source)
         {
             var triggerRates = new RateControl[] {
