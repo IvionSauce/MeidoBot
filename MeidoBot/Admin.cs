@@ -31,21 +31,21 @@ namespace MeidoBot
                 // Admin triggers.
                 switch (trigger)
                 {
-                case "j":
-                case "join":
+                    case "j":
+                    case "join":
                     for (int i = 2; i < msg.MessageArray.Length; i++)
                         irc.RfcJoin(msg.MessageArray[i]);
 
                     return;
 
-                case "p":
-                case "part":
+                    case "p":
+                    case "part":
                     for (int i = 2; i < msg.MessageArray.Length; i++)
                         irc.RfcPart(msg.MessageArray[i]);
                     
                     return;
 
-                case "nick":
+                    case "nick":
                     if (msg.MessageArray.Length == 3)
                     {
                         msg.Reply("Attempting to change nick from {0} to {1}.", irc.Nickname, msg.MessageArray[2]);
@@ -56,7 +56,8 @@ namespace MeidoBot
 
                     return;
 
-                case "channels":
+                    case "ch":
+                    case "channels":
                     var channels = string.Join(", ", irc.GetChannels());
                     msg.Reply(channels);
                     return;
@@ -66,17 +67,17 @@ namespace MeidoBot
                 {
                     switch (trigger)
                     {
-                    case "dc":
-                    case "disconnect":
+                        case "dc":
+                        case "disconnect":
                         msg.Reply("Disconnecting from {0}.", irc.Address);
                         bot.Dispose();
                         return;
 
-                    case "restart":
+                        case "restart":
                         Program.RestartMeido();
                         return;
 
-                    case "gc-collect":
+                        case "gc-collect":
                         long before = GC.GetTotalMemory(false);
                         GC.Collect();
                         msg.Reply("Garbage Collection Meido: {0:N0} -> {1:N0}", before, GC.GetTotalMemory(true));

@@ -2,8 +2,6 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Meebey.SmartIrc4net;
-// Using directives for plugin use.
-using MeidoCommon;
 
 
 namespace MeidoBot
@@ -130,8 +128,8 @@ namespace MeidoBot
 
         void SetHandlers(MessageDispatcher dispatch)
         {
-            irc.OnConnected += OnConnected;
-            irc.OnInvite += OnInvited;
+            irc.OnConnected += Connected;
+            irc.OnInvite += Invited;
 
             irc.OnChannelMessage += dispatch.OnMessage;
             irc.OnQueryMessage += dispatch.OnMessage;
@@ -139,10 +137,10 @@ namespace MeidoBot
             irc.OnChannelAction += dispatch.OnAction;
             irc.OnQueryAction += dispatch.OnAction;
 
-            irc.OnPart += OnPart;
-            irc.OnKick += OnKick;
+            irc.OnPart += Part;
+            irc.OnKick += Kick;
 
-            irc.OnCtcpRequest += OnCtcp;
+            irc.OnCtcpRequest += Ctcp;
             // IrcClient should automatically respond to CTCP VERSION if CtcpVersion is set, but it does not.
             // So we gotta do it ourselves.
             irc.OnCtcpRequest += CtcpVersion;
@@ -205,7 +203,7 @@ namespace MeidoBot
         // Event handlers.
         // ---------------
 
-        void OnConnected(object sender, EventArgs e)
+        void Connected(object sender, EventArgs e)
         {
             irc.Login(conf.Nickname, "Meido Bot", 0, "MeidoBot");
             log.Message("Connected as {0} to {1}", irc.Nickname, irc.Address);
@@ -221,7 +219,7 @@ namespace MeidoBot
         }
 
 
-        void OnInvited(object sender, InviteEventArgs e)
+        void Invited(object sender, InviteEventArgs e)
         {
             log.Message("Received invite from {0} for {1}", e.Who, e.Channel);
 
@@ -235,7 +233,7 @@ namespace MeidoBot
         }
 
 
-        void OnPart(object sender, PartEventArgs e)
+        void Part(object sender, PartEventArgs e)
         {
             if (irc.IsMe(e.Who))
             {
@@ -244,7 +242,7 @@ namespace MeidoBot
             }
         }
 
-        void OnKick(object sender, KickEventArgs e)
+        void Kick(object sender, KickEventArgs e)
         {
             if (irc.IsMe(e.Whom))
             {
@@ -254,7 +252,7 @@ namespace MeidoBot
         }
 
 
-        void OnCtcp(object s, CtcpEventArgs e)
+        void Ctcp(object s, CtcpEventArgs e)
         {
             var ctcpCmd = e.CtcpCommand;
             if (!string.IsNullOrEmpty(e.CtcpParameter))

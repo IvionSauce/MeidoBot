@@ -81,8 +81,11 @@ namespace MeidoBot
 
         public void Fire(Trigger tr, IIrcMessage msg)
         {
-            string source = msg.Channel ?? "PM";
-            log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
+            string source = msg.Nick;
+            if (msg.Channel != null)
+                source += "/" + msg.Channel;
+            
+            log.Message("{0} {1}", source, msg.Message);
 
             if (FirePredicate(msg, tr.Option))
                 tr.Call(msg);
