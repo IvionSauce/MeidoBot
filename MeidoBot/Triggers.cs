@@ -69,27 +69,23 @@ namespace MeidoBot
         }
 
 
-        public TriggerThreading GetThreading(string identifier)
+        public bool TryGet(string identifier, out Trigger tr)
         {
-            Trigger trigger;
-            if (triggers.TryGetValue(identifier, out trigger))
-                return trigger.Threading;
-
-            return TriggerThreading.Default;
+            return triggers.TryGetValue(identifier, out tr);
         }
 
-
-        public void FireTrigger(IIrcMessage msg)
+        public Action<IIrcMessage> Delegate(Trigger tr)
         {
-            Trigger tr;
-            if (triggers.TryGetValue(msg.Trigger, out tr))
-            {
-                string source = msg.Channel ?? "PM";
-                log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
+            return (msg) => Fire(tr, msg);
+        }
 
-                if (FirePredicate(msg, tr.Option))
-                    tr.Call(msg);
-            }
+        public void Fire(Trigger tr, IIrcMessage msg)
+        {
+            string source = msg.Channel ?? "PM";
+            log.Message("{0}/{1} {2}", source, msg.Nick, msg.Message);
+
+            if (FirePredicate(msg, tr.Option))
+                tr.Call(msg);
         }
 
         bool FirePredicate(IIrcMessage msg, TriggerOption opt)

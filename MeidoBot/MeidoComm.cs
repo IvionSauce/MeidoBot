@@ -96,13 +96,6 @@ namespace MeidoBot
             triggers.SpecialTrigger(trigger, callback);
         }
 
-
-        public void FireTrigger(IIrcMessage msg)
-        {
-            triggers.FireTrigger(msg);
-        }
-
-
         public bool Auth(string nick, string pass)
         {
             if (nick == null)
