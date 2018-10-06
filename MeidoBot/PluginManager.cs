@@ -77,7 +77,7 @@ namespace MeidoBot
 
             for (int i = 0; i < Count; i++)
             {
-                dicts[i] = pluginContainer[i].Help;
+                dicts[i] = pluginContainer[i].Help();
             }
 
             return dicts;

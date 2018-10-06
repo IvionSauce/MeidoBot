@@ -12,8 +12,8 @@ namespace MeidoBot
 
         public PluginTriggers(IMeidoHook plugin)
         {
-            Name = plugin.Name;
-            Triggers = plugin.Triggers;
+            Name = plugin.Name();
+            Triggers = plugin.Triggers();
         }
     }
 }

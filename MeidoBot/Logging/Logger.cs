@@ -21,22 +21,7 @@ namespace MeidoBot
 
         public Logger CreateLogger(IMeidoHook plugin)
         {
-            string name = plugin.Name.Trim();
-            switch (name)
-            {
-            case "":
-            case null:
-                name = "Unknown";
-                break;
-            // Reserved logger names.
-            case "Main":
-            case "Meido":
-            case "Auth":
-                name = "_" + name;
-                break;
-            }
-
-            return CreateLogger(name);
+            return CreateLogger(plugin.Name());
         }
 
         public Logger CreateLogger(string name)
