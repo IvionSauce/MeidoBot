@@ -82,28 +82,41 @@ namespace MeidoBot
 
         void HandleTrigger(IrcMessage msg)
         {
-            // Unique Queue: trigger -> Queue [one-to-one]
-            // Shared Queue: triggers -> Queue [many-to-one]
-            // Threadpool: Reentrant chaos
-            // Only the last 2 are implemented for now.
-            switch ( triggers.GetThreading(msg.Trigger) )
+            Trigger trigger;
+            if (triggers.TryGet(msg.Trigger, out trigger))
             {
-                case TriggerThreading.Queue:
-                Queue<DispatchPackage> queue;
-                if (triggerQueues.TryGetValue(msg.Trigger, out queue))
+                // • Unique queue: queue per trigger
+                //    trigger -> Queue [one-to-one]
+
+                // • Shared queue: queue per plugin
+                //    triggers -> Queue [many-to-one]
+
+                // • Threadpool: Reentrant chaos
+                //    triggers -> Threadpool [many-to-many]
+
+                // • Standard/Default: single shared queue for all
+                //    * -> Queue [many-to-one]
+
+                // Only the last 3 are implemented for now.
+                switch (trigger.Threading)
                 {
-                    Push(msg, triggers.FireTrigger, queue);
+                    case TriggerThreading.Queue:
+                    Queue<DispatchPackage> queue;
+                    if (triggerQueues.TryGetValue(msg.Trigger, out queue))
+                    {
+                        Push(msg, triggers.Delegate(trigger), queue);
+                        break;
+                    }
+                    goto default;
+
+                    case TriggerThreading.Threadpool:
+                    ThreadPool.QueueUserWorkItem( (cb) => triggers.Fire(trigger, msg) );
+                    break;
+
+                    default:
+                    Push(msg, triggers.Delegate(trigger), Standard);
                     break;
                 }
-                goto default;
-
-                case TriggerThreading.Threadpool:
-                ThreadPool.QueueUserWorkItem( (cb) => triggers.FireTrigger(msg) );
-                break;
-
-                default:
-                Push(msg, triggers.FireTrigger, Standard);
-                break;
             }
         }
 
