@@ -55,6 +55,7 @@
     <Compile Include="Authentication\AuthDictionary.cs" />
     <Compile Include="MessageDispatcher.cs" />
     <Compile Include="PluginTriggers.cs" />
+    <Compile Include="PluginExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
