@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Calculation;
 // Using directives for plugin use.
@@ -32,7 +31,7 @@ public class Calc : IMeidoHook
     public IEnumerable<Trigger> Triggers { get; private set; }
 
 
-    static CalcEnvironment CalcEnv = new CalcEnvironment();
+    CalcEnvironment CalcEnv = new CalcEnvironment();
 
 
     public void Stop()
@@ -52,7 +51,7 @@ public class Calc : IMeidoHook
     }
 
 
-    public static void HandleTrigger(IIrcMessage e)
+    void HandleTrigger(IIrcMessage e)
     {
         if (e.MessageArray.Length > 1)
         {
@@ -70,7 +69,7 @@ public class Calc : IMeidoHook
     }
 
 
-    public static void HandleMessage(IIrcMessage e)
+    void HandleMessage(IIrcMessage e)
     {
         var expr = VerifiedExpression.Parse(e.Message, CalcEnv);
         // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
@@ -95,7 +94,7 @@ public class Calc : IMeidoHook
     }
 
 
-    static void DefVar(IIrcMessage e)
+    void DefVar(IIrcMessage e)
     {
         string symbol;
         string expression;
