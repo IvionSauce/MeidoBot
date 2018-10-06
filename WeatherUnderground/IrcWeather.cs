@@ -78,8 +78,8 @@ public class IrcWeather : IMeidoHook
         }
 
         Triggers = new Trigger[] {
-            new Trigger("w", WeatherSearch),
-            new Trigger("W", SetWeatherLocation)
+            new Trigger("w", WeatherSearch, TriggerThreading.Queue),
+            new Trigger("W", SetWeatherLocation, TriggerThreading.Queue)
         };
     }
 

@@ -49,10 +49,11 @@ public class IrcTell : IMeidoHook
         inboxes = new Inboxes(meido.DataDir);
 
         irc.AddChannelMessageHandler(MessageHandler);
+        var t = TriggerThreading.Queue;
         Triggers = new Trigger[] {
-            new Trigger("tell", Tell),
-            new Trigger("tell-read", Read),
-            new Trigger("tell-clear", Clear)
+            new Trigger("tell", Tell, t),
+            new Trigger("tell-read", Read, t),
+            new Trigger("tell-clear", Clear, t)
         };
     }
 
