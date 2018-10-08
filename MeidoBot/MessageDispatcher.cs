@@ -9,13 +9,12 @@ namespace MeidoBot
 {
     class MessageDispatcher : IDisposable
     {
+        // Contains nicks to ignore, whether due to abuse or them being other bots.
+        public volatile Ignores Ignore;
+
         readonly IrcComm irc;
         readonly Triggers triggers;
         readonly string triggerPrefix;
-        readonly Logger log;
-
-        // Contains nicks to ignore, whether due to abuse or them being other bots.
-        volatile Ignores ignore;
 
         // Standard off-thread queue, to keep the main thread clear.
         readonly Queue<DispatchPackage> Standard;
@@ -24,26 +23,16 @@ namespace MeidoBot
         readonly Dictionary<Trigger, Queue<DispatchPackage>> triggerQueues;
 
 
-        public MessageDispatcher(
-            IrcComm ircComm,
-            Triggers triggers,
-            string triggerPrefix,
-            Logger log)
+        public MessageDispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
         {
             irc = ircComm;
             this.triggers = triggers;
             this.triggerPrefix = triggerPrefix;
-            this.log = log;
 
             Standard = new Queue<DispatchPackage>();
             StartConsumeThread(Standard);
 
             triggerQueues = new Dictionary<Trigger, Queue<DispatchPackage>>();
-        }
-
-        public void LoadIgnores(string path)
-        {
-            ignore = Ignores.FromFile(path, log);
         }
 
 
@@ -66,7 +55,7 @@ namespace MeidoBot
         {
             var msg = new IrcMessage(irc, e.Data, triggerPrefix);
 
-            if (!ignore.Contains(msg.Nick))
+            if (!Ignore.Contains(msg.Nick))
             {
                 if (msg.Trigger != null)
                     HandleTrigger(msg);

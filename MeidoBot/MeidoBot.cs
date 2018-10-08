@@ -65,18 +65,16 @@ namespace MeidoBot
             dispatch = new MessageDispatcher(
                 ircComm,
                 triggers,
-                conf.TriggerPrefix,
-                log
+                conf.TriggerPrefix
             );
+            // Setup autoloading of ignores.
+            meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
 
             help = new Help(config.TriggerPrefix);
             LoadPlugins(triggers);
             // Setup non-plugin triggers and register them.
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers();
-
-            // Setup autoloading of ignores.
-            meidoComm.LoadAndWatchConfig("Ignore", dispatch.LoadIgnores);
 
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
@@ -94,6 +92,11 @@ namespace MeidoBot
 
             log.Error("No chatlogging due to failed IO checks.");
             return new DummyChatlogger();
+        }
+
+        void LoadIgnores(string path)
+        {
+            dispatch.Ignore = Ignores.FromFile(path, log);
         }
 
         void LoadPlugins(Triggers triggers)
