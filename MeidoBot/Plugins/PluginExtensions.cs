@@ -18,6 +18,7 @@ namespace MeidoBot
                 // Reserved names.
                 case "Main":
                 case "Meido":
+                case "Triggers":
                 case "Auth":
                 name = "_" + name;
                 break;

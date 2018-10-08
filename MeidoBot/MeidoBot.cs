@@ -58,8 +58,8 @@ namespace MeidoBot
             var chatLog = SetupChatlog();
             ircComm = new IrcComm(irc, tManager, chatLog);
 
-            var triggers = new Triggers(tManager, log);
-            meidoComm = new MeidoComm(config, triggers, logFac, log);
+            var triggers = new Triggers(tManager, logFac.CreateLogger("Triggers"));
+            meidoComm = new MeidoComm(config, logFac, log);
 
             // This must be instantiated before loading plugins and their triggers.
             dispatch = new MessageDispatcher(
@@ -70,11 +70,12 @@ namespace MeidoBot
             // Setup autoloading of ignores.
             meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
 
-            help = new Help(config.TriggerPrefix);
-            LoadPlugins(triggers);
             // Setup non-plugin triggers and register them.
+            help = new Help(config.TriggerPrefix);
             admin = new Admin(this, irc, meidoComm);
-            RegisterSpecialTriggers();
+            RegisterSpecialTriggers(triggers);
+            // Load plugins and setup their triggers/help.
+            LoadPlugins(triggers);
 
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
@@ -281,13 +282,13 @@ namespace MeidoBot
         // Special trigger handling.
         // -------------------------
 
-        void RegisterSpecialTriggers()
+        void RegisterSpecialTriggers(Triggers triggers)
         {
-            meidoComm.SpecialTrigger("h", help.Trigger);
-            meidoComm.SpecialTrigger("help", help.Trigger);
+            triggers.SpecialTrigger("h", help.Trigger);
+            triggers.SpecialTrigger("help", help.Trigger);
 
-            meidoComm.SpecialTrigger("auth", admin.AuthTrigger);
-            meidoComm.SpecialTrigger("admin", admin.AdminTrigger);
+            triggers.SpecialTrigger("auth", admin.AuthTrigger);
+            triggers.SpecialTrigger("admin", admin.AdminTrigger);
         }
 
     }

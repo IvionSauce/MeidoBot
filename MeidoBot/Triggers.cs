@@ -50,12 +50,13 @@ namespace MeidoBot
                 return;
             }
 
-            log.Verbose("{0}: Trigger '{1}'.", pluginName, identifier);
+            log.Verbose("{0}: Registering '{1}'.", pluginName, identifier);
             triggers[identifier] = tr;
         }
 
         public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
         {
+            log.Verbose("Meido: Registering '{0}'.", identifier);
             triggers[identifier] = new Trigger(identifier, callback);
         }
 

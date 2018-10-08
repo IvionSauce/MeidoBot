@@ -15,21 +15,15 @@ namespace MeidoBot
         public readonly Logger Log;
 
         readonly LogFactory logFac;
-        readonly Triggers triggers;
         readonly WatchConfig watcher;
         readonly UserAuthManager userAuths;
 
 
-        public MeidoComm(
-            MeidoConfig conf,
-            Triggers triggers,
-            LogFactory factory,
-            Logger meidoLog)
+        public MeidoComm(MeidoConfig conf, LogFactory factory, Logger meidoLog)
         {
             ConfDir = conf.ConfigurationDirectory;
             DataDir = conf.DataDirectory;
 
-            this.triggers = triggers;
             logFac = factory;
             Log = meidoLog;
 
@@ -90,11 +84,6 @@ namespace MeidoBot
 
 
         // --- Methods made available only to the Meido ---
-
-        public void SpecialTrigger(string trigger, Action<IIrcMessage> callback)
-        {
-            triggers.SpecialTrigger(trigger, callback);
-        }
 
         public bool Auth(string nick, string pass)
         {
