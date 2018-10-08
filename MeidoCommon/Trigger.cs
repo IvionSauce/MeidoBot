@@ -125,11 +125,5 @@ namespace MeidoCommon
 
             return false;
         }
-
-
-        public override int GetHashCode()
-        {
-            return Identifiers.GetHashCode();
-        }
     }
 }
