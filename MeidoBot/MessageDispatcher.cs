@@ -21,7 +21,7 @@ namespace MeidoBot
         readonly Queue<DispatchPackage> Standard;
 
         // Queues, either on plugin level or seperate for each trigger.
-        readonly Dictionary<string, Queue<DispatchPackage>> triggerQueues;
+        readonly Dictionary<Trigger, Queue<DispatchPackage>> triggerQueues;
 
 
         public MessageDispatcher(
@@ -38,7 +38,7 @@ namespace MeidoBot
             Standard = new Queue<DispatchPackage>();
             StartConsumeThread(Standard);
 
-            triggerQueues = new Dictionary<string, Queue<DispatchPackage>>();
+            triggerQueues = new Dictionary<Trigger, Queue<DispatchPackage>>();
             triggers.PluginTriggersRegister += ProcessPluginTriggers;
         }
 
@@ -102,7 +102,7 @@ namespace MeidoBot
                 {
                     case TriggerThreading.Queue:
                     Queue<DispatchPackage> queue;
-                    if (triggerQueues.TryGetValue(msg.Trigger, out queue))
+                    if (triggerQueues.TryGetValue(trigger, out queue))
                     {
                         Push(msg, triggers.Delegate(trigger), queue);
                         break;
@@ -147,7 +147,7 @@ namespace MeidoBot
                     if (queue == null)
                         queue = new Queue<DispatchPackage>();
 
-                    triggerQueues[tr.Identifier] = queue;
+                    triggerQueues[tr] = queue;
                 }
                 // We don't need to do anything for other types of threading.
             }

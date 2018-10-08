@@ -24,6 +24,7 @@ namespace MeidoBot
         }
 
 
+        // Triggers of all the plugins.
         public void RegisterTriggers(PluginTriggers[] allTriggers)
         {
             foreach (var trigs in allTriggers)
@@ -36,17 +37,22 @@ namespace MeidoBot
             }
         }
 
-        public void RegisterTriggers(PluginTriggers plugin)
+        // Triggers of a single plugin.
+        void RegisterTriggers(PluginTriggers plugin)
         {
             foreach (var trig in plugin.Triggers)
             {
-                RegisterTrigger(trig, plugin.Name);
+                // Single trigger, but with possible multiple identifiers.
+                foreach (var id in trig.Identifiers)
+                {
+                    RegisterTrigger(id, trig, plugin.Name);
+                }
             }
         }
 
-        public void RegisterTrigger(Trigger tr, string pluginName)
+        void RegisterTrigger(string identifier, Trigger tr, string pluginName)
         {
-            switch (tr.Identifier)
+            switch (identifier)
             {
                 case "h":
                 case "help":
@@ -54,13 +60,13 @@ namespace MeidoBot
                 case "admin":
                 log.Error(
                     "{0}: Tried to register reserved trigger '{1}', this is not allowed.",
-                    pluginName, tr.Identifier);
-                
+                    pluginName, identifier);
+
                 return;
             }
 
-            log.Verbose("{0}: Trigger '{1}'.", pluginName, tr.Identifier);
-            triggers[tr.Identifier] = tr;
+            log.Verbose("{0}: Trigger '{1}'.", pluginName, identifier);
+            triggers[identifier] = tr;
         }
 
         public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
@@ -73,6 +79,7 @@ namespace MeidoBot
         {
             return triggers.TryGetValue(identifier, out tr);
         }
+
 
         public Action<IIrcMessage> Delegate(Trigger tr)
         {
