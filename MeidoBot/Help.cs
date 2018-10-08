@@ -18,17 +18,9 @@ namespace MeidoBot
         }
 
 
-        public void RegisterHelp(IEnumerable< Dictionary<string, string> > helpDicts)
+        public void RegisterHelp(MeidoPlugin plugin)
         {
-            foreach (var dict in helpDicts)
-            {
-                RegisterHelp(dict);
-            }
-        }
-
-        public void RegisterHelp(Dictionary<string, string> helpDict)
-        {
-            foreach (var pair in helpDict)
+            foreach (var pair in plugin.Help)
             {
                 subjects[pair.Key] = pair.Value;
             }

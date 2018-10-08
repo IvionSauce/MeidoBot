@@ -28,6 +28,8 @@ namespace MeidoBot
         // MeidoBot Communication object, used for functions that concern both the bot-framework and the plugins
         // running in it.
         readonly MeidoComm meidoComm;
+        // Dispatches messages and trigger calls.
+        readonly MessageDispatcher dispatch;
 
         // Configuration fields, used for initializing various helper classes and for events.
         readonly MeidoConfig conf;
@@ -59,9 +61,8 @@ namespace MeidoBot
             var triggers = new Triggers(tManager, log);
             meidoComm = new MeidoComm(config, triggers, logFac, log);
 
-            // Dispatches messages and trigger calls.
             // This must be instantiated before loading plugins and their triggers.
-            var dispatch = new MessageDispatcher(
+            dispatch = new MessageDispatcher(
                 ircComm,
                 triggers,
                 conf.TriggerPrefix,
@@ -79,7 +80,7 @@ namespace MeidoBot
 
             // Setting some SmartIrc4Net properties and event handlers.
             SetProperties();
-            SetHandlers(dispatch);
+            SetHandlers();
             reconnect = new AutoReconnect(irc);
         }
 
@@ -97,14 +98,16 @@ namespace MeidoBot
 
         void LoadPlugins(Triggers triggers)
         {
+            plugins = new PluginManager();
+            plugins.PluginLoad += dispatch.ProcessPluginQueues;
+            plugins.PluginLoad += triggers.RegisterTriggers;
+            plugins.PluginLoad += help.RegisterHelp;
+
             // Only load plugins if IO checks succeed.
             if (PathTools.CheckPluginIO(conf, log))
             {
                 log.Message("Loading plugins...");
-                plugins = new PluginManager(ircComm, meidoComm);
-
-                help.RegisterHelp( plugins.GetHelpDicts() );
-                triggers.RegisterTriggers( plugins.GetTriggers() );
+                plugins.LoadPlugins(ircComm, meidoComm);
 
                 log.Message("Done! Loaded {0} plugin(s):", plugins.Count);
                 foreach (string s in plugins.GetDescriptions())
@@ -126,7 +129,7 @@ namespace MeidoBot
             irc.Encoding = Encoding.UTF8;
         }
 
-        void SetHandlers(MessageDispatcher dispatch)
+        void SetHandlers()
         {
             irc.OnConnected += Connected;
             irc.OnInvite += Invited;

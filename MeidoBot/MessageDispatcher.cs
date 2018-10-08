@@ -39,7 +39,6 @@ namespace MeidoBot
             StartConsumeThread(Standard);
 
             triggerQueues = new Dictionary<Trigger, Queue<DispatchPackage>>();
-            triggers.PluginTriggersRegister += ProcessPluginTriggers;
         }
 
         public void LoadIgnores(string path)
@@ -134,13 +133,13 @@ namespace MeidoBot
         }
 
 
-        void ProcessPluginTriggers(IEnumerable<Trigger> pTriggers)
+        public void ProcessPluginQueues(MeidoPlugin plugin)
         {
             // Shared queue for all triggers declared by the plugin,
             // that is if they have opted for Threading.Queue.
             Queue<DispatchPackage> queue = null;
 
-            foreach (var tr in pTriggers)
+            foreach (var tr in plugin.Triggers)
             {
                 if (tr.Threading == TriggerThreading.Queue)
                 {

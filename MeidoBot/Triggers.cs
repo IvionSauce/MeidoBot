@@ -7,8 +7,6 @@ namespace MeidoBot
 {
     class Triggers
     {
-        public event Action< IEnumerable<Trigger> > PluginTriggersRegister;
-
         readonly Dictionary<string, Trigger> triggers;
 
         readonly ThrottleManager throttle;
@@ -24,22 +22,9 @@ namespace MeidoBot
         }
 
 
-        // Triggers of all the plugins.
-        public void RegisterTriggers(PluginTriggers[] allTriggers)
+        public void RegisterTriggers(MeidoPlugin plugin)
         {
-            foreach (var trigs in allTriggers)
-            {
-                RegisterTriggers(trigs);
-                if (PluginTriggersRegister != null)
-                {
-                    PluginTriggersRegister(trigs.Triggers);
-                }
-            }
-        }
-
-        // Triggers of a single plugin.
-        void RegisterTriggers(PluginTriggers plugin)
-        {
+            // Triggers of a single plugin.
             foreach (var trig in plugin.Triggers)
             {
                 // Single trigger, but with possible multiple identifiers.

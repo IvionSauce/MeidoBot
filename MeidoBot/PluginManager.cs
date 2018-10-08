@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -17,6 +18,9 @@ namespace MeidoBot
             get { return pluginContainer.Length; }
         }
 
+        public event Action<MeidoPlugin> PluginLoad;
+
+
         [ImportMany(typeof(IMeidoHook))]
         IMeidoHook[] pluginContainer;
 
@@ -26,7 +30,7 @@ namespace MeidoBot
             pluginContainer = new IMeidoHook[0];
         }
 
-        public PluginManager(IIrcComm ircComm, IMeidoComm meidoComm)
+        public void LoadPlugins(IIrcComm ircComm, IMeidoComm meidoComm)
         {
             // Create catalog and add our plugin-directory to it.
             var catalog = new AggregateCatalog();
@@ -41,6 +45,18 @@ namespace MeidoBot
 
                 container.ComposeParts(this);
             }
+            OnPluginLoad();
+        }
+
+        public void OnPluginLoad()
+        {
+            if (PluginLoad != null)
+            {
+                foreach (var plugin in pluginContainer)
+                {
+                    PluginLoad(new MeidoPlugin(plugin));
+                }
+            }
         }
 
 
@@ -51,36 +67,10 @@ namespace MeidoBot
             for (int i = 0; i < Count; i++)
             {
                 var plugin = pluginContainer[i];
-                descriptions[i] = plugin.Name + " " + plugin.Version;
+                descriptions[i] = plugin.Name() + " " + plugin.Version;
             }
 
             return descriptions;
-        }
-
-
-        public PluginTriggers[] GetTriggers()
-        {
-            var triggers = new PluginTriggers[Count];
-
-            for (int i = 0; i < Count; i++)
-            {
-                triggers[i] = new PluginTriggers(pluginContainer[i]);
-            }
-
-            return triggers;
-        }
-
-
-        public Dictionary<string, string>[] GetHelpDicts()
-        {
-            var dicts = new Dictionary<string, string>[Count];
-
-            for (int i = 0; i < Count; i++)
-            {
-                dicts[i] = pluginContainer[i].Help();
-            }
-
-            return dicts;
         }
 
 

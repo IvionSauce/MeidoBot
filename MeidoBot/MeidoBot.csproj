@@ -54,7 +54,7 @@
     <Compile Include="Authentication\UserAuth.cs" />
     <Compile Include="Authentication\AuthDictionary.cs" />
     <Compile Include="MessageDispatcher.cs" />
-    <Compile Include="PluginTriggers.cs" />
+    <Compile Include="MeidoPlugin.cs" />
     <Compile Include="PluginExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
