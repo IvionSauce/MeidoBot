@@ -30,16 +30,12 @@
     <Compile Include="IrcMessage.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MeidoComm.cs" />
-    <Compile Include="PluginManager.cs" />
     <Compile Include="MessageTools.cs" />
-    <Compile Include="Admin.cs" />
-    <Compile Include="Triggers.cs" />
     <Compile Include="Configuration\MeidoConfig.cs" />
     <Compile Include="Configuration\Parsing.cs" />
     <Compile Include="Configuration\Ssl.cs" />
     <Compile Include="Configuration\Ignores.cs" />
     <Compile Include="Configuration\PathTools.cs" />
-    <Compile Include="Help.cs" />
     <Compile Include="Logging\Chatlogger.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogWriter.cs" />
@@ -49,13 +45,17 @@
     <Compile Include="Logging\ChatWriter.cs" />
     <Compile Include="AutoReconnect.cs" />
     <Compile Include="ThrottleManager.cs" />
-    <Compile Include="WatchConfig.cs" />
     <Compile Include="Authentication\UserAuthManager.cs" />
     <Compile Include="Authentication\UserAuth.cs" />
     <Compile Include="Authentication\AuthDictionary.cs" />
     <Compile Include="MessageDispatcher.cs" />
-    <Compile Include="MeidoPlugin.cs" />
-    <Compile Include="PluginExtensions.cs" />
+    <Compile Include="Plugins\PluginExtensions.cs" />
+    <Compile Include="Plugins\PluginManager.cs" />
+    <Compile Include="Plugins\MeidoPlugin.cs" />
+    <Compile Include="Configuration\WatchConfig.cs" />
+    <Compile Include="Admin.cs" />
+    <Compile Include="Help.cs" />
+    <Compile Include="Triggers.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -76,5 +76,6 @@
     <Folder Include="Configuration\" />
     <Folder Include="Logging\" />
     <Folder Include="Authentication\" />
+    <Folder Include="Plugins\" />
   </ItemGroup>
 </Project>
