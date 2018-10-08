@@ -65,11 +65,12 @@ class FeedReader
             int mult = (now.Minute / interval) + 1;
             int mins = interval * mult;
 
-            var projected = new DateTimeOffset(
+            var wholeHour = new DateTimeOffset(
                 now.Year, now.Month,
                 now.Day, now.Hour,
-                mins, 0, now.Offset
+                0, 0, now.Offset
             );
+            var projected = wholeHour + TimeSpan.FromMinutes(mins);
 
             dueTime = projected - now;
         }
