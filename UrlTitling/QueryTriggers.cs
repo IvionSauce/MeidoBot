@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
-
 using IvionWebSoft;
 using WebIrc;
 using MeidoCommon;
@@ -18,16 +16,7 @@ class QueryTriggers
     }
 
 
-    public void Query(IIrcMessage msg)
-    {
-        ThreadPool.QueueUserWorkItem( (cb) => Query(msg, false) );
-    }
-    public void QueryDebug(IIrcMessage msg)
-    {
-        ThreadPool.QueueUserWorkItem( (cb) => Query(msg, true) );
-    }
-
-    void Query(IIrcMessage msg, bool debug)
+    public void Query(IIrcMessage msg, bool debug)
     {
         WebToIrc wIrc;
         if (msg.Channel != null)
@@ -63,8 +52,7 @@ class QueryTriggers
             Uri url;
             if ( Uri.TryCreate(msg.MessageArray[i], UriKind.Absolute, out url) )
             {
-                ThreadPool.QueueUserWorkItem( (cb) =>
-                    msg.Reply(Dump(url)) );
+                msg.Reply(Dump(url));
             }
         }
     }

@@ -82,11 +82,18 @@ public class UrlTitler : IMeidoHook
         Triggers = new Trigger[] {
             new Trigger("disable", Disable, TriggerOption.ChannelOnly),
             new Trigger("enable", Enable, TriggerOption.ChannelOnly),
-
             new Trigger("dump", Dump),
-            new Trigger("query", qTriggers.Query),
-            new Trigger("q", qTriggers.Query),
-            new Trigger("query-dbg", qTriggers.QueryDebug)
+
+            new Trigger(
+                msg => qTriggers.Query(msg, false),
+                TriggerThreading.Threadpool,
+                "query", "q"
+            ),
+            new Trigger(
+                msg => qTriggers.Query(msg, true),
+                TriggerThreading.Threadpool,
+                "query-dbg", "qd"
+            )
         };
     }
 
