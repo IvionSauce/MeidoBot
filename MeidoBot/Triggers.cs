@@ -43,20 +43,25 @@ namespace MeidoBot
                 case "help":
                 case "auth":
                 case "admin":
-                log.Error(
-                    "{0}: Tried to register reserved trigger '{1}', this is not allowed.",
-                    pluginName, identifier);
+                log.Error("{0}: Tried to register reserved trigger '{1}'",
+                          pluginName, identifier);
 
                 return;
             }
 
-            log.Verbose("{0}: Registering '{1}'.", pluginName, identifier);
-            triggers[identifier] = tr;
+            if (!triggers.ContainsKey(identifier))
+            {
+                log.Verbose("{0}: Registering '{1}'", pluginName, identifier);
+                triggers[identifier] = tr;
+            }
+            else
+                log.Error("{0}: Tried to register previously registered trigger '{1}'",
+                          pluginName, identifier);
         }
 
         public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
         {
-            log.Verbose("Meido: Registering '{0}'.", identifier);
+            log.Verbose("Meido: Registering '{0}'", identifier);
             triggers[identifier] = new Trigger(identifier, callback);
         }
 
