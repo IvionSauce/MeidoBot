@@ -7,7 +7,7 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    class MessageDispatcher
+    class MessageDispatcher : IDisposable
     {
         readonly IrcComm irc;
         readonly Triggers triggers;
@@ -181,6 +181,25 @@ namespace MeidoBot
                     pack.Invoke();
                 else
                     return;
+            }
+        }
+
+
+        public void Dispose()
+        {
+            lock (Standard)
+            {
+                Standard.Enqueue(null);
+                Monitor.Pulse(Standard);
+            }
+
+            foreach (var queue in triggerQueues.Values)
+            {
+                lock (queue)
+                {
+                    queue.Enqueue(null);
+                    Monitor.Pulse(queue);
+                }
             }
         }
     }

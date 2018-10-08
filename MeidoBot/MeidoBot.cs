@@ -198,7 +198,8 @@ namespace MeidoBot
             if (irc.IsConnected)
                 Disconnect();
 
-            plugins.StopPlugins();
+            dispatch.Dispose();
+            plugins.Dispose();
             logWriter.Dispose();
         }
 

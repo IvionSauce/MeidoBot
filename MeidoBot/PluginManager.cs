@@ -11,7 +11,7 @@ namespace MeidoBot
     // http://dotnetbyexample.blogspot.nl/2010/04/very-basic-mef-sample-using-importmany.html and
     // http://msdn.microsoft.com/en-us/library/dd460648.aspx
     // Both were used by yours truly to make this very simple plugin-architecture you see below.
-    class PluginManager
+    class PluginManager : IDisposable
     {
         public int Count
         {
@@ -74,7 +74,7 @@ namespace MeidoBot
         }
 
 
-        public void StopPlugins()
+        public void Dispose()
         {
             foreach (var plugin in pluginContainer)
                 plugin.Stop();

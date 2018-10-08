@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace MeidoBot
 {
-    class WatchConfig
+    class WatchConfig : IDisposable
     {
         readonly Logger log;
         readonly FileSystemWatcher watcher;
@@ -103,6 +103,12 @@ namespace MeidoBot
             }
 
             return null;
+        }
+
+
+        public void Dispose()
+        {
+            watcher.Dispose();
         }
     }
 
