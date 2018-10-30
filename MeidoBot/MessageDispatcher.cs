@@ -14,78 +14,89 @@ namespace MeidoBot
 
         readonly IrcComm irc;
         readonly Triggers triggers;
+        readonly IrcEventHandlers ircEvents;
         readonly string triggerPrefix;
 
         // Standard off-thread queue, to keep the main thread clear.
         readonly Queue<Action> Standard;
 
-        // Queues, either on plugin level or seperate for each trigger.
+        // Queues, either on plugin level or seperate for each trigger or IRC event handler.
         readonly Dictionary<Trigger, Queue<Action>> triggerQueues;
+        readonly Dictionary<IIrcHandler, Queue<Action>> eventQueues;
 
 
         public MessageDispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
         {
             irc = ircComm;
             this.triggers = triggers;
+            ircEvents = new IrcEventHandlers();
             this.triggerPrefix = triggerPrefix;
 
             Standard = new Queue<Action>();
             StartConsumeThread(Standard);
 
             triggerQueues = new Dictionary<Trigger, Queue<Action>>();
+            eventQueues = new Dictionary<IIrcHandler, Queue<Action>>();
         }
 
 
         // --- Event handlers for SmartIrc4Net ---
 
-        public void OnMessage(object sender, IrcEventArgs e)
+        public void ChannelMessage(object sender, IrcEventArgs e)
         {
-            DoHandlers(e, irc.ChannelMessageHandlers, irc.QueryMessageHandlers);
-        }
-
-        public void OnAction(object sender, ActionEventArgs e)
-        {
-            DoHandlers(e, irc.ChannelActionHandlers, irc.QueryActionHandlers);
-        }
-
-
-        // --- Dispatching the correct things in the correct way ---
-
-        void DoHandlers(IrcEventArgs e, Action<IIrcMessage> channelHandler, Action<IIrcMessage> queryHandler)
-        {
-            var msg = new IrcMessage(irc, e.Data, triggerPrefix);
-
+            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
             if (!Ignore.Contains(msg.Nick))
             {
-                if (msg.Trigger != null)
-                    HandleTrigger(msg);
-
-                if (channelHandler != null && msg.Channel != null)
-                    Push(msg, channelHandler, Standard);
-                
-                else if (queryHandler != null)
-                    Push(msg, queryHandler, Standard);
+                DoTrigger(msg);
+                DoHandlers<IChannelMsg>(msg);
             }
         }
 
-        void HandleTrigger(IrcMessage msg)
+        public void QueryMessage(object sender, IrcEventArgs e)
+        {
+            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            if (!Ignore.Contains(msg.Nick))
+            {
+                DoTrigger(msg);
+                DoHandlers<IQueryMsg>(msg);
+            }
+        }
+
+        public void ChannelAction(object sender, ActionEventArgs e)
+        {
+            IChannelAction msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            if (!Ignore.Contains(msg.Nick))
+                DoHandlers(msg);
+        }
+
+        public void QueryAction(object sender, ActionEventArgs e)
+        {
+            IQueryAction msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            if (!Ignore.Contains(msg.Nick))
+                DoHandlers(msg);
+        }
+
+        // --- Dispatching the correct things in the correct way ---
+
+        // • Unique queue: queue per trigger/handler
+        //    [one-to-one]
+
+        // • Shared queue: queue per plugin
+        //    [many-to-one]
+
+        // • Threadpool: Reentrant chaos
+        //    [many-to-many]
+
+        // • Standard/Default: single shared queue for all
+        //    [many-to-one]
+
+        // Only the last 3 are implemented for now.
+
+        void DoTrigger(IrcMsg msg)
         {
             Trigger trigger;
             if (triggers.TryGet(msg.Trigger, out trigger))
             {
-                // • Unique queue: queue per trigger
-                //    trigger -> Queue [one-to-one]
-
-                // • Shared queue: queue per plugin
-                //    triggers -> Queue [many-to-one]
-
-                // • Threadpool: Reentrant chaos
-                //    triggers -> Threadpool [many-to-many]
-
-                // • Standard/Default: single shared queue for all
-                //    * -> Queue [many-to-one]
-
-                // Only the last 3 are implemented for now.
                 switch (trigger.Threading)
                 {
                     case TriggerThreading.Queue:
@@ -108,12 +119,38 @@ namespace MeidoBot
             }
         }
 
+        void DoHandlers<T>(T ircEvent)
+        {
+            foreach (var handler in ircEvents.Handlers<T>())
+            {
+                switch (handler.Threading)
+                {
+                    case TriggerThreading.Queue:
+                    Queue<Action> queue;
+                    if (eventQueues.TryGetValue(handler, out queue))
+                    {
+                        Push(ircEvent, handler, queue);
+                        break;
+                    }
+                    goto default;
+
+                    case TriggerThreading.Threadpool:
+                    ThreadPool.QueueUserWorkItem( (cb) => handler.Invoke(ircEvent) );
+                    break;
+
+                    default:
+                    Push(ircEvent, handler, Standard);
+                    break;
+                }
+            }
+        }
+
 
         // --- Enqueing, consuming and threading ---
 
-        static void Push<T>(T ircEvent, Action<T> action, Queue<Action> q)
+        static void Push(object ircEvent, IIrcHandler handler, Queue<Action> q)
         {
-            Push(() => action(ircEvent), q);
+            Push(() => handler.Invoke(ircEvent), q);
         }
 
         static void Push(Action action, Queue<Action> q)
@@ -128,24 +165,39 @@ namespace MeidoBot
 
         public void ProcessPluginQueues(MeidoPlugin plugin)
         {
-            // Shared queue for all triggers declared by the plugin,
-            // that is if they have opted for Threading.Queue.
+            // Shared queue for all triggers or IRC even handlers declared by the plugin,
+            // that is if they have opted for ThreadingModel.Queue.
             Queue<Action> queue = null;
 
             foreach (var tr in plugin.Triggers)
             {
-                if (tr.Threading == TriggerThreading.Queue)
-                {
-                    if (queue == null)
-                        queue = new Queue<Action>();
-
-                    triggerQueues[tr] = queue;
-                }
-                // We don't need to do anything for other types of threading.
+                RegisterThreading(tr.Threading, tr, triggerQueues, ref queue);
+            }
+            foreach (var handler in plugin.Handlers)
+            {
+                ircEvents.Add(handler);
+                RegisterThreading(handler.Threading, handler, eventQueues, ref queue);
             }
 
             if (queue != null)
                 StartConsumeThread(queue);
+        }
+
+        // Map `id` to `queue` via a Dictionary in a way determined by ThreadingModel.
+        static void RegisterThreading<T>(
+            TriggerThreading threading,
+            T id,
+            Dictionary<T, Queue<Action>> map,
+            ref Queue<Action> queue)
+        {
+            if (threading == TriggerThreading.Queue)
+            {
+                if (queue == null)
+                    queue = new Queue<Action>();
+
+                map[id] = queue;
+            }
+            // We don't need to do anything for other types of threading.
         }
 
 
@@ -182,6 +234,10 @@ namespace MeidoBot
         {
             Push(null, Standard);
             foreach (var queue in triggerQueues.Values)
+            {
+                Push(null, queue);
+            }
+            foreach (var queue in eventQueues.Values)
             {
                 Push(null, queue);
             }

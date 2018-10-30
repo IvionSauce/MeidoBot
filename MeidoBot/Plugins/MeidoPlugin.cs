@@ -9,6 +9,7 @@ namespace MeidoBot
         public readonly string Name;
         public readonly Dictionary<string, string> Help;
         public readonly IEnumerable<Trigger> Triggers;
+        public readonly IEnumerable<IIrcHandler> Handlers;
 
 
         public MeidoPlugin(IMeidoHook plugin)
@@ -16,6 +17,7 @@ namespace MeidoBot
             Name = plugin.Name();
             Help = plugin.Help();
             Triggers = plugin.Triggers();
+            Handlers = new IIrcHandler[0];
         }
     }
 }

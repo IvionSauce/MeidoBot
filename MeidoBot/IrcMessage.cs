@@ -6,9 +6,7 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    // Implement IIrcMessage and supply a constructor that fills in the fields, once again allowing the subset of
-    // a SmartIrc4Net class to trickle down to the plugins.
-    class IrcMessage : IIrcMessage
+    class IrcMsg : IQueryMsg, IChannelMsg, ITriggerMsg, IQueryAction, IChannelAction, IIrcMessage
     {
         // Identical to the IrcMessageData properties.
         public string Message { get; private set; }
@@ -21,28 +19,28 @@ namespace MeidoBot
         // My own additions.
         public string Trigger { get; private set; }
         public string ReturnTo { get; private set; }
-        
+
         readonly IrcComm irc;
         readonly ReceiveType type;
-        
-        
-        public IrcMessage(IrcComm irc, IrcMessageData messageData, string prefix)
+
+
+        public IrcMsg(IrcComm irc, IrcMessageData messageData, string prefix)
         {
             this.irc = irc;
             type = messageData.Type;
-            
+
             Message = messageData.Message;
             MessageArray = messageData.MessageArray;
             Channel = messageData.Channel;
             Nick = messageData.Nick;
             Ident = messageData.Ident;
             Host = messageData.Host;
-            
+
             Trigger = ParseTrigger(prefix);
             ReturnTo = Channel ?? Nick;
         }
-        
-        
+
+
         // Returns trigger without the prefix.
         // Will be null if message didn't start with a prefix.
         // Will also be null if prefix occurs at least twice, to escape trigger calling.
@@ -70,7 +68,6 @@ namespace MeidoBot
                 return null;
         }
 
-
         public void SendNotice(string message, params object[] args)
         {
             SendNotice( string.Format(message, args) );
@@ -80,26 +77,26 @@ namespace MeidoBot
         {
             irc.SendNotice(Nick, message);
         }
-        
-        
+
+
         public void Reply(string message, params object[] args)
         {
             Reply( string.Format(message, args) );
         }
-        
+
         public void Reply(string message)
         {
             switch(type)
             {
-            case ReceiveType.ChannelMessage:
-            case ReceiveType.ChannelAction:
+                case ReceiveType.ChannelMessage:
+                case ReceiveType.ChannelAction:
                 irc.SendMessage(Channel, string.Concat(Nick, ": ", message));
                 return;
-            case ReceiveType.QueryMessage:
-            case ReceiveType.QueryAction:
+                case ReceiveType.QueryMessage:
+                case ReceiveType.QueryAction:
                 irc.SendMessage(Nick, message);
                 return;
-            default:
+                default:
                 throw new InvalidOperationException("Unexpected ReceiveType.");
             }
         }

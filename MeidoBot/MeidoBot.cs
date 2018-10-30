@@ -138,11 +138,11 @@ namespace MeidoBot
             irc.OnConnected += Connected;
             irc.OnInvite += Invited;
 
-            irc.OnChannelMessage += dispatch.OnMessage;
-            irc.OnQueryMessage += dispatch.OnMessage;
+            irc.OnChannelMessage += dispatch.ChannelMessage;
+            irc.OnQueryMessage += dispatch.QueryMessage;
 
-            irc.OnChannelAction += dispatch.OnAction;
-            irc.OnQueryAction += dispatch.OnAction;
+            irc.OnChannelAction += dispatch.ChannelAction;
+            irc.OnQueryAction += dispatch.QueryAction;
 
             irc.OnPart += Part;
             irc.OnKick += Kick;
