@@ -27,7 +27,6 @@
   <ItemGroup>
     <Compile Include="MeidoBot.cs" />
     <Compile Include="IrcComm.cs" />
-    <Compile Include="IrcMessage.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MeidoComm.cs" />
     <Compile Include="MessageTools.cs" />
@@ -48,15 +47,16 @@
     <Compile Include="Authentication\UserAuthManager.cs" />
     <Compile Include="Authentication\UserAuth.cs" />
     <Compile Include="Authentication\AuthDictionary.cs" />
-    <Compile Include="MessageDispatcher.cs" />
     <Compile Include="Plugins\PluginExtensions.cs" />
     <Compile Include="Plugins\PluginManager.cs" />
     <Compile Include="Plugins\MeidoPlugin.cs" />
     <Compile Include="Configuration\WatchConfig.cs" />
     <Compile Include="Admin.cs" />
     <Compile Include="Help.cs" />
-    <Compile Include="Triggers.cs" />
-    <Compile Include="IrcEventHandlers.cs" />
+    <Compile Include="Dispatch\Dispatcher.cs" />
+    <Compile Include="Dispatch\IrcMessage.cs" />
+    <Compile Include="Dispatch\Triggers.cs" />
+    <Compile Include="Dispatch\IrcEventHandlers.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
@@ -78,5 +78,6 @@
     <Folder Include="Logging\" />
     <Folder Include="Authentication\" />
     <Folder Include="Plugins\" />
+    <Folder Include="Dispatch\" />
   </ItemGroup>
 </Project>

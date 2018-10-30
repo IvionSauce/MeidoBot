@@ -7,7 +7,7 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    class MessageDispatcher : IDisposable
+    class Dispatcher : IDisposable
     {
         // Contains nicks to ignore, whether due to abuse or them being other bots.
         public volatile Ignores Ignore;
@@ -25,7 +25,7 @@ namespace MeidoBot
         readonly Dictionary<IIrcHandler, Queue<Action>> eventQueues;
 
 
-        public MessageDispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
+        public Dispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
         {
             irc = ircComm;
             this.triggers = triggers;

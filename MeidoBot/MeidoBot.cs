@@ -29,7 +29,7 @@ namespace MeidoBot
         // running in it.
         readonly MeidoComm meidoComm;
         // Dispatches messages and trigger calls.
-        readonly MessageDispatcher dispatch;
+        readonly Dispatcher dispatch;
 
         // Configuration fields, used for initializing various helper classes and for events.
         readonly MeidoConfig conf;
@@ -62,7 +62,7 @@ namespace MeidoBot
             meidoComm = new MeidoComm(config, logFac, log);
 
             // This must be instantiated before loading plugins and their triggers.
-            dispatch = new MessageDispatcher(
+            dispatch = new Dispatcher(
                 ircComm,
                 triggers,
                 conf.TriggerPrefix
