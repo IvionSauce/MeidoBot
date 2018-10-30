@@ -7,8 +7,22 @@ namespace MeidoBot
 {
     class IrcEventHandlers
     {
+        static readonly HashSet<Type> allowedTypes;
         readonly Dictionary<Type, List<IIrcHandler>> typedHandlers;
 
+
+        static IrcEventHandlers()
+        {
+            allowedTypes = new HashSet<Type> {
+                typeof(IIrcMsg),
+                typeof(IChannelMsg),
+                typeof(IQueryMsg),
+                typeof(IChannelAction),
+                typeof(IQueryAction),
+                typeof(ITriggerMsg)
+            };
+            allowedTypes.TrimExcess();
+        }
 
         public IrcEventHandlers()
         {
@@ -16,10 +30,16 @@ namespace MeidoBot
         }
 
 
-        public void Add(IIrcHandler handler)
+        public bool AddHandler(IIrcHandler handler)
         {
-            var handlerList = Get(handler.IrcEventType);
-            handlerList.Add(handler);
+            if (allowedTypes.Contains(handler.IrcEventType))
+            {
+                var handlerList = Get(handler.IrcEventType);
+                handlerList.Add(handler);
+                return true;
+            }
+
+            return false;
         }
 
         List<IIrcHandler> Get(Type type)
