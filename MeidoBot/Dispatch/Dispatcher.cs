@@ -84,21 +84,8 @@ namespace MeidoBot
             }
         }
 
+
         // --- Dispatching the correct things in the correct way ---
-
-        // • Unique queue: queue per trigger/handler
-        //   [one-to-one]
-
-        // • Shared queue: queue per plugin
-        //   [many-to-one]
-
-        // • Threadpool: Reentrant chaos
-        //   [many-to-many]
-
-        // • Standard/Default: single shared queue for all
-        //   [many-to-one]
-
-        // Only the last 3 are implemented for now.
 
         void DoTrigger(IrcMsg msg)
         {
@@ -136,47 +123,19 @@ namespace MeidoBot
         }
 
 
-        void ThreadingDispatch<T>(
-            TriggerThreading threading,
-            Action queueDelegate,
-            WaitCallback threadpoolDelegate,
-            T id,
-            Dictionary<T, Queue<Action>> map)
-        {
-            switch (threading)
-            {
-                case TriggerThreading.Queue:
-                Queue<Action> queue;
-                if (map.TryGetValue(id, out queue))
-                {
-                    Push(queueDelegate, queue);
-                    break;
-                }
-                goto default;
+        // --- Dispatch threading and queue logic ---
 
-                case TriggerThreading.Threadpool:
-                ThreadPool.QueueUserWorkItem(threadpoolDelegate);
-                break;
+        // • Unique queue: queue per trigger/handler
+        //    [one-to-one]
+        // • Shared queue: queue per plugin
+        //    [many-to-one]
+        // • Threadpool: Reentrant chaos
+        //    [many-to-many]
+        // • Standard/Default: single shared queue for all
+        //    [many-to-one]
+        // Only the last 3 are implemented for now.
 
-                default:
-                Push(queueDelegate, Standard);
-                break;
-            }
-        }
-
-
-        // --- Enqueing, consuming and threading ---
-
-        static void Push(Action action, Queue<Action> q)
-        {
-            lock (q)
-            {
-                q.Enqueue(action);
-                Monitor.Pulse(q);
-            }
-        }
-
-
+        // Process triggers and IRC event handlers declared by the plugin.
         public void ProcessPluginDeclares(MeidoPlugin plugin)
         {
             // Shared queue for all triggers or IRC even handlers declared by the plugin,
@@ -215,6 +174,46 @@ namespace MeidoBot
             // We don't need to do anything for other types of threading.
         }
 
+        // Dispatch the correct delegate to the correct queue (or Threadpool) according to `threading`.
+        void ThreadingDispatch<T>(
+            TriggerThreading threading,
+            Action queueDelegate,
+            WaitCallback threadpoolDelegate,
+            T id,
+            Dictionary<T, Queue<Action>> map)
+        {
+            switch (threading)
+            {
+                case TriggerThreading.Queue:
+                Queue<Action> queue;
+                if (map.TryGetValue(id, out queue))
+                {
+                    Push(queueDelegate, queue);
+                    break;
+                }
+                goto default;
+
+                case TriggerThreading.Threadpool:
+                ThreadPool.QueueUserWorkItem(threadpoolDelegate);
+                break;
+
+                default:
+                Push(queueDelegate, Standard);
+                break;
+            }
+        }
+
+
+        // --- Enqueing, consuming and threading boilerplate ---
+
+        static void Push(Action action, Queue<Action> q)
+        {
+            lock (q)
+            {
+                q.Enqueue(action);
+                Monitor.Pulse(q);
+            }
+        }
 
         static void StartConsumeThread(Queue<Action> queue)
         {
