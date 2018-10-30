@@ -179,7 +179,7 @@ namespace MeidoBot
         }
 
 
-        public void ProcessPluginQueues(MeidoPlugin plugin)
+        public void ProcessPluginDeclares(MeidoPlugin plugin)
         {
             // Shared queue for all triggers or IRC even handlers declared by the plugin,
             // that is if they have opted for ThreadingModel.Queue.
@@ -187,12 +187,13 @@ namespace MeidoBot
 
             foreach (var tr in plugin.Triggers)
             {
-                RegisterThreading(tr.Threading, tr, triggerQueues, ref queue);
+                if (triggers.AddTrigger(tr, plugin))
+                    RegisterThreading(tr.Threading, tr, triggerQueues, ref queue);
             }
             foreach (var handler in plugin.Handlers)
             {
-                ircEvents.Add(handler);
-                RegisterThreading(handler.Threading, handler, eventQueues, ref queue);
+                if (ircEvents.AddHandler(handler))
+                    RegisterThreading(handler.Threading, handler, eventQueues, ref queue);
             }
 
             if (queue != null)

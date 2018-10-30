@@ -103,8 +103,7 @@ namespace MeidoBot
         void LoadPlugins(Triggers triggers)
         {
             plugins = new PluginManager();
-            plugins.PluginLoad += dispatch.ProcessPluginQueues;
-            plugins.PluginLoad += triggers.RegisterTriggers;
+            plugins.PluginLoad += dispatch.ProcessPluginDeclares;
             plugins.PluginLoad += help.RegisterHelp;
 
             // Only load plugins if IO checks succeed.

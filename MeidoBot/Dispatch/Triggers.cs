@@ -22,20 +22,21 @@ namespace MeidoBot
         }
 
 
-        public void RegisterTriggers(MeidoPlugin plugin)
+        public bool AddTrigger(Trigger trigger, MeidoPlugin plugin)
         {
-            // Triggers of a single plugin.
-            foreach (var trig in plugin.Triggers)
+            bool success = false;
+            // Single trigger, but with possible multiple identifiers.
+            foreach (var id in trigger.Identifiers)
             {
-                // Single trigger, but with possible multiple identifiers.
-                foreach (var id in trig.Identifiers)
-                {
-                    RegisterTrigger(id, trig, plugin.Name);
-                }
+                // We consider it a success if even one identifier is successfully registered.
+                if (RegisterTrigger(id, trigger, plugin.Name) && !success)
+                    success = true;
             }
+
+            return success;
         }
 
-        void RegisterTrigger(string identifier, Trigger tr, string pluginName)
+        bool RegisterTrigger(string identifier, Trigger tr, string pluginName)
         {
             switch (identifier)
             {
@@ -45,18 +46,21 @@ namespace MeidoBot
                 case "admin":
                 log.Error("{0}: Tried to register reserved trigger '{1}'",
                           pluginName, identifier);
-
-                return;
+                return false;
             }
 
             if (!triggers.ContainsKey(identifier))
             {
                 log.Verbose("{0}: Registering '{1}'", pluginName, identifier);
                 triggers[identifier] = tr;
+                return true;
             }
             else
+            {
                 log.Error("{0}: Tried to register previously registered trigger '{1}'",
                           pluginName, identifier);
+                return false;
+            }
         }
 
         public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
