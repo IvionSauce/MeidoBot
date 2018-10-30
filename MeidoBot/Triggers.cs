@@ -72,9 +72,9 @@ namespace MeidoBot
         }
 
 
-        public Action<IIrcMessage> Delegate(Trigger tr)
+        public Action Delegate(Trigger tr, IIrcMessage msg)
         {
-            return (msg) => Fire(tr, msg);
+            return () => Fire(tr, msg);
         }
 
         public void Fire(Trigger tr, IIrcMessage msg)

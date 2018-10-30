@@ -17,10 +17,10 @@ namespace MeidoBot
         readonly string triggerPrefix;
 
         // Standard off-thread queue, to keep the main thread clear.
-        readonly Queue<DispatchPackage> Standard;
+        readonly Queue<Action> Standard;
 
         // Queues, either on plugin level or seperate for each trigger.
-        readonly Dictionary<Trigger, Queue<DispatchPackage>> triggerQueues;
+        readonly Dictionary<Trigger, Queue<Action>> triggerQueues;
 
 
         public MessageDispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
@@ -29,10 +29,10 @@ namespace MeidoBot
             this.triggers = triggers;
             this.triggerPrefix = triggerPrefix;
 
-            Standard = new Queue<DispatchPackage>();
+            Standard = new Queue<Action>();
             StartConsumeThread(Standard);
 
-            triggerQueues = new Dictionary<Trigger, Queue<DispatchPackage>>();
+            triggerQueues = new Dictionary<Trigger, Queue<Action>>();
         }
 
 
@@ -89,10 +89,10 @@ namespace MeidoBot
                 switch (trigger.Threading)
                 {
                     case TriggerThreading.Queue:
-                    Queue<DispatchPackage> queue;
+                    Queue<Action> queue;
                     if (triggerQueues.TryGetValue(trigger, out queue))
                     {
-                        Push(msg, triggers.Delegate(trigger), queue);
+                        Push(triggers.Delegate(trigger, msg), queue);
                         break;
                     }
                     goto default;
@@ -102,7 +102,7 @@ namespace MeidoBot
                     break;
 
                     default:
-                    Push(msg, triggers.Delegate(trigger), Standard);
+                    Push(triggers.Delegate(trigger, msg), Standard);
                     break;
                 }
             }
@@ -111,12 +111,16 @@ namespace MeidoBot
 
         // --- Enqueing, consuming and threading ---
 
-        static void Push(IrcMessage msg, Action<IIrcMessage> action, Queue<DispatchPackage> q)
+        static void Push<T>(T ircEvent, Action<T> action, Queue<Action> q)
         {
-            var package = new DispatchPackage(msg, action);
+            Push(() => action(ircEvent), q);
+        }
+
+        static void Push(Action action, Queue<Action> q)
+        {
             lock (q)
             {
-                q.Enqueue(package);
+                q.Enqueue(action);
                 Monitor.Pulse(q);
             }
         }
@@ -126,14 +130,14 @@ namespace MeidoBot
         {
             // Shared queue for all triggers declared by the plugin,
             // that is if they have opted for Threading.Queue.
-            Queue<DispatchPackage> queue = null;
+            Queue<Action> queue = null;
 
             foreach (var tr in plugin.Triggers)
             {
                 if (tr.Threading == TriggerThreading.Queue)
                 {
                     if (queue == null)
-                        queue = new Queue<DispatchPackage>();
+                        queue = new Queue<Action>();
 
                     triggerQueues[tr] = queue;
                 }
@@ -145,7 +149,7 @@ namespace MeidoBot
         }
 
 
-        static void StartConsumeThread(Queue<DispatchPackage> queue)
+        static void StartConsumeThread(Queue<Action> queue)
         {
             var t = new Thread(Consume);
             t.Start(queue);
@@ -153,8 +157,8 @@ namespace MeidoBot
 
         static void Consume(object queueObj)
         {
-            var q = (Queue<DispatchPackage>)queueObj;
-            DispatchPackage pack;
+            var q = (Queue<Action>)queueObj;
+            Action action;
 
             while (true)
             {
@@ -163,11 +167,11 @@ namespace MeidoBot
                     while (q.Count == 0)
                         Monitor.Wait(q);
 
-                    pack = q.Dequeue();
+                    action = q.Dequeue();
                 }
 
-                if (pack != null)
-                    pack.Invoke();
+                if (action != null)
+                    action();
                 else
                     return;
             }
@@ -176,39 +180,11 @@ namespace MeidoBot
 
         public void Dispose()
         {
-            lock (Standard)
-            {
-                Standard.Enqueue(null);
-                Monitor.Pulse(Standard);
-            }
-
+            Push(null, Standard);
             foreach (var queue in triggerQueues.Values)
             {
-                lock (queue)
-                {
-                    queue.Enqueue(null);
-                    Monitor.Pulse(queue);
-                }
+                Push(null, queue);
             }
-        }
-    }
-
-
-    class DispatchPackage
-    {
-        readonly IrcMessage message;
-        readonly Action<IIrcMessage> action;
-
-        public DispatchPackage(IrcMessage msg, Action<IIrcMessage> action)
-        {
-            message = msg;
-            this.action = action;
-        }
-
-
-        public void Invoke()
-        {
-            action(message);
         }
     }
 }
