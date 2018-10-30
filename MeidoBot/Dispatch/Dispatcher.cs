@@ -110,25 +110,12 @@ namespace MeidoBot
             // Enqueue specific trigger call.
             if (triggers.TryGet(msg.Trigger, out trigger))
             {
-                switch (trigger.Threading)
-                {
-                    case TriggerThreading.Queue:
-                    Queue<Action> queue;
-                    if (triggerQueues.TryGetValue(trigger, out queue))
-                    {
-                        Push(triggers.Delegate(trigger, msg), queue);
-                        break;
-                    }
-                    goto default;
-
-                    case TriggerThreading.Threadpool:
-                    ThreadPool.QueueUserWorkItem( (cb) => triggers.Fire(trigger, msg) );
-                    break;
-
-                    default:
-                    Push(triggers.Delegate(trigger, msg), Standard);
-                    break;
-                }
+                ThreadingDispatch(
+                    trigger.Threading,
+                    triggers.Delegate(trigger, msg),
+                    (cb) => triggers.Fire(trigger, msg),
+                    trigger, triggerQueues
+                );
             }
             // Enqueue general trigger event.
             DoHandlers<ITriggerMsg>(msg);
@@ -139,35 +126,46 @@ namespace MeidoBot
             // Enqueue IRC handlers for raised event type.
             foreach (var handler in ircEvents.Handlers<T>())
             {
-                switch (handler.Threading)
+                ThreadingDispatch(
+                    handler.Threading,
+                    () => handler.Invoke(ircEvent),
+                    (cb) => handler.Invoke(ircEvent),
+                    handler, eventQueues
+                );
+            }
+        }
+
+
+        void ThreadingDispatch<T>(
+            TriggerThreading threading,
+            Action queueDelegate,
+            WaitCallback threadpoolDelegate,
+            T id,
+            Dictionary<T, Queue<Action>> map)
+        {
+            switch (threading)
+            {
+                case TriggerThreading.Queue:
+                Queue<Action> queue;
+                if (map.TryGetValue(id, out queue))
                 {
-                    case TriggerThreading.Queue:
-                    Queue<Action> queue;
-                    if (eventQueues.TryGetValue(handler, out queue))
-                    {
-                        Push(ircEvent, handler, queue);
-                        break;
-                    }
-                    goto default;
-
-                    case TriggerThreading.Threadpool:
-                    ThreadPool.QueueUserWorkItem( (cb) => handler.Invoke(ircEvent) );
-                    break;
-
-                    default:
-                    Push(ircEvent, handler, Standard);
+                    Push(queueDelegate, queue);
                     break;
                 }
+                goto default;
+
+                case TriggerThreading.Threadpool:
+                ThreadPool.QueueUserWorkItem(threadpoolDelegate);
+                break;
+
+                default:
+                Push(queueDelegate, Standard);
+                break;
             }
         }
 
 
         // --- Enqueing, consuming and threading ---
-
-        static void Push(object ircEvent, IIrcHandler handler, Queue<Action> q)
-        {
-            Push(() => handler.Invoke(ircEvent), q);
-        }
 
         static void Push(Action action, Queue<Action> q)
         {
