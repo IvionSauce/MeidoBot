@@ -61,12 +61,6 @@ namespace MeidoCommon
     {
         string Nickname { get; }
 
-        void AddChannelMessageHandler(Action<IIrcMessage> handler);
-        void AddChannelActionHandler(Action<IIrcMessage> handler);
-
-        void AddQueryMessageHandler(Action<IIrcMessage> handler);
-        void AddQueryActionHandler(Action<IIrcMessage> handler);
-
         void SendMessage(string target, string message);
         void SendMessage(string target, string message, params object[] args);
 

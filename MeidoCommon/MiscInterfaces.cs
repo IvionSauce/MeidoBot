@@ -17,6 +17,11 @@ namespace MeidoCommon
         void Stop();
     }
 
+    public interface IPluginIrcHandlers
+    {
+        IEnumerable<IIrcHandler> IrcHandlers { get; }
+    }
+
 
     public interface ILog
     {
