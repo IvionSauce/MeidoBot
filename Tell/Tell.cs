@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcTell : IMeidoHook
+public class IrcTell : IMeidoHook, IPluginIrcHandlers
 {
     public string Name
     {
@@ -34,6 +34,7 @@ public class IrcTell : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+    public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
 
 
     readonly IIrcComm irc;
@@ -48,12 +49,15 @@ public class IrcTell : IMeidoHook
         this.irc = irc;
         inboxes = new Inboxes(meido.DataDir);
 
-        irc.AddChannelMessageHandler(MessageHandler);
         var t = TriggerThreading.Queue;
         Triggers = new Trigger[] {
             new Trigger("tell", Tell, t),
             new Trigger("tell-read", Read, t),
             new Trigger("tell-clear", Clear, t)
+        };
+
+        IrcHandlers = new IIrcHandler[] {
+            new IrcHandler<IChannelMsg>(MessageHandler, t)
         };
     }
 
@@ -143,7 +147,7 @@ public class IrcTell : IMeidoHook
     }
 
 
-    public void MessageHandler(IIrcMessage e)
+    public void MessageHandler(IChannelMsg e)
     {
         var inbox = inboxes.Get(e.Nick);
         if (inbox.NewMessages)
