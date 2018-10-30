@@ -49,6 +49,7 @@ namespace MeidoBot
             {
                 DoTrigger(msg);
                 DoHandlers<IChannelMsg>(msg);
+                DoHandlers<IIrcMsg>(msg);
             }
         }
 
@@ -59,42 +60,54 @@ namespace MeidoBot
             {
                 DoTrigger(msg);
                 DoHandlers<IQueryMsg>(msg);
+                DoHandlers<IIrcMsg>(msg);
             }
         }
 
         public void ChannelAction(object sender, ActionEventArgs e)
         {
-            IChannelAction msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
             if (!Ignore.Contains(msg.Nick))
-                DoHandlers(msg);
+            {
+                DoHandlers<IChannelAction>(msg);
+                DoHandlers<IIrcMsg>(msg);
+            }
         }
 
         public void QueryAction(object sender, ActionEventArgs e)
         {
-            IQueryAction msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
             if (!Ignore.Contains(msg.Nick))
-                DoHandlers(msg);
+            {
+                DoHandlers<IQueryAction>(msg);
+                DoHandlers<IIrcMsg>(msg);
+            }
         }
 
         // --- Dispatching the correct things in the correct way ---
 
         // • Unique queue: queue per trigger/handler
-        //    [one-to-one]
+        //   [one-to-one]
 
         // • Shared queue: queue per plugin
-        //    [many-to-one]
+        //   [many-to-one]
 
         // • Threadpool: Reentrant chaos
-        //    [many-to-many]
+        //   [many-to-many]
 
         // • Standard/Default: single shared queue for all
-        //    [many-to-one]
+        //   [many-to-one]
 
         // Only the last 3 are implemented for now.
 
         void DoTrigger(IrcMsg msg)
         {
+            // Return early if there's nothing to do.
+            if (string.IsNullOrEmpty(msg.Trigger))
+                return;
+            
             Trigger trigger;
+            // Enqueue specific trigger call.
             if (triggers.TryGet(msg.Trigger, out trigger))
             {
                 switch (trigger.Threading)
@@ -117,10 +130,13 @@ namespace MeidoBot
                     break;
                 }
             }
+            // Enqueue general trigger event.
+            DoHandlers<ITriggerMsg>(msg);
         }
 
         void DoHandlers<T>(T ircEvent)
         {
+            // Enqueue IRC handlers for raised event type.
             foreach (var handler in ircEvents.Handlers<T>())
             {
                 switch (handler.Threading)
