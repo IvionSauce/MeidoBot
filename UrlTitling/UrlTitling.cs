@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class UrlTitler : IMeidoHook
+public class UrlTitler : IMeidoHook, IPluginIrcHandlers
 {
     public string Name
     {
@@ -38,6 +38,7 @@ public class UrlTitler : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+    public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
 
 
     readonly IMeidoComm meido;
@@ -75,8 +76,9 @@ public class UrlTitler : IMeidoHook
         meido.LoadAndWatchConfig("whitelist", WrappedIO(LoadWhitelist));
 
         // For handling messages/actions that can potentially containg URL(s).
-        irc.AddChannelMessageHandler(UrlHandler);
-        irc.AddChannelActionHandler(UrlHandler);
+        IrcHandlers = new IIrcHandler[] {
+            new IrcHandler<IIrcMsg>(UrlHandler)
+        };
 
         // Trigger handling.
         Triggers = new Trigger[] {
@@ -133,7 +135,7 @@ public class UrlTitler : IMeidoHook
     }
 
 
-    public void UrlHandler(IIrcMessage e)
+    public void UrlHandler(IIrcMsg e)
     {
         // Only process messages that aren't a trigger call.
         if (e.Trigger == null)

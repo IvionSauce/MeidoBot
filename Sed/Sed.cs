@@ -5,7 +5,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcSed : IMeidoHook
+public class IrcSed : IMeidoHook, IPluginIrcHandlers
 {
     public string Name
     {
@@ -33,6 +33,7 @@ public class IrcSed : IMeidoHook
     {
         get { return new Trigger[0]; }
     }
+    public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
 
 
     readonly IIrcComm irc;
@@ -45,12 +46,14 @@ public class IrcSed : IMeidoHook
     [ImportingConstructor]
     public IrcSed (IIrcComm irc, IMeidoComm meido)
     {
-        irc.AddChannelMessageHandler(HandleMessage);
         this.irc = irc;
+        IrcHandlers = new IIrcHandler[] {
+            new IrcHandler<IChannelMsg>(HandleMessage)
+        };
     }
 
 
-    public void HandleMessage(IIrcMessage e)
+    public void HandleMessage(IChannelMsg e)
     {
         var replace = new ReplaceAction(e.Message);
         if (replace.ParseSuccess)

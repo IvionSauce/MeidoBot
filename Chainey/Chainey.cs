@@ -9,7 +9,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class IrcChainey : IMeidoHook
+public class IrcChainey : IMeidoHook, IPluginIrcHandlers
 {
     public string Name
     {
@@ -29,6 +29,7 @@ public class IrcChainey : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+    public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
 
 
     readonly IIrcComm irc;
@@ -41,7 +42,7 @@ public class IrcChainey : IMeidoHook
     readonly Config conf = new Config();
 
     // Housekeeping for producer-consumer queue.
-    readonly Queue<IIrcMessage> MessageQueue = new Queue<IIrcMessage>();
+    readonly Queue<IChannelMsg> MessageQueue = new Queue<IChannelMsg>();
     readonly object _locker = new object();
 
     const string nickPlaceholder = "||NICK||";
@@ -73,11 +74,14 @@ public class IrcChainey : IMeidoHook
             new Thread(Consume).Start();
 
         irc = ircComm;
-        irc.AddChannelMessageHandler(Handler);
 
         Triggers = new Trigger[] {
             new Trigger("markov", Markov),
             new Trigger("remove", Remove)
+        };
+
+        IrcHandlers = new IIrcHandler[] {
+            new IrcHandler<IChannelMsg>(Handler)
         };
     }
 
@@ -86,7 +90,7 @@ public class IrcChainey : IMeidoHook
     // Boilerplate for the threaded handling of messages.
     // --------------------------------------------------
 
-    void Handler(IIrcMessage e)
+    void Handler(IChannelMsg e)
     {
         if (e.Trigger == null)
         {
@@ -100,7 +104,7 @@ public class IrcChainey : IMeidoHook
 
     void Consume()
     {
-        IIrcMessage message;
+        IChannelMsg message;
         while (true)
         {
             lock (_locker)
@@ -169,7 +173,7 @@ public class IrcChainey : IMeidoHook
     // Handling of messages (learning and replying).
     // ---------------------------------------------
 
-    void ThreadedHandler(IIrcMessage e)
+    void ThreadedHandler(IChannelMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
         if (msg.Length == 0)

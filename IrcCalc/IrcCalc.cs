@@ -5,7 +5,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class Calc : IMeidoHook
+public class Calc : IMeidoHook, IPluginIrcHandlers
 {
     public string Name
     {
@@ -29,6 +29,7 @@ public class Calc : IMeidoHook
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
+    public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
 
 
     CalcEnvironment CalcEnv = new CalcEnvironment();
@@ -40,13 +41,15 @@ public class Calc : IMeidoHook
     [ImportingConstructor]
     public Calc(IIrcComm irc, IMeidoComm meido)
     {
-        irc.AddQueryMessageHandler(HandleMessage);
-
         Triggers = new Trigger[] {
             new Trigger("calc", HandleTrigger),
             new Trigger("c", HandleTrigger),
             new Trigger("defvar", DefVar),
             new Trigger("var", DefVar)
+        };
+
+        IrcHandlers = new IIrcHandler[] {
+            new IrcHandler<IQueryMsg>(HandleMessage)
         };
     }
 
@@ -69,7 +72,7 @@ public class Calc : IMeidoHook
     }
 
 
-    void HandleMessage(IIrcMessage e)
+    void HandleMessage(IQueryMsg e)
     {
         var expr = VerifiedExpression.Parse(e.Message, CalcEnv);
         // Only automatically calculate if the expression is legitimate and if it's reasonable to assume it's meant
