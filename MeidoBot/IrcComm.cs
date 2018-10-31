@@ -16,12 +16,6 @@ namespace MeidoBot
         }
 
 
-        public Action<IIrcMessage> ChannelMessageHandlers { get; private set; }
-        public Action<IIrcMessage> ChannelActionHandlers { get; private set; }
-
-        public Action<IIrcMessage> QueryMessageHandlers { get; private set; }
-        public Action<IIrcMessage> QueryActionHandlers { get; private set; }
-
         readonly IrcClient irc;
         readonly ThrottleManager throttle;
         readonly IChatlogger chatLog;
@@ -34,26 +28,7 @@ namespace MeidoBot
             this.chatLog = chatLog;
         }
 
-        
-        public void AddChannelMessageHandler(Action<IIrcMessage> handler)
-        {
-            ChannelMessageHandlers += handler;
-        }
-        public void AddChannelActionHandler(Action<IIrcMessage> handler)
-        {
-            ChannelActionHandlers += handler;
-        }
 
-        public void AddQueryMessageHandler(Action<IIrcMessage> handler)
-        {
-            QueryMessageHandlers += handler;
-        }
-        public void AddQueryActionHandler(Action<IIrcMessage> handler)
-        {
-            QueryActionHandlers += handler;
-        }
-        
-        
         public void SendMessage(string target, string message, params object[] args)
         {
             SendMessage( target, string.Format(message, args) );

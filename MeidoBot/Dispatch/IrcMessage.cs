@@ -6,7 +6,7 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    class IrcMsg : IQueryMsg, IChannelMsg, ITriggerMsg, IQueryAction, IChannelAction, IIrcMessage
+    class IrcMsg : IQueryMsg, IChannelMsg, ITriggerMsg, IQueryAction, IChannelAction
     {
         // Identical to the IrcMessageData properties.
         public string Message { get; private set; }
