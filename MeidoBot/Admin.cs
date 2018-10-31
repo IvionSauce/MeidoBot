@@ -20,7 +20,7 @@ namespace MeidoBot
         }
 
 
-        public void AdminTrigger(IIrcMessage msg)
+        public void AdminTrigger(ITriggerMsg msg)
         {
             if (meidoComm.AuthLevel(msg.Nick) >= 2)
             {
@@ -90,7 +90,7 @@ namespace MeidoBot
         }
 
 
-        public void AuthTrigger(IIrcMessage msg)
+        public void AuthTrigger(ITriggerMsg msg)
         {
             if (msg.MessageArray.Length > 1)
             {

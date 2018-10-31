@@ -21,13 +21,13 @@ namespace MeidoBot
 
 
         // Returns true if trigger calls are allowed. Returns false otherwise.
-        public bool AllowTriggers(IIrcMessage msg)
+        public bool AllowTriggers(ITriggerMsg msg)
         {
             return !Triggers(msg);
         }
 
         // Returns true if trigger calls should be throttled. Returns false otherwise.
-        public bool Triggers(IIrcMessage msg)
+        public bool Triggers(ITriggerMsg msg)
         {
             var entry = GetOrAdd(msg.ReturnTo);
             ThrottleInfo info;
@@ -59,7 +59,7 @@ namespace MeidoBot
             return false;
         }
 
-        static bool ThrottleActive(IIrcMessage msg, SourceEntry entry)
+        static bool ThrottleActive(ITriggerMsg msg, SourceEntry entry)
         {
             if (entry.Triggers.ThrottleActive)
             {

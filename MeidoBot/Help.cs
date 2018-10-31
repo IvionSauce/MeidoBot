@@ -27,7 +27,7 @@ namespace MeidoBot
         }
 
 
-        public void Trigger(IIrcMessage msg)
+        public void Trigger(ITriggerMsg msg)
         {
             string subject = null;
             if (msg.MessageArray.Length > 1)

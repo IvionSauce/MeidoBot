@@ -63,7 +63,7 @@ namespace MeidoBot
             }
         }
 
-        public void SpecialTrigger(string identifier, Action<IIrcMessage> callback)
+        public void SpecialTrigger(string identifier, Action<ITriggerMsg> callback)
         {
             log.Verbose("Meido: Registering '{0}'", identifier);
             triggers[identifier] = new Trigger(identifier, callback);
@@ -76,12 +76,12 @@ namespace MeidoBot
         }
 
 
-        public Action Delegate(Trigger tr, IIrcMessage msg)
+        public Action Delegate(Trigger tr, ITriggerMsg msg)
         {
             return () => Fire(tr, msg);
         }
 
-        public void Fire(Trigger tr, IIrcMessage msg)
+        public void Fire(Trigger tr, ITriggerMsg msg)
         {
             string source = msg.Nick;
             if (msg.Channel != null)
@@ -93,7 +93,7 @@ namespace MeidoBot
                 tr.Call(msg);
         }
 
-        bool FirePredicate(IIrcMessage msg, TriggerOption opt)
+        bool FirePredicate(ITriggerMsg msg, TriggerOption opt)
         {
             bool fire = true;
             switch (opt)
