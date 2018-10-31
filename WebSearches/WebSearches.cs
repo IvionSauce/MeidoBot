@@ -56,48 +56,48 @@ public class WebSearches : IMeidoHook
     }
 
 
-    void GoogleSearch(IIrcMessage e)
+    void GoogleSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.None);
     }
 
-    void YtSearch(IIrcMessage e)
+    void YtSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.YouTube);
     }
 
-    void WikiSearch(IIrcMessage e)
+    void WikiSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.Wikipedia);
     }
 
-    void MalSearch(IIrcMessage e)
+    void MalSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.MyAnimeList);
     }
 
-    void AnidbSearch(IIrcMessage e)
+    void AnidbSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.AniDb);
     }
 
-    void MuSearch(IIrcMessage e)
+    void MuSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.MangaUpdates);
     }
 
-    void VndbSearch(IIrcMessage e)
+    void VndbSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.VnDb);
     }
 
-    void SteamSearch(IIrcMessage e)
+    void SteamSearch(ITriggerMsg e)
     {
         ExecuteSearch(e, Site.Steam);
     }
 
 
-    void ExecuteSearch(IIrcMessage e, Site site)
+    void ExecuteSearch(ITriggerMsg e, Site site)
     {
         if (e.MessageArray.Length > 1)
         {

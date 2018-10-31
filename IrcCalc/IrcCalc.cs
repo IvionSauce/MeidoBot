@@ -54,7 +54,7 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    void HandleTrigger(IIrcMessage e)
+    void HandleTrigger(ITriggerMsg e)
     {
         if (e.MessageArray.Length > 1)
         {
@@ -87,7 +87,7 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    static void OutputError<T>(IIrcMessage e, GenericExpression<T> expr)
+    static void OutputError<T>(ITriggerMsg e, GenericExpression<T> expr)
     {
         string error = expr.ErrorMessage;
         if (expr.ErrorPosition >= 0)
@@ -97,7 +97,7 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    void DefVar(IIrcMessage e)
+    void DefVar(ITriggerMsg e)
     {
         string symbol;
         string expression;
@@ -120,7 +120,7 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
         }
     }
 
-    static bool CheckPreconditions(IIrcMessage e, VerifiedExpression expr, string symbol)
+    static bool CheckPreconditions(ITriggerMsg e, VerifiedExpression expr, string symbol)
     {
         if (!expr.Success)
         {

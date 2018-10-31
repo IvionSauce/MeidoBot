@@ -16,7 +16,7 @@ class QueryTriggers
     }
 
 
-    public void Query(IIrcMessage msg, bool debug)
+    public void Query(ITriggerMsg msg, bool debug)
     {
         WebToIrc wIrc;
         if (msg.Channel != null)
@@ -45,7 +45,7 @@ class QueryTriggers
     }
 
 
-    public static void Dump(IIrcMessage msg)
+    public static void Dump(ITriggerMsg msg)
     {
         for (int i = 1; i < msg.MessageArray.Length; i++)
         {

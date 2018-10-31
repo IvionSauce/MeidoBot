@@ -62,7 +62,7 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    public void Tell(IIrcMessage e)
+    public void Tell(ITriggerMsg e)
     {
         // tell <nick> <message>
         string destinationNick, message;
@@ -100,7 +100,7 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    public void Read(IIrcMessage e)
+    public void Read(ITriggerMsg e)
     {
         // tell-read [amount]
         var inbox = inboxes.Get(e.Nick);
@@ -134,7 +134,7 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    public void Clear(IIrcMessage e)
+    public void Clear(ITriggerMsg e)
     {
         var inbox = inboxes.Get(e.Nick);
         int count = inbox.MessagesCount;

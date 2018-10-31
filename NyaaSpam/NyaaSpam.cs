@@ -121,7 +121,7 @@ public class NyaaSpam : IMeidoHook
     }
 
 
-    public void Nyaa(IIrcMessage e)
+    public void Nyaa(ITriggerMsg e)
     {
         // Some early return conditions.
         if (conf.Feed == null)

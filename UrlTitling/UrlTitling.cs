@@ -143,20 +143,20 @@ public class UrlTitler : IMeidoHook, IPluginIrcHandlers
     }
 
 
-    public void Disable(IIrcMessage e)
+    public void Disable(ITriggerMsg e)
     {
         manager.DisableNick(e.Channel, e.Nick);
         e.SendNotice("Disabling URL-Titling for you. (In {0})", e.Channel);
     }
 
-    public void Enable(IIrcMessage e)
+    public void Enable(ITriggerMsg e)
     {
         if ( manager.EnableNick(e.Channel, e.Nick) )
             e.SendNotice("Re-enabling URL-Titling for you.");
     }
 
 
-    public void Dump(IIrcMessage e)
+    public void Dump(ITriggerMsg e)
     {
         // Only allow owner to dump (writing temp files).
         if (meido.AuthLevel(e.Nick) == 3)

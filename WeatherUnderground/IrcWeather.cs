@@ -101,7 +101,7 @@ public class IrcWeather : IMeidoHook
 
     // --- Weather Search, 'w' trigger ---
 
-    void WeatherSearch(IIrcMessage e)
+    void WeatherSearch(ITriggerMsg e)
     {
         var location = GetLocation(e);
 
@@ -116,7 +116,7 @@ public class IrcWeather : IMeidoHook
         }
     }
 
-    void WeatherSearch(IIrcMessage e, string location)
+    void WeatherSearch(ITriggerMsg e, string location)
     {
         WeatherConditions cond;
         if (TryGetConditions(location, out cond))
@@ -133,7 +133,7 @@ public class IrcWeather : IMeidoHook
 
     // --- Helper functions for WeatherSearch ---
 
-    string GetLocation(IIrcMessage e)
+    string GetLocation(ITriggerMsg e)
     {
         string location;
         if (e.MessageArray.Length > 1)
@@ -197,7 +197,7 @@ public class IrcWeather : IMeidoHook
 
     // --- Set Weather Location, 'W' trigger ---
 
-    void SetWeatherLocation(IIrcMessage e)
+    void SetWeatherLocation(ITriggerMsg e)
     {
         if (e.MessageArray.Length > 1)
         {

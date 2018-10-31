@@ -63,7 +63,7 @@ public class MiscUtils : IMeidoHook
     // Timer trigger.
     // --------------
 
-    void Timer(IIrcMessage e)
+    void Timer(ITriggerMsg e)
     {
         var timers = ircTimers.GetTimers(e.Nick);
 
@@ -110,7 +110,7 @@ public class MiscUtils : IMeidoHook
             TimerStart(e, timers);
     }
 
-    static void TimerStart(IIrcMessage e, Timers timers)
+    static void TimerStart(ITriggerMsg e, Timers timers)
     {
         // Return if invalid or negative duration.
         var duration = IrcTimers.Parse(e.MessageArray[1]);
@@ -129,7 +129,7 @@ public class MiscUtils : IMeidoHook
             e.Reply("Max timer count reached. Please wait for some timers to finish or stop them manually.");
     }
 
-    static void TimerChange(int index, TimeSpan delta, IIrcMessage e, Timers timers)
+    static void TimerChange(int index, TimeSpan delta, ITriggerMsg e, Timers timers)
     {
         // Return if invalid or 0 delta.
         if (delta == TimeSpan.Zero)
@@ -149,7 +149,7 @@ public class MiscUtils : IMeidoHook
             e.Reply("No such timer.");
     }
 
-    static void TimerStop(IIrcMessage e, Timers timers)
+    static void TimerStop(ITriggerMsg e, Timers timers)
     {
         // Stop all timers.
         if (e.MessageArray.Length == 2)
@@ -177,14 +177,14 @@ public class MiscUtils : IMeidoHook
     }
 
 
-    static void EmitDescriptions(TimerDescription[] descs, IIrcMessage msg)
+    static void EmitDescriptions(TimerDescription[] descs, ITriggerMsg msg)
     {
         foreach (var desc in descs)
             EmitDescription(desc, msg);
         msg.SendNotice(" -----");
     }
 
-    static void EmitDescription(TimerDescription desc, IIrcMessage msg)
+    static void EmitDescription(TimerDescription desc, ITriggerMsg msg)
     {
         msg.SendNotice("[{0}] {1} :: {2} ({3})",
             desc.Index, desc.Message, desc.Duration.Str(), desc.Remaining.Str());
@@ -195,13 +195,13 @@ public class MiscUtils : IMeidoHook
     // Say trigger.
     // ------------
 
-    void Say(IIrcMessage e)
+    void Say(ITriggerMsg e)
     {
         string channel = null;
         string message = null;
         // say [channel] <message>
         // Send message to specified channel.
-        if ( e.MessageArray.Length > 2 && e.MessageArray[1].StartsWith("#") )
+        if ( e.MessageArray.Length > 2 && e.MessageArray[1].StartsWith("#", StringComparison.Ordinal) )
         {
             channel = e.MessageArray[1];
             message = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);

@@ -76,7 +76,7 @@ public class TimeLeft : IMeidoHook
         };
     }
     
-    public void HandleTrigger(IIrcMessage e)
+    public void HandleTrigger(ITriggerMsg e)
     {
         // timeleft
         if (e.MessageArray.Length == 1)

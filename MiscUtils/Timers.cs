@@ -55,7 +55,7 @@ class Timers
     }
 
 
-    public int Enqueue(TimeSpan duration, IIrcMessage msg, string message)
+    public int Enqueue(TimeSpan duration, ITriggerMsg msg, string message)
     {
         lock (_locker)
         {
@@ -195,10 +195,10 @@ class SingleTimer : IDisposable
     public DateTimeOffset StopTime { get; private set; }
 
     readonly Timer tmr;
-    readonly IIrcMessage msg;
+    readonly ITriggerMsg msg;
 
 
-    public SingleTimer(int index, Action<int> remove, IIrcMessage msg)
+    public SingleTimer(int index, Action<int> remove, ITriggerMsg msg)
     {
         Index = index;
         Remove = remove;

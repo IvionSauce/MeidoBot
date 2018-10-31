@@ -75,7 +75,7 @@ public class IrcRandom : IMeidoHook
     }
 
 
-    void Choose(IIrcMessage e)
+    void Choose(ITriggerMsg e)
     {
         string choice = RandomChoice.RndChoice(e.MessageArray);
         if (choice != null)
@@ -83,7 +83,7 @@ public class IrcRandom : IMeidoHook
     }
 
 
-    void Countdown(IIrcMessage e)
+    void Countdown(ITriggerMsg e)
     {
         const int maxCountdownSec = 10;
         const int minCountdownSec = 3;
@@ -115,7 +115,7 @@ public class IrcRandom : IMeidoHook
     }
 
 
-    void EightBall(IIrcMessage e)
+    void EightBall(ITriggerMsg e)
     {
         string choice = RandomChoice.Shake8Ball();
 

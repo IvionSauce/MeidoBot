@@ -126,7 +126,7 @@ public class IrcChainey : IMeidoHook, IPluginIrcHandlers
     // Chainey triggers.
     // -----------------
 
-    public void Remove(IIrcMessage e)
+    void Remove(ITriggerMsg e)
     {
         if (meido.AuthLevel(e.Nick) >= 2)
         {
@@ -136,7 +136,7 @@ public class IrcChainey : IMeidoHook, IPluginIrcHandlers
         }
     }
 
-    void Markov(IIrcMessage e)
+    void Markov(ITriggerMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
