@@ -7,17 +7,18 @@ namespace MeidoBot
 {
     class Triggers
     {
-        readonly Dictionary<string, Trigger> triggers;
+        public readonly string Prefix;
 
+        readonly Dictionary<string, Trigger> triggers;
         readonly ThrottleManager throttle;
         readonly Logger log;
 
 
-        public Triggers(ThrottleManager tManager, Logger log)
+        public Triggers(string triggerPrefix, ThrottleManager tManager, Logger log)
         {
+            Prefix = triggerPrefix;
             throttle = tManager;
             this.log = log;
-
             triggers = new Dictionary<string, Trigger>(StringComparer.Ordinal);
         }
 

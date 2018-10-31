@@ -15,7 +15,10 @@ namespace MeidoBot
         readonly IrcComm irc;
         readonly Triggers triggers;
         readonly IrcEventHandlers ircEvents;
-        readonly string triggerPrefix;
+        string triggerPrefix
+        {
+            get { return triggers.Prefix; }
+        }
 
         // Standard off-thread queue, to keep the main thread clear.
         readonly Queue<Action> Standard;
@@ -25,16 +28,11 @@ namespace MeidoBot
         readonly Dictionary<IIrcHandler, Queue<Action>> eventQueues;
 
 
-        public Dispatcher(
-            IrcComm ircComm,
-            Triggers triggers,
-            IrcEventHandlers ircHandlers,
-            string triggerPrefix)
+        public Dispatcher(IrcComm ircComm, Triggers triggers, IrcEventHandlers ircHandlers)
         {
             irc = ircComm;
             this.triggers = triggers;
             ircEvents = ircHandlers;
-            this.triggerPrefix = triggerPrefix;
 
             Standard = new Queue<Action>();
             StartConsumeThread(Standard);

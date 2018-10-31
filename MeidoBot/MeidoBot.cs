@@ -56,17 +56,21 @@ namespace MeidoBot
             // Setup chatlogger and underlying LogWriter.
             logWriter = new LogWriter();
             var chatLog = SetupChatlog();
-            ircComm = new IrcComm(irc, tManager, chatLog);
 
-            var triggers = new Triggers(tManager, logFac.CreateLogger("Triggers"));
+            ircComm = new IrcComm(irc, tManager, chatLog);
             meidoComm = new MeidoComm(config, logFac, log);
+
+            var triggers = new Triggers(
+                config.TriggerPrefix,
+                tManager,
+                logFac.CreateLogger("Triggers")
+            );
 
             // This must be instantiated before loading plugins and their triggers.
             dispatch = new Dispatcher(
                 ircComm,
                 triggers,
-                new IrcEventHandlers(log),
-                conf.TriggerPrefix
+                new IrcEventHandlers(log)
             );
             // Setup autoloading of ignores.
             meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
