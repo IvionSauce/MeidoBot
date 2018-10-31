@@ -9,6 +9,7 @@ namespace MeidoBot
     {
         static readonly HashSet<Type> allowedTypes;
         readonly Dictionary<Type, List<IIrcHandler>> typedHandlers;
+        readonly Logger log;
 
 
         static IrcEventHandlers()
@@ -24,21 +25,27 @@ namespace MeidoBot
             allowedTypes.TrimExcess();
         }
 
-        public IrcEventHandlers()
+        public IrcEventHandlers(Logger log)
         {
             typedHandlers = new Dictionary<Type, List<IIrcHandler>>();
+            this.log = log;
         }
 
 
-        public bool AddHandler(IIrcHandler handler)
+        public bool AddHandler(IIrcHandler handler, MeidoPlugin plugin)
         {
             if (allowedTypes.Contains(handler.IrcEventType))
             {
+                log.Verbose("{0}: Adding IrcHandler for type '{1}'");
+
                 var handlerList = Get(handler.IrcEventType);
                 handlerList.Add(handler);
                 return true;
             }
 
+            log.Error("{0}: Declared an IrcHandler with unsupported type '{1}'. " +
+                      "The method for this type will never be called.",
+                      plugin.Name, handler.IrcEventType);
             return false;
         }
 

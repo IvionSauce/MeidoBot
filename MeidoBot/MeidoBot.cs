@@ -65,6 +65,7 @@ namespace MeidoBot
             dispatch = new Dispatcher(
                 ircComm,
                 triggers,
+                new IrcEventHandlers(log),
                 conf.TriggerPrefix
             );
             // Setup autoloading of ignores.

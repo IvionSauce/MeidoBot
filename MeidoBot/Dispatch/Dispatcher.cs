@@ -25,11 +25,15 @@ namespace MeidoBot
         readonly Dictionary<IIrcHandler, Queue<Action>> eventQueues;
 
 
-        public Dispatcher(IrcComm ircComm, Triggers triggers, string triggerPrefix)
+        public Dispatcher(
+            IrcComm ircComm,
+            Triggers triggers,
+            IrcEventHandlers ircHandlers,
+            string triggerPrefix)
         {
             irc = ircComm;
             this.triggers = triggers;
-            ircEvents = new IrcEventHandlers();
+            ircEvents = ircHandlers;
             this.triggerPrefix = triggerPrefix;
 
             Standard = new Queue<Action>();
@@ -149,7 +153,7 @@ namespace MeidoBot
             }
             foreach (var handler in plugin.Handlers)
             {
-                if (ircEvents.AddHandler(handler))
+                if (ircEvents.AddHandler(handler, plugin))
                     RegisterThreading(handler.Threading, handler, eventQueues, ref queue);
             }
 
