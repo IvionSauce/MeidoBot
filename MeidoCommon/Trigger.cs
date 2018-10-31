@@ -22,7 +22,7 @@ namespace MeidoCommon
     public class Trigger
     {
         public readonly ReadOnlyCollection<string> Identifiers;
-        public readonly Action<IIrcMessage> Call;
+        public readonly Action<ITriggerMsg> Call;
         public readonly TriggerOption Option;
         public readonly TriggerThreading Threading;
 
@@ -34,18 +34,18 @@ namespace MeidoCommon
 
         // --- Single identifier constructors ---
 
-        public Trigger(string identifier, Action<IIrcMessage> call) :
+        public Trigger(string identifier, Action<ITriggerMsg> call) :
         this(identifier, call, TriggerOption.None, TriggerThreading.Default) {}
 
-        public Trigger(string identifier, Action<IIrcMessage> call, TriggerOption opt) :
+        public Trigger(string identifier, Action<ITriggerMsg> call, TriggerOption opt) :
         this(identifier, call, opt, TriggerThreading.Default) {}
 
-        public Trigger(string identifier, Action<IIrcMessage> call, TriggerThreading threading) :
+        public Trigger(string identifier, Action<ITriggerMsg> call, TriggerThreading threading) :
         this(identifier, call, TriggerOption.None, threading) {}
 
         public Trigger(
             string identifier,
-            Action<IIrcMessage> call,
+            Action<ITriggerMsg> call,
             TriggerOption opt,
             TriggerThreading threading)
         {
@@ -67,17 +67,17 @@ namespace MeidoCommon
 
         // --- Multiple identifiers constructors ---
 
-        public Trigger(Action<IIrcMessage> call, params string[] identifiers) :
+        public Trigger(Action<ITriggerMsg> call, params string[] identifiers) :
         this(call, TriggerOption.None, TriggerThreading.Default, identifiers) {}
 
-        public Trigger(Action<IIrcMessage> call, TriggerOption opt, params string[] identifiers) :
+        public Trigger(Action<ITriggerMsg> call, TriggerOption opt, params string[] identifiers) :
         this(call, opt, TriggerThreading.Default, identifiers) {}
 
-        public Trigger(Action<IIrcMessage> call, TriggerThreading threading, params string[] identifiers) :
+        public Trigger(Action<ITriggerMsg> call, TriggerThreading threading, params string[] identifiers) :
         this(call, TriggerOption.None, threading, identifiers) {}
 
         public Trigger(
-            Action<IIrcMessage> call,
+            Action<ITriggerMsg> call,
             TriggerOption opt,
             TriggerThreading threading,
             params string[] identifiers)
