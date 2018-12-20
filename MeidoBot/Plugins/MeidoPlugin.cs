@@ -16,8 +16,13 @@ namespace MeidoBot
         {
             Name = plugin.Name();
             Help = plugin.Help();
-            Triggers = plugin.Triggers();
-            Handlers = new IIrcHandler[0];
+            Triggers = plugin.Triggers.NoNull();
+
+            var withHandlers = plugin as IPluginIrcHandlers;
+            if (withHandlers != null)
+                Handlers = withHandlers.IrcHandlers.NoNull();
+            else
+                Handlers = new IIrcHandler[0];
         }
     }
 }
