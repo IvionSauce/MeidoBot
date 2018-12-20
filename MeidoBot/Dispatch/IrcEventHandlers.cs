@@ -36,7 +36,8 @@ namespace MeidoBot
         {
             if (allowedTypes.Contains(handler.IrcEventType))
             {
-                log.Verbose("{0}: Adding IrcHandler for type '{1}'");
+                log.Verbose("{0}: Adding IrcHandler for type '{1}'",
+                            plugin.Name, handler.IrcEventType);
 
                 var handlerList = Get(handler.IrcEventType);
                 handlerList.Add(handler);
