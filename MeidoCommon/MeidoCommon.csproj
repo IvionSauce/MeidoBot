@@ -47,6 +47,7 @@
     <Compile Include="XmlConfig2.cs" />
     <Compile Include="Trigger.cs" />
     <Compile Include="IrcHandler.cs" />
+    <Compile Include="Parsing.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
