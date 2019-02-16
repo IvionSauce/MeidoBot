@@ -72,15 +72,25 @@ public class IrcSed : IMeidoHook, IPluginIrcHandlers
                 case ReplaceResult.NoMatch:
                 continue;
 
-                case ReplaceResult.Success:
-                irc.SendMessage(channel, "<{0}> {1}", item.Nick, replacedMsg);
-                return;
-
                 case ReplaceResult.RegexTimeout:
                 irc.SendNotice(invoker, "Your regular expression timed out.");
                 return;
-            }
-        }
+
+                case ReplaceResult.Success:
+                if (FoulPlay(replacedMsg))
+                    irc.SendNotice(invoker, "Replaced message was too long, not outputting to prevent spam.");
+                else
+                    irc.SendMessage(channel, "<{0}> {1}", item.Nick, replacedMsg);
+                return;
+            } // switch
+        } // foreach
+    }
+
+    static bool FoulPlay(string message)
+    {
+        const int maxMsgLength = 256;
+
+        return message.Length > maxMsgLength;
     }
 
 }
