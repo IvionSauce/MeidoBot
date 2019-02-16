@@ -31,33 +31,20 @@ namespace MeidoCommon.Formatting
             var minutes = duration.Minutes;
             int seconds = duration.Seconds;
 
-            // Overflow cascade, might be too much of a hassle.
-            //if (duration.Milliseconds >= 500)
-            //{
-            //    seconds++;
-
-            //    if (seconds == 60)
-            //    {
-            //        seconds = 0;
-            //        minutes++;
-            //    }
-            //    if (minutes == 60)
-            //    {
-            //        minutes = 0;
-            //        hours++;
-            //    }
-            //    if (withDays && hours == 24)
-            //    {
-                    
-            //    }
-            //}
-
+            string dateStr;
             if (withDays && days > 0)
-                return string.Format("{0} days {1}:{2:00}:{3:00}", days, hours, minutes, seconds);
-            if (hours > 0)
-                return string.Format("{0}:{1:00}:{2:00}", hours, minutes, seconds);
+            {
+                if (days > 1)
+                    dateStr = string.Format("{0} days {1}:{2:00}:{3:00}", days, hours, minutes, seconds);
+                else
+                    dateStr = string.Format("{0} day {1}:{2:00}:{3:00}", days, hours, minutes, seconds);
+            }
+            else if (hours > 0)
+                dateStr = string.Format("{0}:{1:00}:{2:00}", hours, minutes, seconds);
             else
-                return string.Format("{0}:{1:00}", minutes, seconds);
+                dateStr = string.Format("{0}:{1:00}", minutes, seconds);
+
+            return dateStr;
         }
 
 
