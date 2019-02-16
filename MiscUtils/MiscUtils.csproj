@@ -38,6 +38,7 @@
     <Compile Include="MiscUtils.cs" />
     <Compile Include="Timers.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="TimerTrigger.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
