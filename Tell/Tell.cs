@@ -23,7 +23,8 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
         {
             return new Dictionary<string, string>()
             {
-                {"tell", "tell <nick> <message> - Relay message to nick, will be relayed when nick is active. " +
+                {"tell", "tell [<nick> <message>] - Store message for nick, will be relayed when nick is active. " +
+                    "If called with 1 or 0 arguments this will function as tell-read. " +
                     "See also: tell-read, tell-clear"},
                 
                 {"tell-read", "tell-read [n] - Read the next `n` messages, defaults to 5."},
@@ -72,7 +73,9 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
 
             if (inbox.Add(e.Nick, message))
             {
-                e.Reply("Sending message to {0} when they're active.", destinationNick);
+                e.Reply("Sending message to {0} when they're active. [{1}/{2}]",
+                        destinationNick, inbox.MessagesCount, inbox.Capacity);
+                
                 inboxes.Save(inbox);
             }
             else

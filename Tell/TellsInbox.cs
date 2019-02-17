@@ -8,8 +8,14 @@ class TellsInbox
 {
     [DataMember]
     public readonly string Username;
+
     [DataMember]
     public int MessagesCount { get; private set; }
+    public int Capacity
+    {
+        get { return entries.Length; }
+    }
+
     [DataMember]
     public bool NewMessages { get; set; }
 
