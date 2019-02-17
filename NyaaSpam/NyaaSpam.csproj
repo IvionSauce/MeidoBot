@@ -45,6 +45,7 @@
     <Compile Include="FeedReader.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="DateTimeFile.cs" />
+    <Compile Include="OutputTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
