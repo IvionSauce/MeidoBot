@@ -27,10 +27,7 @@ class FeedReader
         this.dtFile = dtFile;
         this.patterns = patterns;
 
-        // Do not accept a DateTime too far in the past, to prevent flooding/spam.
         lastPrintedTime = dtFile.Read();
-        var maxElapsed = TimeSpan.FromHours(1);
-        lastPrintedTime = DateTimeFile.SanityCheck(lastPrintedTime, maxElapsed);
     }
 
     public void Configure(Config conf)
@@ -90,7 +87,8 @@ class FeedReader
         var feed = OpenFeed();
         if (feed == null)
             return;
-        
+
+        SanitizeLastPrinted();
         bool latestItem = true;
         // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. But it _does_ get
         // assigned, in the first loop (but I can see why the compiler doesn't see this).
@@ -143,6 +141,12 @@ class FeedReader
         }
 
         return feed;
+    }
+
+    void SanitizeLastPrinted()
+    {
+        // Do not accept a DateTime too far in the past, to prevent flooding/spam.
+        lastPrintedTime = InputTools.SanitizeDate(lastPrintedTime, TimeSpan.FromHours(24));
     }
 
     static bool Skip(SyndicationItem item, HashSet<string> skipCategories)

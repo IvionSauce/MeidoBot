@@ -53,17 +53,4 @@ class DateTimeFile
 
         return date;
     }
-
-    public static DateTimeOffset SanityCheck(DateTimeOffset pastDate, TimeSpan maxElapsed)
-    {
-        var now = DateTimeOffset.Now;
-
-        if (pastDate < now &&
-            (now - pastDate) <= maxElapsed)
-        {
-            return pastDate;
-        }
-
-        return now;
-    }
 }

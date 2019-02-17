@@ -67,4 +67,18 @@ static class InputTools
         }
         return numbers;
     }
+
+
+    public static DateTimeOffset SanitizeDate(DateTimeOffset pastDate, TimeSpan maxElapsed)
+    {
+        var now = DateTimeOffset.Now;
+
+        if (pastDate < now &&
+            (now - pastDate) <= maxElapsed)
+        {
+            return pastDate;
+        }
+
+        return now;
+    }
 }
