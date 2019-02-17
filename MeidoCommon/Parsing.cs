@@ -11,36 +11,39 @@ namespace MeidoCommon.Parsing
             if (shortTime == null)
                 throw new ArgumentNullException(nameof(shortTime));
             
-            var timeRegexp = new Regex(@"(?i)(\d*\.?\d+)([hms])");
+            var timeRegexp = new Regex(
+                @"^\s*([+-])?\s*
+                (?:(\d*\.?\d+)h\s*)? 
+                (?:(\d*\.?\d+)m\s*)? 
+                (?:(\d*\.?\d+)s\s*)?$",
+                RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace
+            );
 
-            double seconds = 0;
-            double minutes = 0;
+            var m = timeRegexp.Match(shortTime);
+            var signGrp = m.Groups[1];
+            var hourGrp = m.Groups[2];
+            var minuteGrp = m.Groups[3];
+            var secondGrp = m.Groups[4];
+
             double hours = 0;
+            double minutes = 0;
+            double seconds = 0;
 
-            foreach (Match m in timeRegexp.Matches(shortTime))
-            {
-                var amount = double.Parse(m.Groups[1].Value);
-                var unit = m.Groups[2].Value;
+            if (hourGrp.Success)
+                hours = double.Parse(hourGrp.Value);
+            if (minuteGrp.Success)
+                minutes = double.Parse(minuteGrp.Value);
+            if (secondGrp.Success)
+                seconds = double.Parse(secondGrp.Value);
 
-                switch (unit)
-                {
-                    case "s":
-                    seconds += amount;
-                    break;
+            var ts = TimeSpan.FromHours(hours) +
+                     TimeSpan.FromMinutes(minutes) +
+                     TimeSpan.FromSeconds(seconds);
 
-                    case "m":
-                    minutes += amount;
-                    break;
+            if (signGrp.Value == "-")
+                ts = TimeSpan.Zero - ts;
 
-                    case "h":
-                    hours += amount;
-                    break;
-                }
-            }
-
-            return TimeSpan.FromHours(hours) +
-                   TimeSpan.FromMinutes(minutes) +
-                   TimeSpan.FromSeconds(seconds);
+            return ts;
         }
     }
 }
