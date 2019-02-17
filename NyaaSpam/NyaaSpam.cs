@@ -195,7 +195,7 @@ public class NyaaSpam : IMeidoHook
 
     void Add(string channel, string nick, string patternsStr, int? assocPat)
     {
-        var patterns = GetPatterns(patternsStr);
+        var patterns = InputTools.GetPatterns(patternsStr);
 
         int amount = 0;
         if (assocPat == null)
@@ -227,8 +227,8 @@ public class NyaaSpam : IMeidoHook
 
     void Del(string channel, string nick, string numbersStr, int? assocPat)
     {
-        int[] numbers = GetNumbers(numbersStr);
-        Array.Reverse(numbers);
+        var numbers = InputTools.GetNumbers(numbersStr);
+        numbers.Reverse();
 
         string removedPattern;
         if (assocPat == null)
@@ -296,73 +296,5 @@ public class NyaaSpam : IMeidoHook
         }
         
         irc.SendNotice(nick, " -----");
-    }
-
-
-    static List<string> GetPatterns(string patternsStr)
-    {
-        const string quot = "\"";
-        
-        var patterns = new List<string>();
-        // If enclosed in quotation marks, add string within the marks verbatim.
-        if ( patternsStr.StartsWith(quot, StringComparison.OrdinalIgnoreCase) &&
-            patternsStr.EndsWith(quot, StringComparison.OrdinalIgnoreCase) )
-        {
-            // Slice off the quotation marks.
-            string pattern = patternsStr.Substring(1, patternsStr.Length - 2);
-            patterns.Add(pattern);
-        }
-        // Else interpret comma's as seperators between different titles.
-        else
-        {
-            foreach ( string pattern in patternsStr.Split(',') )
-                patterns.Add( pattern.Trim() );
-        }
-        
-        return patterns;
-    }
-
-
-    static int[] GetNumbers(string numbersStr)
-    {
-        if (string.IsNullOrWhiteSpace(numbersStr))
-            return new int[0];
-
-        var numbers = new List<int>();
-
-        int num;
-        foreach (string s in numbersStr.Split(','))
-        {
-            if (s.Contains("-"))
-                numbers.AddRange( GetRange(s) );
-            else if (int.TryParse(s, out num))
-                numbers.Add(num);
-        }
-
-        numbers.Sort();
-        return numbers.ToArray();
-    }
-
-    // Return list of ints for a range given as "x-y".
-    static List<int> GetRange(string rangeStr)
-    {
-        var numbers = new List<int>();
-
-        string[] startEnd = rangeStr.Split('-');
-        if (startEnd.Length != 2)
-            return numbers;
-
-        int start, end;
-
-        if ( int.TryParse(startEnd[0], out start) && int.TryParse(startEnd[1], out end) )
-        {
-            int num = start;
-            while (num <= end)
-            {
-                numbers.Add(num);
-                num++;
-            }
-        }
-        return numbers;
     }
 }

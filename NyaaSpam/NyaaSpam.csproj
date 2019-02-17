@@ -46,6 +46,7 @@
     <Compile Include="Config.cs" />
     <Compile Include="DateTimeFile.cs" />
     <Compile Include="OutputTools.cs" />
+    <Compile Include="InputTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
