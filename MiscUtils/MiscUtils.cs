@@ -25,10 +25,11 @@ public class MiscUtils : IMeidoHook
             {
                 {"say", "say [channel] <message> - If bot is in the specified channel, send message to the channel. " +
                     "If no channel is given, message will be sent to current channel."},
+                
                 {"timer", "timer <duration> [message] - Starts a timer. Duration is in minutes."},
-                {"timer stop", "timer stop [index] - Stops previously started timer, if no number specified will stop" +
-                    "all previously started timers."},
-                {"timer change", "timer change <index> <delta> - Change previously started timer by delta. Delta is" +
+                {"timer stop", "timer stop [index] - Stops previously started timer, if no number specified will " +
+                    "stop all previously started timers."},
+                {"timer change", "timer change <index> <delta> - Change previously started timer by delta. Delta is " +
                     "in minutes. Shorthand: timer <delta> [index]"}
             };
         }

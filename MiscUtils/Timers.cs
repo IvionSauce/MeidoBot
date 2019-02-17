@@ -23,15 +23,6 @@ class IrcTimers
         return timers;
     }
 
-    public static TimeSpan Parse(string s)
-    {
-        double minutes;
-        if (double.TryParse(s, out minutes))
-            return TimeSpan.FromMinutes(minutes);
-        else
-            return TimeSpan.Zero;
-    }
-
     public static int Parse(string s, int defaultValue)
     {
         int val;

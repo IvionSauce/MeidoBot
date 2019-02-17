@@ -1,5 +1,6 @@
 ﻿using System;
 using MeidoCommon;
+using MeidoCommon.Parsing;
 
 
 class TimerTrigger
@@ -25,14 +26,7 @@ class TimerTrigger
             char deltaSign = e.MessageArray[1][0];
             if (deltaSign == '+' || deltaSign == '-')
             {
-                var delta = IrcTimers.Parse(e.MessageArray[1]);
-                int index;
-                if (e.MessageArray.Length >= 3)
-                    index = IrcTimers.Parse(e.MessageArray[2], -1);
-                else
-                    index = 0;
-
-                TimerChange(index, delta, e, timers);
+                TimerChangeShorthand(e, timers);
                 return;
             }
         }
@@ -40,14 +34,10 @@ class TimerTrigger
         // timer stop [index]
         if (e.MessageArray[1] == "stop")
             TimerStop(e, timers);
+        
         // timer change <index> <delta>
         else if (e.MessageArray.Length == 4 && e.MessageArray[1] == "change")
-        {
-            var delta = IrcTimers.Parse(e.MessageArray[3]);
-            int index = IrcTimers.Parse(e.MessageArray[2], -1);
-
-            TimerChange(index, delta, e, timers);
-        }
+            TimerChange(e, timers);
 
         // timer <duration> [message]
         else
@@ -55,10 +45,11 @@ class TimerTrigger
     }
 
 
+    // timer <duration> [message]
     static void TimerStart(ITriggerMsg e, Timers timers)
     {
         // Return if invalid or negative duration.
-        var duration = IrcTimers.Parse(e.MessageArray[1]);
+        var duration = ParseTs(e.MessageArray[1]);
         if (duration <= TimeSpan.Zero)
             return;
 
@@ -72,6 +63,30 @@ class TimerTrigger
             e.Reply("Your timer has started. [{0}]", tmrNo);
         else
             e.Reply("Max timer count reached. Please wait for some timers to finish or stop them manually.");
+    }
+
+
+    // timer change <index> <delta>
+    static void TimerChange(ITriggerMsg e, Timers timers)
+    {
+        var delta = ParseTs(e.MessageArray[3]);
+        int index = IrcTimers.Parse(e.MessageArray[2], -1);
+
+        TimerChange(index, delta, e, timers);
+    }
+
+    // timer <delta> [index]
+    // Delta is +N or -N
+    static void TimerChangeShorthand(ITriggerMsg e, Timers timers)
+    {
+        var delta = ParseTs(e.MessageArray[1]);
+        int index;
+        if (e.MessageArray.Length >= 3)
+            index = IrcTimers.Parse(e.MessageArray[2], -1);
+        else
+            index = 0;
+
+        TimerChange(index, delta, e, timers);
     }
 
     static void TimerChange(int index, TimeSpan delta, ITriggerMsg e, Timers timers)
@@ -94,6 +109,8 @@ class TimerTrigger
             e.Reply("No such timer.");
     }
 
+
+    // timer stop [index]
     static void TimerStop(ITriggerMsg e, Timers timers)
     {
         // Stop all timers.
@@ -122,7 +139,21 @@ class TimerTrigger
     }
 
 
+    static TimeSpan ParseTs(string s)
+    {
+        TimeSpan ts = TimeSpan.Zero;
 
+        double minutes;
+        // Interpret a bare number as minutes.
+        if (double.TryParse(s, out minutes))
+            ts = TimeSpan.FromMinutes(minutes);
+        // Otherwise assume it's a short time string.
+        // Ex: 1h45m30s
+        else
+            ts = Parse.ShortTimeString(s);
+
+        return ts;
+    }
 
 
     static void EmitDescriptions(TimerDescription[] descs, ITriggerMsg msg)
