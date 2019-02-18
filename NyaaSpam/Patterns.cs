@@ -402,7 +402,7 @@ public class Patterns : IDisposable
         // Each pattern is an array of constituents. The title needs to contain each of them.
         string tmpTitle = title;
         
-        foreach (string s in pattern)
+        foreach (string s in BangShorthands.ExpandPattern(pattern))
         {
             int startIndex = tmpTitle.IndexOf(s, StringComparison.OrdinalIgnoreCase);
             
