@@ -399,11 +399,8 @@ public class Patterns : IDisposable
 
     static bool IsMatch(string[] pattern, string title)
     {
-        // Each pattern is an array of constituents. If the title contains one subtract 1 from the
-        // countdown. When the countdown reaches 0 it means all constituents were found in the title, so
-        // add the channel.
+        // Each pattern is an array of constituents. The title needs to contain each of them.
         string tmpTitle = title;
-        int countdown = pattern.Length;
         
         foreach (string s in pattern)
         {
@@ -415,14 +412,12 @@ public class Patterns : IDisposable
                 // have a pattern with repeated words it only matches when the title indeed contains
                 // multiple instances of that word.
                 tmpTitle = tmpTitle.Remove(startIndex, s.Length);
-                countdown--;
             }
+            else
+                return false;
         }
-        
-        if (countdown <= 0)
-            return true;
-        else
-            return false;
+
+        return true;
     }
 
 
