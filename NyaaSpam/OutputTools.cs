@@ -22,7 +22,7 @@ static class OutputTools
             j = i + half;
             if (j < patterns.Length)
             {
-                var patternLeft = PadRight(patterns[i], longestLength);
+                var patternLeft = Pad(patterns[i], longestLength);
                 var patternRight = patterns[j];
 
                 yield return string.Format("[{0}] {1} [{2}] {3}", i, patternLeft, j, patternRight);
@@ -33,14 +33,24 @@ static class OutputTools
     }
 
 
-    static string PadRight(string s, int totalLength)
+    static string Pad(string s, int totalLength)
     {
-        var builder = new StringBuilder(s, totalLength);
-        for (int i = s.Length; i < totalLength; i++)
+        string padded;
+        // Padoru, padoru.
+        if (s.Length < totalLength)
         {
-            builder.Append(' ');
-        }
+            var builder = new StringBuilder(s, totalLength);
+            while (builder.Length < totalLength)
+            {
+                builder.Append(' ');
+            }
 
-        return builder.ToString();
+            padded = builder.ToString();
+        }
+        // No padoru necessary.
+        else
+            padded = s;
+
+        return padded;
     }
 }
