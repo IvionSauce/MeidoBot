@@ -5,6 +5,7 @@ using System.Collections.Generic;
 static class BangShorthands
 {
     static readonly Dictionary<string, string[]> bangs;
+    const char prefix = '!';
 
 
     static BangShorthands()
@@ -30,7 +31,7 @@ static class BangShorthands
 
         for (int i = 0; i < shortHand.Length && i < expanded.Length; i++)
         {
-            string key = '!' + shortHand[i];
+            string key = prefix + shortHand[i];
             bangs[key] = expanded[i].Split(' ');
         }
     }
@@ -42,7 +43,7 @@ static class BangShorthands
         {
             string[] expandedBang;
             // If the word (pattern part) is a bang shorthand expand it and return each constituent.
-            if (bangs.TryGetValue(patternPart, out expandedBang))
+            if (Shorthand(patternPart, out expandedBang))
             {
                 foreach (string bangPart in expandedBang)
                     yield return bangPart;
@@ -51,5 +52,13 @@ static class BangShorthands
             else
                 yield return patternPart;
         }
+    }
+
+    static bool Shorthand(string part, out string[] expanded)
+    {
+        expanded = null;
+        return part.Length > 0 &&
+               part[0] == prefix &&
+               bangs.TryGetValue(part, out expanded);
     }
 }
