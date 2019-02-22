@@ -89,20 +89,18 @@ class FeedReader
             return;
 
         SanitizeLastPrinted();
-        bool latestItem = true;
-        // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. But it _does_ get
-        // assigned, in the first loop (but I can see why the compiler doesn't see this).
+        // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. Which is a
+        // possibility, since feed.Items could be empty...
         DateTimeOffset latestPublish = DateTimeOffset.MinValue;
+        // So let's track that (it's also nice for logging).
+        int itemsSeen = 0;
         foreach (SyndicationItem item in feed.Items)
         {
-            // Since feed.Items is only IEnumerable, we can't just access the first member by index, so we have to
-            // use this roundabout way. :/
-            if (latestItem)
-            {
+            // Save the most recent publishing date for later.
+            if (itemsSeen == 0)
                 latestPublish = item.PublishDate;
-                latestItem = false;
-            }
-            
+
+            itemsSeen++;
             // Once we hit items that we probably already have printed, stop processing the rest.
             if (item.PublishDate <= lastPrintedTime)
                 break;
@@ -116,8 +114,17 @@ class FeedReader
                 irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
             }
         }
-        lastPrintedTime = latestPublish;
-        dtFile.Write(latestPublish);
+
+        if (itemsSeen > 0)
+        {
+            log.Verbose("Read {0} item(s) from feed. Most recent publish date is {1:s}",
+                        itemsSeen, latestPublish.ToLocalTime());
+            
+            lastPrintedTime = latestPublish;
+            dtFile.Write(latestPublish);
+        }
+        else
+            log.Error("No items were processed in ReadFeed: RSS/Atom feed had 0 items.");
     }
 
     SyndicationFeed OpenFeed()
