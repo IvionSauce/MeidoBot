@@ -290,6 +290,35 @@ public class Patterns : IDisposable
     }
 
 
+    public List<int> Search(string channel, IEnumerable<string> patternSubstrings)
+    {
+        if (patternSubstrings == null)
+            throw new ArgumentNullException(nameof(patternSubstrings));
+        
+        var matches = new List<int>();
+        var patterns = GetPatterns(channel);
+
+        foreach (string patSub in patternSubstrings)
+        {
+            matches.Add( Find(patterns, patSub) );
+        }
+
+        return matches;
+    }
+
+    static int Find(string[] patterns, string patternSubstring)
+    {
+        for (int i = 0; i < patterns.Length; i++)
+        {
+            if (patterns[i].Contains(patternSubstring, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     // ------------------------------------------------------
     // Helper functions for the above Add/Get/Remove methods.
     // ------------------------------------------------------
