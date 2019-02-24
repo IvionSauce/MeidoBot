@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 
 
@@ -35,22 +34,11 @@ static class OutputTools
 
     static string Pad(string s, int totalLength)
     {
-        string padded;
+        int padding = totalLength - s.Length;
         // Padoru, padoru.
-        if (s.Length < totalLength)
-        {
-            var builder = new StringBuilder(s, totalLength);
-            while (builder.Length < totalLength)
-            {
-                builder.Append(' ');
-            }
-
-            padded = builder.ToString();
-        }
-        // No padoru necessary.
+        if (padding > 0)
+            return s + new string(' ', padding);
         else
-            padded = s;
-
-        return padded;
+            return s;
     }
 }
