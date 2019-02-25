@@ -23,11 +23,18 @@ public class NyaaSpam : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"nyaa add", "add <pattern...> - Adds pattern(s), seperated by \",\". Unless enclosed in quotation " +
-                    "marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
-                {"nyaa del", "del <index...> - Removes pattern(s) inidicated by given indices. Can be seperated by " +
-                    "\",\" and accepts ranges given as \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
-                {"nyaa show", "show - Gives an overview of all patterns that are checked for."}
+                {"nyaa add", "nyaa add <pattern...> - Adds pattern(s), seperated by \",\". Unless enclosed in " +
+                    "quotation marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
+                
+                {"nyaa del", "nyaa del <index...>|<pattern...> - Removes pattern(s) inidicated by list of indices. " +
+                    "Can also accepts a list of patterns (or parts thereof) to be deleted. " +
+                    "List of indices/patterns are seperated by \",\" and indices can specified as a " +
+                    "number range \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
+                
+                {"nyaa show", "nyaa show - Gives an overview of all patterns that are checked for."},
+
+                {"nyaa bangs", "Shows all NyaaBangs that are currently supported. These are shorthands that can be " +
+                    "used in patterns."}
             };
         }
     }
@@ -177,14 +184,20 @@ public class NyaaSpam : IMeidoHook
 
             switch (command)
             {
-            case "add":
+                case "add":
                 Add(e.Channel, e.Nick, input, assocPat);
                 return;
-            case "del":
+
+                case "del":
                 Del(e.Channel, e.Nick, input, assocPat);
                 return;
-            case "show":
+
+                case "show":
                 ShowAll(e.Channel, e.Nick, assocPat);
+                return;
+
+                case "bangs":
+                Bangs(e.Nick);
                 return;
             }
         }
@@ -304,6 +317,17 @@ public class NyaaSpam : IMeidoHook
             {
                 irc.SendNotice(nick, line);
             }
+        }
+        irc.SendNotice(nick, " -----");
+    }
+
+
+    void Bangs(string nick)
+    {
+        irc.SendNotice(nick, "Supported NyaaBang shorthands:");
+        foreach (string desc in BangShorthands.GetDescriptions())
+        {
+            irc.SendNotice(nick, desc);
         }
         irc.SendNotice(nick, " -----");
     }
