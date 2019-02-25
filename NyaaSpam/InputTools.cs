@@ -69,6 +69,28 @@ static class InputTools
     }
 
 
+    // Return a reversed and deduplicated list.
+    public static List<int> PrepareDeletions(List<int> sortedNums)
+    {
+        var preparedDeletions = new List<int>(sortedNums.Count);
+
+        int? previous = null;
+        int current;
+        for (int i = sortedNums.Count - 1; i >= 0; i--)
+        {
+            current = sortedNums[i];
+            if (current != previous)
+            {
+                preparedDeletions.Add(current);
+            }
+
+            previous = current;
+        }
+
+        return preparedDeletions;
+    }
+
+
     public static DateTimeOffset SanitizeDate(DateTimeOffset pastDate, TimeSpan maxElapsed)
     {
         var now = DateTimeOffset.Now;
