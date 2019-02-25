@@ -293,17 +293,18 @@ public class NyaaSpam : IMeidoHook
             patterns = feedPatterns.GetGlobalExcludePatterns(channel);
         }
 
-        if (patterns.Length > 0)
-            IrcShow(nick, patterns);
+        IrcShow(nick, patterns);
     }
 
     void IrcShow(string nick, string[] patterns)
     {
-        foreach (string line in OutputTools.TwoColumns(patterns))
+        if (patterns.Length > 0)
         {
-            irc.SendNotice(nick, line);
+            foreach (string line in OutputTools.TwoColumns(patterns))
+            {
+                irc.SendNotice(nick, line);
+            }
         }
-        
         irc.SendNotice(nick, " -----");
     }
 }
