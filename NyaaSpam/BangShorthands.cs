@@ -61,4 +61,23 @@ static class BangShorthands
                part[0] == prefix &&
                bangs.TryGetValue(part, out expanded);
     }
+
+
+    public static string[] GetDescriptions()
+    {
+        // Get and sort keys.
+        var sortedKeys = new string[bangs.Count];
+        bangs.Keys.CopyTo(sortedKeys, 0);
+        Array.Sort(sortedKeys);
+
+        // Use sorted keys to create a sorted list of descriptions.
+        var sortedDescs = new string[sortedKeys.Length];
+        for (int i = 0; i < sortedKeys.Length; i++)
+        {
+            var key = sortedKeys[i];
+            sortedDescs[i] = string.Format("{0} -> {1}", key, bangs[key]);
+        }
+
+        return sortedDescs;
+    }
 }
