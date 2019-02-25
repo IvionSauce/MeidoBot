@@ -14,7 +14,7 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     }
     public string Version
     {
-        get { return "0.14"; }
+        get { return "0.15"; }
     }
 
     public Dictionary<string,string> Help

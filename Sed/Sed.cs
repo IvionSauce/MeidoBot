@@ -13,7 +13,7 @@ public class IrcSed : IMeidoHook, IPluginIrcHandlers
     }
     public string Version
     {
-        get { return "0.11"; }
+        get { return "0.12"; }
     }
 
     public Dictionary<string,string> Help

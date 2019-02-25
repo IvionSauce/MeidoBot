@@ -14,7 +14,7 @@ public class NyaaSpam : IMeidoHook
     }
     public string Version
     {
-        get { return "0.81"; }
+        get { return "0.84"; }
     }
 
     public Dictionary<string,string> Help
