@@ -33,8 +33,8 @@ public class NyaaSpam : IMeidoHook
                 
                 {"nyaa show", "nyaa show - Gives an overview of all patterns that are checked for."},
 
-                {"nyaa bangs", "Shows all NyaaBangs that are currently supported. These are shorthands that can be " +
-                    "used in patterns."}
+                {"nyaa bangs", "nyaa bangs - Shows all NyaaBangs that are currently supported. These are shorthands " +
+                    "that can be used in patterns."}
             };
         }
     }

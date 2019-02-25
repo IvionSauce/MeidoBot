@@ -74,8 +74,10 @@ static class BangShorthands
         var sortedDescs = new string[sortedKeys.Length];
         for (int i = 0; i < sortedKeys.Length; i++)
         {
-            var key = sortedKeys[i];
-            sortedDescs[i] = string.Format("{0} -> {1}", key, bangs[key]);
+            var shorthand = sortedKeys[i];
+            var expanded = string.Join(" ", bangs[shorthand]);
+
+            sortedDescs[i] = string.Format("{0} -> {1}", shorthand, expanded);
         }
 
         return sortedDescs;
