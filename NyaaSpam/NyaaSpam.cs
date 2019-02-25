@@ -225,10 +225,19 @@ public class NyaaSpam : IMeidoHook
     }
 
 
-    void Del(string channel, string nick, string numbersStr, int? assocPat)
+    void Del(string channel, string nick, string deletions, int? assocPat)
     {
-        var numbers = InputTools.GetNumbers(numbersStr);
-        numbers.Reverse();
+        var numbers = InputTools.GetNumbers(deletions);
+        // If we got no numbers, assume it's a list of patterns (or parts thereof) to be deleted.
+        // Search include patterns (no search for excludes) for pattern by their substrings.
+        if (assocPat == null && numbers.Count == 0)
+        {
+            var delPatterns = InputTools.GetPatterns(deletions);
+            numbers = feedPatterns.Search(channel, delPatterns);
+            // Search returns results in the order they were requested, so we need to sort.
+            numbers.Sort();
+        }
+        numbers = InputTools.PrepareDeletions(numbers);
 
         string removedPattern;
         if (assocPat == null)
