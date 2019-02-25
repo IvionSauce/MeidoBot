@@ -35,10 +35,10 @@ static class InputTools
         int num;
         foreach (string s in numbersStr.Split(','))
         {
-            if (s.Contains("-"))
-                numbers.AddRange( GetRange(s) );
-            else if (int.TryParse(s, out num))
+            if (int.TryParse(s, out num))
                 numbers.Add(num);
+            else
+                numbers.AddRange( GetRange(s) );
         }
 
         numbers.Sort();
@@ -51,12 +51,11 @@ static class InputTools
         var numbers = new List<int>();
 
         string[] startEnd = rangeStr.Split('-');
-        if (startEnd.Length != 2)
-            return numbers;
-
         int start, end;
 
-        if ( int.TryParse(startEnd[0], out start) && int.TryParse(startEnd[1], out end) )
+        if (startEnd.Length == 2 &&
+            int.TryParse(startEnd[0], out start) &&
+            int.TryParse(startEnd[1], out end))
         {
             int num = start;
             while (num <= end)
