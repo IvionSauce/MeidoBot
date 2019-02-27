@@ -23,18 +23,18 @@ public class NyaaSpam : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"nyaa add", "nyaa add <pattern...> - Adds pattern(s), seperated by \",\". Unless enclosed in " +
+                {"nyaa add", "nyaa add <pattern...> - Adds pattern(s), seperated by commas (,). Unless enclosed in " +
                     "quotation marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
                 
-                {"nyaa del", "nyaa del <index...>|<pattern...> - Removes pattern(s) inidicated by list of indices. " +
+                {"nyaa del", "nyaa del <index...>|<pattern...> - Removes pattern(s) indicated by list of indices. " +
                     "Can also accepts a list of patterns (or parts thereof) to be deleted. " +
-                    "List of indices/patterns are seperated by \",\" and indices can specified as a " +
+                    "Lists of indices/patterns are comma (,) seperated and indices can specified as a " +
                     "number range \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
                 
                 {"nyaa show", "nyaa show - Gives an overview of all patterns that are checked for."},
 
-                {"nyaa bangs", "nyaa bangs - Shows all NyaaBangs that are currently supported. These are shorthands " +
-                    "that can be used in patterns."}
+                {"nyaa bangs", "nyaa bangs - Shows all NyaaBangs that are currently supported. These are " +
+                    "(case insensitive) shorthands that can be used in patterns."}
             };
         }
     }
