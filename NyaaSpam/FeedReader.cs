@@ -158,12 +158,39 @@ class FeedReader
 
     static bool Skip(SyndicationItem item, HashSet<string> skipCategories)
     {
-        foreach (SyndicationCategory cat in item.Categories)
+        foreach (string cat in Categories(item))
         {
-            if (skipCategories.Contains(cat.Name))
+            if (skipCategories.Contains(cat))
                 return true;
         }
 
         return false;
+    }
+
+    static IEnumerable<string> Categories(SyndicationItem item)
+    {
+        // Straightforward categories as per the standard (either RSS or Atom).
+        foreach (SyndicationCategory cat in item.Categories)
+            yield return cat.Name;
+
+        /* Roundabout case for special snowflake (XML Namespace) categories.
+         * I'm looking at you, nyaa.si, what's wrong with using the standard!?
+         * 
+         * Looking more closely at the standard (http://www.rssboard.org/rss-specification) for the 'category' element:
+         * "The value of the element is a forward-slash-separated string that identifies a hierarchic location
+         * in the indicated taxonomy."
+         * Nyaa.si doesn't use a "forward-slash-seperated string" but instead the category is formatted as:
+         * "Category - Sub-category" ... so technically it's CORRECT to not use the standard category tag. Damnit.
+         * 
+         * The relevant NyaaV2 git commit that changes this is cc957ccc96ab9f7d1c26485064f8e40068623998,
+         * Github URL: https://github.com/nyaadevs/nyaa/pull/140
+        */
+        foreach (SyndicationElementExtension element in item.ElementExtensions)
+        {
+            if ("category".Equals(element.OuterName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return element.GetObject<string>();
+            }
+        }
     }
 }
