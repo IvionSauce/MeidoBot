@@ -24,7 +24,13 @@ public class WebSearches : IMeidoHook
         {
             return new Dictionary<string, string>()
             {
-                {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms."}
+                {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms. " +
+                    "There are also a number of triggers for site specific searches, see the 'searches' help subject " +
+                    "for more information."},
+
+                {"searches", "Supported site specific searches are, with the trigger in parentheses: YouTube (yt), " +
+                    "Wikipedia EN (wiki), MyAnimeList (mal), AniDB (anidb), MangaUpdates (mu), " +
+                    "Visual Novel DB (vndb), Steam Store (steam)."}
             };
         }
     }
