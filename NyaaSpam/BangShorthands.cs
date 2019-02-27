@@ -26,7 +26,7 @@ static class BangShorthands
 
         bangs = new Dictionary<string, string[]>(
             shortHand.Length,
-            StringComparer.Ordinal
+            StringComparer.OrdinalIgnoreCase
         );
 
         for (int i = 0; i < shortHand.Length && i < expanded.Length; i++)
