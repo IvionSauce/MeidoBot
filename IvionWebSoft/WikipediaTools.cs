@@ -41,13 +41,14 @@ namespace IvionWebSoft
                                                       @"<img [^>]*/>|" +
                                                       @"<sup[^>]*>.*?</sup>|" +
                                                       @"<small[^>]*>.*?</small>|" +
-                                                      @"<b>|</b>|<i>|</i>");
+                                                      @"<b[^>]*>|</b>|" +
+                                                      @"<i[^>]*>|</i>");
 
 
         public static WikipediaArticle Parse(string htmlDoc)
         {
             if (htmlDoc == null)
-                throw new ArgumentNullException("htmlDoc");
+                throw new ArgumentNullException(nameof(htmlDoc));
 
             var cleanedDoc = removeRegexp.Replace(htmlDoc, string.Empty);
             var sectionMatches = sectionRegexp.Matches(cleanedDoc);
