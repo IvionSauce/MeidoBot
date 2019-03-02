@@ -20,7 +20,7 @@ namespace IvionWebSoft
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException("value", "CharIgnore cannot be null.");
+                    throw new ArgumentNullException(nameof(value), "CharIgnore cannot be null.");
                 else
                     _charIgnore = value;
             }
@@ -36,7 +36,7 @@ namespace IvionWebSoft
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException("value", "StringIgnore cannot be null.");
+                    throw new ArgumentNullException(nameof(value), "StringIgnore cannot be null.");
                 else
                     _stringIgnore = value;
             }
@@ -68,9 +68,9 @@ namespace IvionWebSoft
         public double Similarity(string url, string title)
         {
             if (url == null)
-                throw new ArgumentNullException("url");
-            else if (title == null)
-                throw new ArgumentNullException("title");
+                throw new ArgumentNullException(nameof(url));
+            if (title == null)
+                throw new ArgumentNullException(nameof(title));
 
             // Replace punctuation with a space, so as to not accidently meld words together. We'll have string.Split
             // take care of any double, or more, spaces.
