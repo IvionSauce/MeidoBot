@@ -36,9 +36,6 @@ namespace IvionSoft
 
         public bool Contains(T item)
         {
-            if (item == null)
-                throw new ArgumentNullException("item");
-
             if (Length > 0)
                 return hashes.Contains(item);
             else
@@ -47,9 +44,6 @@ namespace IvionSoft
 
         public bool Add(T item)
         {
-            if (item == null)
-                throw new ArgumentNullException("item");
-            
             if (Length == 0)
                 return false;
 
@@ -91,9 +85,6 @@ namespace IvionSoft
 
         public bool Contains(T item)
         {
-            if (item == null)
-                throw new ArgumentNullException("item");
-            
             foreach (T entry in items)
             {
                 if ( EqualityComparer<T>.Default.Equals(item, entry) )
@@ -105,9 +96,6 @@ namespace IvionSoft
 
         public bool Add(T item)
         {
-            if (item == null)
-                throw new ArgumentNullException("item");
-            
             if (Length == 0 || Contains(item))
                 return false;
 
