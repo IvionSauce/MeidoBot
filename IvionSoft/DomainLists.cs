@@ -26,27 +26,27 @@ namespace IvionSoft
                 // lines are applicable to all domains. Gets changed whenever instructed to by ":".
                 string[] domains = {"_all"};
 
-                string line;
-                List<string> domList;
                 while (fileStream.Peek() >= 0)
                 {
-                    line = fileStream.ReadLine();
+                    string line = fileStream.ReadLine()
+                                            .Trim();
                     
                     // Ignore empty lines or comments.
-                    if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
+                    if (string.IsNullOrEmpty(line) || line[0] == '#')
                         continue;
-                    else if (line[0] == ':')
+                    
+                    if (line[0] == ':')
                         // Remove leading ":" before splitting.
                         domains = line.Substring(1).Split(',');
                     // The rest will be treated as relevant and added to the list.
                     else if (domains.Contains("_all"))
-                        tmpGlobal.Add( line.Trim() );
+                        tmpGlobal.Add(line);
                     else
                     {
                         foreach(string dom in domains)
                         {
-                            domList = tmpDomains.GetOrAdd(dom);
-                            domList.Add( line.Trim() );
+                            var domList = tmpDomains.GetOrAdd(dom);
+                            domList.Add(line);
                         }
                     }
                 }
