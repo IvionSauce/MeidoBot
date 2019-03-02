@@ -65,6 +65,7 @@
     <Compile Include="WebResources\BooruPost.cs" />
     <Compile Include="WebResources\ChanPost.cs" />
     <Compile Include="UrlTitleComparer.cs" />
+    <Compile Include="Sanitize.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebResources\" />

@@ -15,8 +15,6 @@ namespace IvionWebSoft
     /// </summary>
     public static class WebTools
     {
-        // Leading/trailing whitespace and intertextual newlines and carriage returns.
-        static readonly Regex titleRegexp = new Regex(@"^\s+|\s+$|[\n\r]+");
         // Try to match "length_seconds": \d+[,}]
         static readonly Regex ytRegexp = new Regex(@"(?<=""length_seconds"":\s?"")\d+(?=""[,}])");
 
@@ -47,12 +45,8 @@ namespace IvionWebSoft
         // Convert HTML Character References to 'normal' characters.
         static string SanitizeTitle(string title)
         {
-            string sanitizedTitle;
-
-            sanitizedTitle = HttpUtility.HtmlDecode(title);
-            sanitizedTitle = titleRegexp.Replace(sanitizedTitle, "");
-
-            return sanitizedTitle;
+            string sanitizedTitle = HttpUtility.HtmlDecode(title);
+            return Sanitize.SquashWhitespace(sanitizedTitle);
         }
 
 
