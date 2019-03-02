@@ -64,6 +64,7 @@
     <Compile Include="StringExtensions.cs" />
     <Compile Include="WebResources\BooruPost.cs" />
     <Compile Include="WebResources\ChanPost.cs" />
+    <Compile Include="UrlTitleComparer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebResources\" />
