@@ -38,7 +38,7 @@ namespace IvionSoft
         public void Set(string id, T item)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
 
             Items[id] = item;
         }
@@ -46,7 +46,7 @@ namespace IvionSoft
         public bool Contains(string id)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             return Items.ContainsKey(id);
         }
@@ -55,9 +55,9 @@ namespace IvionSoft
         public T GetOrSet(string id, Func<T> itemGenerator)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
-            else if (itemGenerator == null)
-                throw new ArgumentNullException("itemGenerator");
+                throw new ArgumentNullException(nameof(id));
+            if (itemGenerator == null)
+                throw new ArgumentNullException(nameof(itemGenerator));
 
             T item;
             if (!Items.TryGetValue(id, out item))
@@ -73,7 +73,7 @@ namespace IvionSoft
         public T Get(string id)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             return Get(id, DefaultValue);
         }
@@ -81,7 +81,7 @@ namespace IvionSoft
         public T Get(string id, T defaultValue)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             T item;
             if (Items.TryGetValue(id, out item))
@@ -107,7 +107,7 @@ namespace IvionSoft
         public IEnumerable<T> Search(string partialId)
         {
             if (partialId == null)
-                throw new ArgumentNullException("partialId");
+                throw new ArgumentNullException(nameof(partialId));
             
             foreach (var pair in Items)
             {
@@ -120,7 +120,7 @@ namespace IvionSoft
         public bool Remove(string id)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             return Items.Remove(id);
         }
@@ -129,7 +129,7 @@ namespace IvionSoft
         public void RemoveAll(Func<T, bool> predicate)
         {
             if (predicate == null)
-                throw new ArgumentNullException("predicate");
+                throw new ArgumentNullException(nameof(predicate));
             
             foreach (var pair in Items)
             {
@@ -148,8 +148,8 @@ namespace IvionSoft
         static public void Serialize(Storage<T> storage, string path)
         {
             if (storage == null)
-                throw new ArgumentNullException("storage");
-            path.ThrowIfNullOrWhiteSpace("path");
+                throw new ArgumentNullException(nameof(storage));
+            path.ThrowIfNullOrWhiteSpace(nameof(path));
 
             var settings = new XmlWriterSettings() { Indent = true };
             
@@ -162,7 +162,7 @@ namespace IvionSoft
 
         static public Storage<T> Deserialize(string path)
         {
-            path.ThrowIfNullOrWhiteSpace("path");
+            path.ThrowIfNullOrWhiteSpace(nameof(path));
 
             using (var stream = File.Open(path, FileMode.Open))
                    return (Storage<T>)dcs.ReadObject(stream);

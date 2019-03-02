@@ -15,7 +15,7 @@ namespace IvionSoft
 
         public DomainLists(string path)
         {
-            path.ThrowIfNullOrWhiteSpace("path");
+            path.ThrowIfNullOrWhiteSpace(nameof(path));
 
             var tmpGlobal = new List<string>();
             var tmpDomains = new Dictionary< string, List<string> >(StringComparer.OrdinalIgnoreCase);
@@ -60,9 +60,9 @@ namespace IvionSoft
         public bool? IsInDomainList(string domain, string line)
         {
             if (domain == null)
-                throw new ArgumentNullException("domain");
-            else if (line == null)
-                throw new ArgumentNullException("line");
+                throw new ArgumentNullException(nameof(domain));
+            if (line == null)
+                throw new ArgumentNullException(nameof(line));
 
             string[] domArr;
             if (domainSpecific.TryGetValue(domain, out domArr))
@@ -82,7 +82,7 @@ namespace IvionSoft
         public bool IsInGlobalList(string line)
         {
             if (line == null)
-                throw new ArgumentNullException("line");
+                throw new ArgumentNullException(nameof(line));
 
             foreach (string s in global)
                 if (line.Contains(s, StringComparison.OrdinalIgnoreCase))
