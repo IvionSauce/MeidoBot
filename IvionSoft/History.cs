@@ -11,11 +11,8 @@ namespace IvionSoft
         readonly Queue<T> queue;
 
 
-        public History() : this(0, null)
-        {}
-
-        public History(int length) : this(length, null)
-        {}
+        public History() : this(0, null) {}
+        public History(int length) : this(length, null) {}
 
         public History(int length, IEqualityComparer<T> comparer)
         {
@@ -73,21 +70,30 @@ namespace IvionSoft
         }
 
         readonly T[] items;
+        readonly IEqualityComparer<T> comparer;
 
 
-        public ShortHistory(int length)
+        public ShortHistory() : this(0, null) {}
+        public ShortHistory(int length) : this(length, null) {}
+
+        public ShortHistory(int length, IEqualityComparer<T> comparer)
         {
-            if (length < 0)
-                throw new ArgumentOutOfRangeException("length", "Cannot be negative.");
+            if (length > 0)
+                items = new T[length];
+            else
+                items = new T[0];
 
-            items = new T[length];
+            if (comparer != null)
+                this.comparer = comparer;
+            else
+                this.comparer = EqualityComparer<T>.Default;
         }
 
         public bool Contains(T item)
         {
             foreach (T entry in items)
             {
-                if ( EqualityComparer<T>.Default.Equals(item, entry) )
+                if ( comparer.Equals(item, entry) )
                     return true;
             }
 
