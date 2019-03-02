@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 // For `HttpUtility.HtmlDecode`
 using System.Web;
@@ -30,7 +28,7 @@ namespace IvionWebSoft
         public static string GetTitle(string htmlString)
         {
             if (htmlString == null)
-                throw new ArgumentNullException("htmlString");
+                throw new ArgumentNullException(nameof(htmlString));
 
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(htmlString);
@@ -59,7 +57,7 @@ namespace IvionWebSoft
         public static TimeSpan GetYoutubeTime(string htmlString)
         {
             if (htmlString == null)
-                throw new ArgumentNullException("htmlString");
+                throw new ArgumentNullException(nameof(htmlString));
 
             Match timeMatch = ytRegexp.Match(htmlString);
             if (timeMatch.Success)
