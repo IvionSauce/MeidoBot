@@ -33,7 +33,7 @@ namespace IvionWebSoft
                 {
                     // Quickly skip over all the whitespace at the beginning of the string.
                     case State.Begin:
-                    while ( char.IsWhiteSpace(s[index]) && index < s.Length )
+                    while ( index < s.Length && char.IsWhiteSpace(s[index]) )
                     {
                         index++;
                     }
