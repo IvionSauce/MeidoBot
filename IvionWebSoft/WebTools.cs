@@ -39,8 +39,6 @@ namespace IvionWebSoft
                 return SanitizeTitle(titleNode.InnerText);
         }
 
-        // Remove newlines, carriage returns, leading and trailing whitespace.
-        // Convert HTML Character References to 'normal' characters.
         static string SanitizeTitle(string title)
         {
             string sanitizedTitle = HttpUtility.HtmlDecode(title);
