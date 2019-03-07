@@ -48,8 +48,14 @@
     <Compile Include="Trigger.cs" />
     <Compile Include="IrcHandler.cs" />
     <Compile Include="Parsing.cs" />
+    <Compile Include="Help\Help.cs" />
+    <Compile Include="Help\DynamicHelp.cs" />
+    <Compile Include="Help\TriggerHelp.cs" />
+    <Compile Include="Help\CommandHelp.cs" />
+    <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
+    <Folder Include="Help\" />
   </ItemGroup>
 </Project>

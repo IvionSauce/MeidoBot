@@ -55,7 +55,7 @@ namespace MeidoCommon
                 throw new ArgumentNullException(nameof(call));
             if (identifier == string.Empty)
                 throw new ArgumentException(emptyEx, nameof(identifier));
-            if (ContainsWhitespace(identifier))
+            if (Tools.ContainsWhitespace(identifier))
                 throw new ArgumentException(whiteEx, nameof(identifier));
 
             Identifiers = new ReadOnlyCollection<string>(new[] {identifier});
@@ -100,7 +100,7 @@ namespace MeidoCommon
                     throw new ArgumentException(nullEx, nameof(identifiers));
                 if (id == string.Empty)
                     throw new ArgumentException(emptyEx, nameof(identifiers));
-                if (ContainsWhitespace(id))
+                if (Tools.ContainsWhitespace(id))
                     throw new ArgumentException(whiteEx, nameof(identifiers));
 
                 // We need to check each element anyway, so use the loop the create our own copy
@@ -112,18 +112,6 @@ namespace MeidoCommon
             Call = call;
             Option = opt;
             Threading = threading;
-        }
-
-
-        static bool ContainsWhitespace(string s)
-        {
-            foreach (char c in s)
-            {
-                if (char.IsWhiteSpace(c))
-                    return true;
-            }
-
-            return false;
         }
     }
 }
