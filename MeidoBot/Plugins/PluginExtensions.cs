@@ -34,18 +34,5 @@ namespace MeidoBot
 
             return new Dictionary<string, string>();
         }
-
-
-        public static IEnumerable<T> NoNull<T>(this IEnumerable<T> seq) where T : class
-        {
-            if (seq != null)
-            {
-                foreach (T item in seq)
-                {
-                    if (item != null)
-                        yield return item;
-                }
-            }
-        }
     }
 }

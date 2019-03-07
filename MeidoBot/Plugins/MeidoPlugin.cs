@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using MeidoCommon;
+using MeidoCommon.ExtensionMethods;
 
 
 namespace MeidoBot

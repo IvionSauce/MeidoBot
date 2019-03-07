@@ -53,6 +53,7 @@
     <Compile Include="Help\TriggerHelp.cs" />
     <Compile Include="Help\CommandHelp.cs" />
     <Compile Include="Tools.cs" />
+    <Compile Include="ExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
