@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MeidoCommon.ExtensionMethods;
 
 
 namespace MeidoCommon
@@ -7,7 +8,12 @@ namespace MeidoCommon
     public abstract class BaseHelp
     {
         public readonly IEnumerable<string> Documentation;
-        public IEnumerable<Help> SeeAlso { get; set; }
+        IEnumerable<Help> _alsoSee;
+        public IEnumerable<Help> AlsoSee
+        {
+            get { return _alsoSee.NoNull(); }
+            set { _alsoSee = value; }
+        }
 
 
         internal BaseHelp(DynamicHelp dHelp)
