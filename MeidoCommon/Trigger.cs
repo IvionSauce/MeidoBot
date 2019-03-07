@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using MeidoCommon.ExtensionMethods;
 
 
 namespace MeidoCommon
@@ -25,6 +28,17 @@ namespace MeidoCommon
         public readonly Action<ITriggerMsg> Call;
         public readonly TriggerOption Option;
         public readonly TriggerThreading Threading;
+
+        IEnumerable<Trigger> _related;
+        public IEnumerable<Trigger> RelatedTriggers
+        {
+            get
+            {
+                return _related.NoNull()
+                               .Where(tr => tr != this);
+            }
+            set { _related = value; }
+        }
 
         TriggerHelp _help;
         public TriggerHelp Help
