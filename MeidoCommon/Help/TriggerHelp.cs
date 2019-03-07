@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using MeidoCommon.ExtensionMethods;
 
 
 namespace MeidoCommon
@@ -9,7 +11,18 @@ namespace MeidoCommon
     {
         public readonly string Parameters;
         public readonly ReadOnlyCollection<CommandHelp> Commands;
-        public IEnumerable<Trigger> RelatedTriggers { get; set; }
+
+        IEnumerable<Trigger> _related;
+        public IEnumerable<Trigger> RelatedTriggers
+        {
+            get
+            {
+                return _related.NoNull()
+                               .Where(tr => tr != ParentTrigger);
+            }
+            set { _related = value; }
+        }
+        public Trigger ParentTrigger { get; internal set; }
 
 
         // Shared field initialization.
