@@ -26,6 +26,18 @@ namespace MeidoCommon
         public readonly TriggerOption Option;
         public readonly TriggerThreading Threading;
 
+        TriggerHelp _help;
+        public TriggerHelp Help
+        {
+            get { return _help; }
+            set
+            {
+                _help = value;
+                if (_help != null)
+                    _help.ParentTrigger = this;
+            }
+        }
+
 
         const string nullEx = "Trigger identifiers cannot be null.";
         const string emptyEx = "Trigger identifiers cannot be empty string.";
