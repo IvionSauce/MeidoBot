@@ -76,6 +76,11 @@ namespace MeidoBot
             return triggers.TryGetValue(identifier, out tr);
         }
 
+        public bool IsRegistered(string identifier)
+        {
+            return triggers.ContainsKey(identifier);
+        }
+
 
         public Action Delegate(Trigger tr, ITriggerMsg msg)
         {
