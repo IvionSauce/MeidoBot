@@ -146,5 +146,34 @@ namespace MeidoCommon
             Func<string> documentation,
             params CommandHelp[] subcommands)
             : this(command, parameters, new DynamicHelp(documentation), subcommands) {}
+
+
+        // Cloning constructor.
+        public CommandHelp(CommandHelp help) : base(help)
+        {
+            if (help == null)
+                throw new ArgumentNullException(nameof(help));
+
+            // These are all read-only and can just be copied.
+            // (This also goes for the properties copied in the base class)
+            Command = help.Command;
+            Subcommands = help.Subcommands;
+            // This one isn't, but we strictly control writing to it.
+            // Namely we only change it _when cloning_.
+            Parent = help.Parent;
+        }
+
+        public CommandHelp Clone()
+        {
+            return new CommandHelp(this);
+        }
+
+        // Clones and re-parents the clone.
+        public CommandHelp Clone(IHelpNode parent)
+        {
+            var help = Clone();
+            help.Parent = parent;
+            return help;
+        }
     }
 }

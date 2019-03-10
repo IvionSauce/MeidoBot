@@ -36,6 +36,13 @@ namespace MeidoCommon
         {
             Documentation = dHelp.Documentation;
         }
+
+        // Cloning constructor.
+        internal BaseHelp(BaseHelp help)
+        {
+            Documentation = help.Documentation;
+            AlsoSee = help.AlsoSee;
+        }
     }
 
     public abstract class CommandBaseHelp : BaseHelp
@@ -51,6 +58,12 @@ namespace MeidoCommon
         internal CommandBaseHelp(DynamicHelp dHelp, string parameters) : base(dHelp)
         {
             Parameters = parameters;
+        }
+
+        // Cloning constructor
+        internal CommandBaseHelp(CommandBaseHelp help) : base(help)
+        {
+            Parameters = help.Parameters;
         }
     }
 
