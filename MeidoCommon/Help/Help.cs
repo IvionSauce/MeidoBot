@@ -5,6 +5,15 @@ using MeidoCommon.ExtensionMethods;
 
 namespace MeidoCommon
 {
+    // Uniform travelling when dealing with Trigger- and CommandHelp.
+    public interface IHelpNode
+    {
+        IHelpNode Parent { get; }
+        IEnumerable<IHelpNode> Siblings { get; }
+        IEnumerable<IHelpNode> Children { get; }
+    }
+
+
     public abstract class BaseHelp
     {
         public readonly IEnumerable<string> Documentation;

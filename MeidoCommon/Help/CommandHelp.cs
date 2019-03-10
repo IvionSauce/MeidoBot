@@ -1,15 +1,35 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 
 namespace MeidoCommon
 {
-    public class CommandHelp : BaseHelp
+    public class CommandHelp : BaseHelp, IHelpNode
     {
         public readonly string Command;
         public readonly string Parameters;
         public readonly ReadOnlyCollection<CommandHelp> Subcommands;
+
+        // IHelpNode properties.
+        public IHelpNode Parent { get; private set; }
+
+        public IEnumerable<IHelpNode> Siblings
+        {
+            get
+            {
+                if (Parent != null)
+                    return Parent.Children.Where(node => node != this);
+
+                return new IHelpNode[0];
+            }
+        }
+
+        public IEnumerable<IHelpNode> Children
+        {
+            get { return Subcommands; }
+        }
 
 
         // Shared argument checking and field initialization.

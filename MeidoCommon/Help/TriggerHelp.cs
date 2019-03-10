@@ -1,15 +1,43 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 
 namespace MeidoCommon
 {
-    public class TriggerHelp : BaseHelp
+    public class TriggerHelp : BaseHelp, IHelpNode
     {
         public readonly string Parameters;
         public readonly ReadOnlyCollection<CommandHelp> Commands;
         public Trigger ParentTrigger { get; internal set; }
+
+        // IHelpNode properties.
+        public IHelpNode Parent
+        {
+            // We don't have a parent, TriggerHelp is the root of the help tree.
+            get { return null; }
+        }
+
+        public IEnumerable<IHelpNode> Siblings
+        {
+            // We can have siblings though, kinda. One can group triggers by setting RelatedTriggers.
+            get
+            {
+                if (ParentTrigger != null)
+                {
+                    return from tr in ParentTrigger.RelatedTriggers
+                           where tr.Help != null
+                           select tr.Help;
+                }
+                return new IHelpNode[0];
+            }
+        }
+
+        public IEnumerable<IHelpNode> Children
+        {
+            get { return Commands; }
+        }
 
 
         // Shared field initialization.
