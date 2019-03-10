@@ -6,10 +6,9 @@ using System.Collections.ObjectModel;
 
 namespace MeidoCommon
 {
-    public class CommandHelp : BaseHelp, IHelpNode
+    public class CommandHelp : CommandBaseHelp, IHelpNode
     {
         public readonly string Command;
-        public readonly string Parameters;
         public readonly ReadOnlyCollection<CommandHelp> Subcommands;
 
         // IHelpNode properties.
@@ -37,7 +36,7 @@ namespace MeidoCommon
             string command,
             string parameters,
             DynamicHelp dHelp,
-            bool initSubcommands) : base(dHelp)
+            bool initSubcommands) : base(dHelp, parameters)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
@@ -47,7 +46,6 @@ namespace MeidoCommon
                 throw new ArgumentException("Cannot contain whitespace.", nameof(command));
 
             Command = command;
-            Parameters = parameters ?? string.Empty;
             if (initSubcommands)
                 Subcommands = new ReadOnlyCollection<CommandHelp>(new CommandHelp[0]);
         }

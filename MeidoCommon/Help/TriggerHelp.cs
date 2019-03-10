@@ -6,9 +6,8 @@ using System.Collections.ObjectModel;
 
 namespace MeidoCommon
 {
-    public class TriggerHelp : BaseHelp, IHelpNode
+    public class TriggerHelp : CommandBaseHelp, IHelpNode
     {
-        public readonly string Parameters;
         public readonly ReadOnlyCollection<CommandHelp> Commands;
         public Trigger ParentTrigger { get; internal set; }
 
@@ -41,9 +40,11 @@ namespace MeidoCommon
 
 
         // Shared field initialization.
-        TriggerHelp(string parameters, DynamicHelp dHelp, bool initCommands) : base(dHelp)
+        TriggerHelp(
+            string parameters,
+            DynamicHelp dHelp,
+            bool initCommands) : base(dHelp, parameters)
         {
-            Parameters = parameters ?? string.Empty;
             if (initCommands)
                 Commands = new ReadOnlyCollection<CommandHelp>(new CommandHelp[0]);
         }
