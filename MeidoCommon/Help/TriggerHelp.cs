@@ -59,7 +59,7 @@ namespace MeidoCommon
             DynamicHelp dHelp,
             CommandHelp[] commands) : this(parameters, dHelp, false)
         {
-            Commands = Tools.ProcessCommands(commands, nameof(commands));
+            Commands = Tools.ProcessCommands(commands, nameof(commands), this);
         }
 
 

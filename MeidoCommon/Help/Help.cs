@@ -19,7 +19,7 @@ namespace MeidoCommon
     // --- Abstract base classes ---
     // Not pretty, but it does allow some degree of abstraction over common properties.
     // These probably also could've been interfaces, but I didn't want to implement them
-    // on all the subclasses - hence regular inheritance proved to most expedient.
+    // on all the subclasses - hence regular inheritance proved to be the most expedient.
 
     public abstract class BaseHelp
     {
@@ -48,9 +48,9 @@ namespace MeidoCommon
     public abstract class CommandBaseHelp : BaseHelp
     {
         /* We'd also like to abstract over some kind of identifier, but TriggerHelp
-        * and CommandHelp are quite different in that regard. TriggerHelp can have
-        * multiple identifiers, while CommandHelp has always one. Maybe in the future
-        * we'll find a way to unify them.
+         * and CommandHelp are quite different in that regard. TriggerHelp can have
+         * multiple identifiers, while CommandHelp has always one. Maybe in the future
+         * we'll find a way to unify them.
         */
         public readonly string Parameters;
 

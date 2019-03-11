@@ -63,7 +63,7 @@ namespace MeidoCommon
             DynamicHelp dHelp,
             CommandHelp[] subcommands) : this(command, parameters, dHelp, false)
         {
-            Subcommands = Tools.ProcessCommands(subcommands, nameof(subcommands));
+            Subcommands = Tools.ProcessCommands(subcommands, nameof(subcommands), this);
         }
 
 
@@ -169,7 +169,7 @@ namespace MeidoCommon
         }
 
         // Clones and re-parents the clone.
-        public CommandHelp Clone(IHelpNode parent)
+        public CommandHelp ReparentClone(IHelpNode parent)
         {
             var help = Clone();
             help.Parent = parent;
