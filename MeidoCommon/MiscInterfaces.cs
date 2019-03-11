@@ -9,7 +9,6 @@ namespace MeidoCommon
         // Things the plugin provides us with.
         string Name { get; }
         string Version { get; }
-        Dictionary<string, string> Help { get; }
 
         // Method to signal to the plugins they need to stop whatever seperate threads they have running.
         // As well as to save/deserialize whatever it needs to.
@@ -24,6 +23,11 @@ namespace MeidoCommon
     public interface IPluginIrcHandlers
     {
         IEnumerable<IIrcHandler> IrcHandlers { get; }
+    }
+
+    public interface IPluginHelp
+    {
+        IEnumerable<TopicHelp> Help { get; }
     }
 
 
