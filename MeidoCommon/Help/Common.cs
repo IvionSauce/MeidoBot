@@ -24,8 +24,8 @@ namespace MeidoCommon
     public abstract class BaseHelp
     {
         public readonly IEnumerable<string> Documentation;
-        IEnumerable<Help> _alsoSee;
-        public IEnumerable<Help> AlsoSee
+        IEnumerable<TopicHelp> _alsoSee;
+        public IEnumerable<TopicHelp> AlsoSee
         {
             get { return _alsoSee.NoNull(); }
             set { _alsoSee = value; }
@@ -65,31 +65,5 @@ namespace MeidoCommon
         {
             Parameters = help.Parameters;
         }
-    }
-
-
-    // --- Simple help class ---
-
-    public class Help : BaseHelp
-    {
-        public readonly string Topic;
-
-
-        Help(string topic, DynamicHelp dHelp) : base(dHelp)
-        {
-            if (topic == null)
-                throw new ArgumentNullException(nameof(topic));
-            
-            Topic = topic;
-        }
-
-        public Help(string topic, string documentation)
-            : this(topic, new DynamicHelp(documentation)) {}
-
-        public Help(string topic, IEnumerable<string> documentation)
-            : this(topic, new DynamicHelp(documentation)) {}
-
-        public Help(string topic, Func<string> documentation)
-            : this(topic, new DynamicHelp(documentation)) {}
     }
 }
