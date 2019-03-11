@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using MeidoCommon;
 
 
@@ -9,6 +11,10 @@ namespace MeidoBot
     {
         public readonly string Prefix;
 
+        readonly List<string> primeIds;
+        public readonly ReadOnlyCollection<string> PrimeIdentifiers;
+
+
         readonly Dictionary<string, Trigger> triggers;
         readonly ThrottleManager throttle;
         readonly Logger log;
@@ -17,6 +23,9 @@ namespace MeidoBot
         public Triggers(string triggerPrefix, ThrottleManager tManager, Logger log)
         {
             Prefix = triggerPrefix;
+            primeIds = new List<string>();
+            PrimeIdentifiers = new ReadOnlyCollection<string>(primeIds);
+
             throttle = tManager;
             this.log = log;
             triggers = new Dictionary<string, Trigger>(StringComparer.Ordinal);
@@ -30,8 +39,14 @@ namespace MeidoBot
             foreach (var id in trigger.Identifiers)
             {
                 // We consider it a success if even one identifier is successfully registered.
-                if (RegisterTrigger(id, trigger, plugin.Name) && !success)
+                if (RegisterTrigger(id, trigger, plugin.Name))
+                {
+                    // Regard the first successful registered id of a trigger as the prime id.
+                    if (!success)
+                        primeIds.Add(id);
+
                     success = true;
+                }
             }
 
             return success;
@@ -76,9 +91,31 @@ namespace MeidoBot
             return triggers.TryGetValue(identifier, out tr);
         }
 
-        public bool IsRegistered(string identifier)
+
+        public IEnumerable<string> PrimeIds(IEnumerable<Trigger> trigs)
         {
-            return triggers.ContainsKey(identifier);
+            return
+                from tr in trigs
+                select GetPrimeId(tr) into prime
+                where prime != null
+                select prime;
+        }
+
+        // Plug trigger identifiers back into registered id's and return the first id
+        // that points to the trigger.
+        string GetPrimeId(Trigger tr)
+        {
+            return tr.Identifiers
+                     .FirstOrDefault(id => IsRegisteredAs(tr, id));
+        }
+
+        // Check if possible prime identifier /actually/ points to the trigger,
+        // another trigger might've snatched the identifier.
+        bool IsRegisteredAs(Trigger tr, string identifier)
+        {
+            Trigger registeredTrig;
+            return TryGet(identifier, out registeredTrig) &&
+                registeredTrig == tr;
         }
 
 
