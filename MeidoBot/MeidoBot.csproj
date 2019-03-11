@@ -57,6 +57,9 @@
     <Compile Include="Dispatch\IrcMessage.cs" />
     <Compile Include="Dispatch\Triggers.cs" />
     <Compile Include="Dispatch\IrcEventHandlers.cs" />
+    <Compile Include="Help\Help.cs" />
+    <Compile Include="Help\HelpRequest.cs" />
+    <Compile Include="Help\HelpResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
