@@ -5,14 +5,14 @@ using MeidoCommon;
 
 namespace MeidoBot
 {
-    class Help
+    class OldHelp
     {
         readonly string triggerPrefix;
         readonly Dictionary<string, string> subjects =
             new Dictionary<string, string> (StringComparer.Ordinal);
 
 
-        public Help(string triggerPrefix)
+        public OldHelp(string triggerPrefix)
         {
             this.triggerPrefix = triggerPrefix;
         }
