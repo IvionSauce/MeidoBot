@@ -20,7 +20,7 @@ namespace MeidoBot
         // Provides 'auth' and 'admin' trigger.
         readonly Admin admin;
         // Provides help triggers 'help'/'h'.
-        readonly OldHelp help;
+        readonly Help help;
 
         // IRC Communication object to be passed along to the plugins, so they can respond freely through it.
         // Also used to call the relevant method(s) on receiving messages.
@@ -76,7 +76,7 @@ namespace MeidoBot
             meidoComm.LoadAndWatchConfig("Ignore", LoadIgnores);
 
             // Setup non-plugin triggers and register them.
-            help = new OldHelp(config.TriggerPrefix);
+            help = new Help(triggers);
             admin = new Admin(this, irc, meidoComm);
             RegisterSpecialTriggers(triggers);
             // Load plugins and setup their triggers/help.

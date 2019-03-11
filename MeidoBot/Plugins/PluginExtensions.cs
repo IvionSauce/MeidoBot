@@ -29,14 +29,6 @@ namespace MeidoBot
             return name;
         }
 
-        public static Dictionary<string, string> Help(this IMeidoHook plugin)
-        {
-            if (plugin.Help != null)
-                return plugin.Help;
-
-            return new Dictionary<string, string>();
-        }
-
 
         public static bool Query(this TriggerHelp root, string[] fullCommand, out CommandHelp help)
         {

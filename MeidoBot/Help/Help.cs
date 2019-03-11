@@ -32,6 +32,13 @@ namespace MeidoBot
         }
 
 
+        public void RegisterHelp(MeidoPlugin plugin)
+        {
+            foreach (var help in plugin.Help)
+                helpOnTopics[help.Topic] = help;
+        }
+
+
         public void Trigger(ITriggerMsg msg)
         {
             var request = HelpRequest.FromHelpTrigger(msg.MessageArray, triggerPrefix);

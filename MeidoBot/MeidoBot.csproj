@@ -52,7 +52,6 @@
     <Compile Include="Plugins\MeidoPlugin.cs" />
     <Compile Include="Configuration\WatchConfig.cs" />
     <Compile Include="Admin.cs" />
-    <Compile Include="Help.cs" />
     <Compile Include="Dispatch\Dispatcher.cs" />
     <Compile Include="Dispatch\IrcMessage.cs" />
     <Compile Include="Dispatch\Triggers.cs" />
