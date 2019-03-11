@@ -58,7 +58,7 @@ namespace MeidoBot
                 var trigIds =
                     from id in triggers.PrimeIdentifiers
                     orderby id
-                    select triggerPrefix;
+                    select id;
                 
                 var topics =
                     from help in helpOnTopics.Values
