@@ -19,10 +19,10 @@ namespace MeidoBot
         // Consts for formatting footer.
         const string pathSep = " ";
         const string listSep = ", ";
-        const string sectionSep = "  ::  ";
-        const string alsoSection = "Also see: ";
-        const string altTrigSection = "Triggers: ";
-        const string relatedSection = "Related: ";
+        const string sectionSep = " :: ";
+        const string alsoSection = "\u0002Also see:\u0002 ";
+        const string altTrigSection = "\u0002Alts:\u0002 ";
+        const string relatedSection = "\u0002Related:\u0002 ";
 
 
         public Help(Triggers triggers)
@@ -65,8 +65,8 @@ namespace MeidoBot
                     orderby help.Topic
                     select help.Topic;
 
-                msg.Reply("Triggers: " + string.Join(listSep, trigIds));
-                msg.Reply("Help topics: " + string.Join(listSep, topics));
+                msg.Reply("Triggers - " + string.Join(listSep, trigIds));
+                msg.Reply("Help topics - " + string.Join(listSep, topics));
             }
         }
 
@@ -164,6 +164,7 @@ namespace MeidoBot
             return sb.ToString();
         }
 
+
         void TriggerFooter(StringBuilder sb, string triggerId, TriggerHelp help)
         {
             var trigger = help.ParentTrigger;
@@ -195,6 +196,7 @@ namespace MeidoBot
             }
         }
 
+
         void CommandFooter(StringBuilder sb, string triggerId, CommandHelp help)
         {
             var cmdPath = new Stack<string>();
@@ -202,25 +204,8 @@ namespace MeidoBot
             // in a space at the end.
             cmdPath.Push(string.Empty);
 
-            IEnumerable<string> relatedCommands;
-            // Node to start building the command path up from.
             IHelpNode startingNode;
-            // Assume sibling commands are relevant.
-            if (help.Siblings.Any())
-            {
-                relatedCommands =
-                    from siblingHelp in help.Siblings.Cast<CommandHelp>()
-                    select siblingHelp.Command;
-                // Prefix for siblings, so don't include this command.
-                startingNode = help.Parent;
-            }
-            // If this command has no siblings, try children/subcommands.
-            else
-            {
-                relatedCommands = help.Subcommands.Select(sc => sc.Command);
-                // We're down a level, include this command.
-                startingNode = help;
-            }
+            var relatedCommands = GetRelated(help, out startingNode);
             // Build command path up to the root.
             StackCommandPath(cmdPath, startingNode, triggerPrefix + triggerId);
 
@@ -230,6 +215,31 @@ namespace MeidoBot
 
             if (related != string.Empty)
                 sb.Append(relatedSection).Append(related);
+        }
+
+        // Returns related commands and their parent node, which is where we will start
+        // to build the prefix.
+        static IEnumerable<string> GetRelated(CommandHelp help, out IHelpNode parentNode)
+        {
+            IEnumerable<string> related;
+
+            // Assume sibling commands are relevant.
+            if (help.Siblings.Any())
+            {
+                related =
+                    from siblingHelp in help.Siblings.Cast<CommandHelp>()
+                    select siblingHelp.Command;
+                
+                parentNode = help.Parent;
+            }
+            // If this command has no siblings, try children/subcommands.
+            else
+            {
+                related = help.Subcommands.Select(sc => sc.Command);
+                parentNode = help;
+            }
+
+            return related;
         }
 
         static void StackCommandPath(Stack<string> cmdPath, IHelpNode start, string root)
