@@ -64,12 +64,15 @@ namespace MeidoBot
         }
 
 
-        public bool Contains(string source)
+        public bool Contains(IrcMsg msg)
         {
             if (ignores != null)
-                return ignores.Contains(source);
-            else
-                return false;
+            {
+                return ignores.Contains(msg.Nick) ||
+                       ignores.Contains(msg.Channel);
+            }
+
+            return false;
         }
     }
 }
