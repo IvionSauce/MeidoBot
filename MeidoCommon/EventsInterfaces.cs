@@ -15,6 +15,8 @@
 
     public interface IIrcMsg : IIrcHandlerEvent
     {
+        IIrcComm Irc { get; }
+
         string Message { get; }
         string[] MessageArray { get; }
         string Channel { get; }

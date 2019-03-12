@@ -8,6 +8,7 @@ namespace MeidoBot
 {
     class IrcMsg : IQueryMsg, IChannelMsg, ITriggerMsg, IQueryAction, IChannelAction
     {
+        public IIrcComm Irc { get; private set; }
         // Identical to the IrcMessageData properties.
         public string Message { get; private set; }
         public string[] MessageArray { get; private set; }
@@ -20,13 +21,12 @@ namespace MeidoBot
         public string Trigger { get; private set; }
         public string ReturnTo { get; private set; }
 
-        readonly IrcComm irc;
         readonly ReceiveType type;
 
 
         public IrcMsg(IrcComm irc, IrcMessageData messageData, string prefix)
         {
-            this.irc = irc;
+            Irc = irc;
             type = messageData.Type;
 
             Message = messageData.Message;
@@ -75,7 +75,7 @@ namespace MeidoBot
 
         public void SendNotice(string message)
         {
-            irc.SendNotice(Nick, message);
+            Irc.SendNotice(Nick, message);
         }
 
 
@@ -90,11 +90,11 @@ namespace MeidoBot
             {
                 case ReceiveType.ChannelMessage:
                 case ReceiveType.ChannelAction:
-                irc.SendMessage(Channel, string.Concat(Nick, ": ", message));
+                Irc.SendMessage(Channel, string.Concat(Nick, ": ", message));
                 return;
                 case ReceiveType.QueryMessage:
                 case ReceiveType.QueryAction:
-                irc.SendMessage(Nick, message);
+                Irc.SendMessage(Nick, message);
                 return;
                 default:
                 throw new InvalidOperationException("Unexpected ReceiveType.");
