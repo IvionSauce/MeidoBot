@@ -88,17 +88,15 @@ namespace MeidoBot
             const int hardLimit = 10;
 
             // Always send first line regularly.
-            msg.Reply(firstLine);
+            Action<string> send = (help) => msg.Irc.SendMessage(msg.ReturnTo, help);
+            send(firstLine);
 
             if (restLines.Count > 0)
             {
                 // Send the other lines via notice if there are too many and
                 // help was requested in a channel.
-                Action<string> send;
                 if (restLines.Count > softLimit && msg.Channel != null)
                     send = msg.SendNotice;
-                else
-                    send = msg.Reply;
 
                 // Never send more than the hard limit.
                 int stop = restLines.Count;
