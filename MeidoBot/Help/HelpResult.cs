@@ -15,6 +15,8 @@ namespace MeidoBot
             get { return firstLine != null; }
         }
 
+        const string helpSep = " – ";
+
         readonly string firstLine;
         readonly List<string> restLines;
 
@@ -38,11 +40,10 @@ namespace MeidoBot
                 restLines.Add(footer);
         }
 
-        public HelpResult(TopicHelp help, string footer) : this((BaseHelp)help, footer)
-        {
-            const string sep = ": ";
-            firstLine = help.Topic + sep + firstLine;
-        }
+        //public HelpResult(TopicHelp help, string footer) : this((BaseHelp)help, footer)
+        //{
+        //    firstLine = help.Topic + helpSep + firstLine;
+        //}
 
         public HelpResult(
             HelpRequest req,
@@ -58,20 +59,23 @@ namespace MeidoBot
 
         static string Format(string signature, string firstLine)
         {
-            const string sep = " - ";
-            return signature + sep + firstLine;
+            return signature + helpSep + firstLine;
         }
 
+        // Signature for trigger/command help.
         static string Signature(HelpRequest req, string parameters)
         {
+            string prefix = null;
+            if (!req.StartsWithTriggerPrefix)
+                prefix = req.TriggerPrefix;
+            
             if (!string.IsNullOrEmpty(parameters))
             {
-                return req.TriggerPrefix +
-                       req.NormalizedQuery +
+                return prefix + req.NormalizedQuery +
                        " " + parameters;
             }
 
-            return req.TriggerPrefix + req.NormalizedQuery;
+            return prefix + req.NormalizedQuery;
         }
 
 

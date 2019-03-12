@@ -16,6 +16,10 @@ namespace MeidoBot
         {
             get { return NormalizedQuery != null; }
         }
+        public bool StartsWithTriggerPrefix
+        {
+            get { return RestrictToTriggers; }
+        }
         public bool HasRest
         {
             get { return Rest != null; }
