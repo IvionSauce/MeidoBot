@@ -175,7 +175,7 @@ namespace MeidoBot
             // For each related trigger select the first identifier that is known to us (prime id).
             var relatedTriggers = triggers.PrimeIds(trigger.RelatedTriggers);
             // The possible commands might also be pertinent.
-            var commands = help.Commands.Select(cmd => triggerId + pathSep + cmd);
+            var commands = help.Commands.Select(cmd => triggerId + pathSep + cmd.Command);
 
             var alternative = Join(triggerPrefix, alternativeIds);
             var related = Join(
