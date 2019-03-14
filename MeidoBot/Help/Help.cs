@@ -17,12 +17,13 @@ namespace MeidoBot
         }
 
         // Consts for formatting footer.
+        public const string NoHelpError = "No help available.";
         const string pathSep = " ";
         const string listSep = ", ";
-        const string sectionSep = " :: ";
-        const string alsoSection = "\u0002Also see:\u0002 ";
-        const string altTrigSection = "\u0002Alts:\u0002 ";
-        const string relatedSection = "\u0002Related:\u0002 ";
+        const string sectionSep = "   ";
+        const string alsoSection = "▶ Also see: ";
+        const string altTrigSection = "⬟ Alt: ";
+        const string relatedSection = "◆ Related: ";
 
 
         public Help(Triggers triggers)
@@ -49,7 +50,7 @@ namespace MeidoBot
                 if (result.Success)
                     result.PrintHelp(msg);
                 else
-                    msg.Reply("Sorry, I couldn't find anything for '{0}'.",
+                    msg.Reply("Sorry, I couldn't find any help for '{0}'.",
                               request.NormalizedQuery);
             }
             // Just the help trigger, no query: print all the subjects we've got.
@@ -65,8 +66,9 @@ namespace MeidoBot
                     orderby help.Topic
                     select help.Topic;
 
-                msg.Reply("Triggers - " + string.Join(listSep, trigIds));
-                msg.Reply("Help topics - " + string.Join(listSep, topics));
+                var irc = msg.Irc;
+                irc.SendMessage(msg.ReturnTo, "Triggers: " + string.Join(listSep, trigIds));
+                irc.SendMessage(msg.ReturnTo, "Other: " + string.Join(listSep, topics));
             }
         }
 

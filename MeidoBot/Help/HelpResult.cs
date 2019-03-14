@@ -28,10 +28,8 @@ namespace MeidoBot
 
         public HelpResult(BaseHelp bHelp, string footer)
         {
-            const string noHelp = "No help available.";
-
             firstLine = bHelp.Documentation
-                             .FirstOrDefault() ?? noHelp;
+                             .FirstOrDefault() ?? Help.NoHelpError;
 
             restLines = bHelp.Documentation
                              .Skip(1).ToList();
@@ -84,8 +82,10 @@ namespace MeidoBot
             if (!Success)
                 throw new InvalidOperationException("Success is false, no help to be printed.");
 
-            const int softLimit = 3;
-            const int hardLimit = 10;
+            // Minus 1 because this should account for the first line,
+            // which is sent before the checks.
+            const int softLimit = 3 - 1;
+            const int hardLimit = 10 - 1;
 
             // Always send first line regularly.
             Action<string> send = (help) => msg.Irc.SendMessage(msg.ReturnTo, help);
