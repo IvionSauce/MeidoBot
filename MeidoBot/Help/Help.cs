@@ -80,9 +80,9 @@ namespace MeidoBot
             Trigger tr;
             if (triggers.TryGet(request.First, out tr))
             {
-                // If trigger has help associated get and format it.
-                if (tr.Help != null)
-                    result = GetHelp(request, tr.Help);
+                // We'll wrap Help so that even when there's no help for a trigger
+                // a footer is still made (with related triggers).
+                result = GetHelp(request, tr.HelpNullWrap(NoHelpError));
             }
 
             // If it's not exclusively a trigger/command query try to find the query
@@ -102,7 +102,7 @@ namespace MeidoBot
 
         HelpResult GetHelp(HelpRequest request, TriggerHelp trHelp)
         {
-            // We have a help query for a trigger+command.
+            // Help query for a trigger+command.
             if (request.HasRest)
             {
                 // Check if we can find a command corresponding to the query.
@@ -115,18 +115,17 @@ namespace MeidoBot
                         FormatFooter(request.First, cmdHelp)
                     );
                 }
-                // If we can't, and the request is not specifically for a trigger,
-                // return failure.
-                if (!request.RestrictToTriggers)
-                    return HelpResult.Failure;
+            }
+            // Help query for just a trigger.
+            else
+            {
+                return request.ToResult(
+                    trHelp,
+                    FormatFooter(request.First, trHelp)
+                );
             }
 
-            // If either there was no command query or `RestrictToTriggers` was on,
-            // return help for trigger.
-            return request.ToResult(
-                trHelp,
-                FormatFooter(request.First, trHelp)
-            );
+            return HelpResult.Failure;
         }
 
 
