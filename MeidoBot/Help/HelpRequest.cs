@@ -57,9 +57,21 @@ namespace MeidoBot
         }
 
 
-        public HelpResult ToResult(CommandBaseHelp cmdBaseHelp, string footer)
+        public HelpResult ToResult(TopicHelp help, Footer foot)
         {
-            return new HelpResult(this, cmdBaseHelp, footer);
+            return new HelpResult(
+                help,
+                foot.Format(this, help)
+            );
+        }
+
+        public HelpResult ToResult(CommandBaseHelp cmdBaseHelp, Footer foot)
+        {
+            return new HelpResult(
+                this,
+                cmdBaseHelp,
+                foot.Format(this, cmdBaseHelp)
+            );
         }
 
 

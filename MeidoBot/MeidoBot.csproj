@@ -59,6 +59,7 @@
     <Compile Include="Help\Help.cs" />
     <Compile Include="Help\HelpRequest.cs" />
     <Compile Include="Help\HelpResult.cs" />
+    <Compile Include="Help\Footer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">
