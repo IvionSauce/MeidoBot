@@ -222,16 +222,19 @@ namespace MeidoBot
         {
             IEnumerable<string> related;
 
-            // Assume sibling commands are relevant.
+            // Assume subcommands and sibling commands are relevant.
             if (help.Siblings.Any())
             {
-                related =
+                var siblings =
                     from siblingHelp in help.Siblings.Cast<CommandHelp>()
                     select siblingHelp.Command;
                 
+                var children = help.Subcommands
+                                   .Select(sc => help.Command + pathSep + sc.Command);
+
+                related = children.Concat(siblings);
                 parentNode = help.Parent;
             }
-            // If this command has no siblings, try children/subcommands.
             else
             {
                 related = help.Subcommands.Select(sc => sc.Command);
