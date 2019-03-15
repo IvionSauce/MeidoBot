@@ -111,7 +111,7 @@ namespace MeidoBot
 
         // Check if possible prime identifier /actually/ points to the trigger,
         // another trigger might've snatched the identifier.
-        bool IsRegisteredAs(Trigger tr, string identifier)
+        public bool IsRegisteredAs(Trigger tr, string identifier)
         {
             Trigger registeredTrig;
             return TryGet(identifier, out registeredTrig) &&

@@ -63,9 +63,13 @@ namespace MeidoBot
         {
             var trigger = help.ParentTrigger;
 
-            // Select all trigger identifiers that are not the current one.
+            // Select trigger identifiers that are for this trigger and
+            // filter out the current trigger id.
             var alternativeIds =
-                trigger.Identifiers.Where(id => id != triggerId);
+                from id in trigger.Identifiers
+                where triggers.IsRegisteredAs(trigger, id)
+                where id != triggerId
+                select id;
 
             // For each related trigger select the first identifier that is known to us (prime id).
             var relatedTriggers = triggers.PrimeIds(trigger.RelatedTriggers);
