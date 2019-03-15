@@ -8,13 +8,13 @@ namespace MeidoBot
 {
     class Help
     {
-        readonly Triggers triggers;
-        readonly Dictionary<string, TopicHelp> helpOnTopics;
-        readonly Footer footer;
-
         // Consts for formatting purposes.
         public const string NoHelpError = "No help available.";
         public const string ListSep = ", ";
+
+        readonly Triggers triggers;
+        readonly Dictionary<string, TopicHelp> helpOnTopics;
+        readonly Footer footer;
 
 
         public Help(Triggers triggers)
@@ -27,8 +27,11 @@ namespace MeidoBot
 
         public void RegisterHelp(MeidoPlugin plugin)
         {
-            foreach (var help in plugin.Help)
-                helpOnTopics[help.Topic] = help;
+            foreach (TopicHelp help in plugin.AllTopicHelp)
+            {
+                if (!helpOnTopics.ContainsKey(help.Topic))
+                    helpOnTopics[help.Topic] = help;
+            }
         }
 
 
@@ -74,7 +77,7 @@ namespace MeidoBot
             Trigger tr;
             if (triggers.TryGet(request.First, out tr))
             {
-                // We'll wrap Help so that even when there's no help for a trigger
+                // We'll wrap Trigger.Help so that even when there's no help
                 // a footer is still made (with related triggers).
                 result = GetHelp(request, tr.HelpNullWrap(NoHelpError));
             }
