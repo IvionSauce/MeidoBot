@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using MeidoCommon;
@@ -27,6 +28,46 @@ namespace MeidoBot
             }
 
             return name;
+        }
+
+
+        public static TriggerHelp HelpNullWrap(this Trigger tr, string errorMsg)
+        {
+            var help = tr.Help;
+            if (help == null)
+            {
+                help = new TriggerHelp(errorMsg);
+                tr.Help = help;
+            }
+
+            return help;
+        }
+
+
+        public static IEnumerable<IHelpNode> AllNodes<T>(this T root)
+            where T : IHelpNode
+        {
+            // Root is included in all nodes.
+            var nodes = new IHelpNode[] {root};
+            return RecurseNodes(nodes);
+        }
+
+        static IEnumerable<IHelpNode> RecurseNodes(IEnumerable<IHelpNode> nodes)
+        {
+            if (nodes.Any())
+            {
+                // For each node, get child nodes.
+                var allChildNodes =
+                    from node in nodes
+                    from child in node.Children
+                    select child;
+
+                // Oh holy stack, lead us not into uneliminated tail recursion,
+                // but deliver us from overflows.
+                return nodes.Concat(RecurseNodes(allChildNodes));
+            }
+            else
+                return Enumerable.Empty<IHelpNode>();
         }
 
 
