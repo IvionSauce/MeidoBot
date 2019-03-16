@@ -60,7 +60,7 @@ class TimerTrigger
 
         int tmrNo = timers.Enqueue(duration, e, message);
         if (tmrNo >= 0)
-            e.Reply("Your timer has started. [{0}]", tmrNo);
+            e.Reply("Your timer has started. [{0}] {1}", tmrNo, duration.Str());
         else
             e.Reply("Max timer count reached. Please wait for some timers to finish or stop them manually.");
     }
@@ -158,6 +158,7 @@ class TimerTrigger
 
     static void EmitDescriptions(TimerDescription[] descs, ITriggerMsg msg)
     {
+        msg.SendNotice("Your currently running timers:");
         foreach (var desc in descs)
             EmitDescription(desc, msg);
         msg.SendNotice(" -----");
