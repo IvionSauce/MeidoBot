@@ -139,5 +139,43 @@ namespace MeidoCommon
             Option = opt;
             Threading = threading;
         }
+
+
+        // Modifies `triggers` in place, but also returns it. It would be clearer
+        // if we returned void, but this way makes it nice to use for initialization.
+        public static Trigger[] Group(params Trigger[] triggers)
+        {
+            if (triggers == null)
+                throw new ArgumentNullException(nameof(triggers));
+            
+            foreach (Trigger tr in triggers)
+            {
+                if (tr != null)
+                    tr.RelatedTriggers = triggers;
+            }
+
+            return triggers;
+        }
+    }
+
+
+    public static class TriggerExtensions
+    {
+        // Extension method to make initializing multiple groups really nice.
+        // Because of the call to Trigger.Group this modifies `adds` in place.
+        public static Trigger[] AddGroup(this Trigger[] triggers, params Trigger[] adds)
+        {
+            if (triggers == null)
+                throw new ArgumentNullException(nameof(triggers));
+            if (adds == null)
+                throw new ArgumentNullException(nameof(adds));
+            
+            Trigger.Group(adds);
+            var enlarged = new Trigger[triggers.Length + adds.Length];
+            Array.Copy(triggers, enlarged, triggers.Length);
+            Array.Copy(adds, 0, enlarged, triggers.Length, adds.Length);
+
+            return enlarged;
+        }
     }
 }
