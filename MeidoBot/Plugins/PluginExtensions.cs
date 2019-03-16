@@ -49,25 +49,25 @@ namespace MeidoBot
         {
             // Root is included in all nodes.
             var nodes = new IHelpNode[] {root};
-            return RecurseNodes(nodes);
+            return RecurseNodes(Enumerable.Empty<IHelpNode>(), nodes);
         }
 
-        static IEnumerable<IHelpNode> RecurseNodes(IEnumerable<IHelpNode> nodes)
+        static IEnumerable<IHelpNode> RecurseNodes(IEnumerable<IHelpNode> acc, IEnumerable<IHelpNode> current)
         {
-            if (nodes.Any())
+            if (current.Any())
             {
                 // For each node, get child nodes.
                 var allChildNodes =
-                    from node in nodes
+                    from node in current
                     from child in node.Children
                     select child;
 
                 // Oh holy stack, lead us not into uneliminated tail recursion,
                 // but deliver us from overflows.
-                return nodes.Concat(RecurseNodes(allChildNodes));
+                return RecurseNodes(acc.Concat(current), allChildNodes);
             }
             else
-                return Enumerable.Empty<IHelpNode>();
+                return acc;
         }
 
 
