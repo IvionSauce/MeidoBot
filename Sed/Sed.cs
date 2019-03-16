@@ -5,7 +5,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcSed : IMeidoHook, IPluginIrcHandlers
+public class IrcSed : IMeidoHook, IPluginIrcHandlers, IPluginHelp
 {
     public string Name
     {
@@ -16,24 +16,8 @@ public class IrcSed : IMeidoHook, IPluginIrcHandlers
         get { return "0.12"; }
     }
 
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"sed", "Interprets messages in the form of s/<SEARCH>/<REPLACE>/<FLAGS>. For more information on " +
-                    "the specifics of the search and replace expressions, see: " +
-                    "https://msdn.microsoft.com/en-us/library/az24scfc.aspx"}
-            };
-        }
-    }
-
-    public IEnumerable<Trigger> Triggers
-    {
-        get { return new Trigger[0]; }
-    }
     public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }
+    public IEnumerable<TopicHelp> Help { get; private set; }
 
 
     readonly IIrcComm irc;
@@ -46,10 +30,19 @@ public class IrcSed : IMeidoHook, IPluginIrcHandlers
     [ImportingConstructor]
     public IrcSed (IIrcComm irc, IMeidoComm meido)
     {
-        this.irc = irc;
         IrcHandlers = new IIrcHandler[] {
             new IrcHandler<IChannelMsg>(HandleMessage)
         };
+
+        Help = new TopicHelp[] {
+            new TopicHelp(
+                "sed",
+                "Interprets messages in the form of s/<SEARCH>/<REPLACE>/<FLAGS>. For more information on " +
+                "the specifics of the search and replace expressions, see: " +
+                "https://msdn.microsoft.com/en-us/library/az24scfc.aspx")
+        };
+
+        this.irc = irc;
     }
 
 

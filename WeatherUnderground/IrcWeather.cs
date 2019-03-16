@@ -8,7 +8,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcWeather : IMeidoHook
+public class IrcWeather : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
@@ -17,18 +17,6 @@ public class IrcWeather : IMeidoHook
     public string Version
     {
         get { return "0.56"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"w", "w [location] - Reports weather conditions at location. (Powered by WeatherUnderground)"},
-                {"W", "W <location> - Sets default location for your nick."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -53,6 +41,22 @@ public class IrcWeather : IMeidoHook
     [ImportingConstructor]
     public IrcWeather(IIrcComm irc, IMeidoComm meido)
     {
+        Triggers = Trigger.Group(
+            
+            new Trigger("w", WeatherSearch, TriggerThreading.Queue) {
+                Help = new TriggerHelp(
+                    "[location] | @<nick>",
+                    "Reports weather conditions at location. Will use your default location if called " +
+                    "without arguments. (Powered by WeatherUnderground)")
+            },
+
+            new Trigger("W", SetWeatherLocation, TriggerThreading.Queue) {
+                Help = new TriggerHelp(
+                    "<location>",
+                    "Sets your default weather location to `location`.")
+            }
+        );
+
         this.irc = irc;
         log = meido.CreateLogger(this);
 
@@ -75,11 +79,6 @@ public class IrcWeather : IMeidoHook
         {
             defaultLocations = new Storage<string>();
         }
-
-        Triggers = new Trigger[] {
-            new Trigger("w", WeatherSearch, TriggerThreading.Queue),
-            new Trigger("W", SetWeatherLocation, TriggerThreading.Queue)
-        };
     }
 
     void Configure(Config conf)

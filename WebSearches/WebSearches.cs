@@ -5,7 +5,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class WebSearches : IMeidoHook
+public class WebSearches : IMeidoHook, IPluginTriggers
 {
     readonly IIrcComm irc;
     
@@ -16,23 +16,6 @@ public class WebSearches : IMeidoHook
     public string Version
     {
         get { return "0.33"; }
-    }
-    
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"g", "g <search terms> - Returns the first 3 results of a Google Search on passed terms. " +
-                    "There are also a number of triggers for site specific searches, see the 'searches' help subject " +
-                    "for more information."},
-
-                {"searches", "Supported site specific searches are, with the trigger in parentheses: YouTube (yt), " +
-                    "Wikipedia EN (wiki), MyAnimeList (mal), AniDB (anidb), MangaUpdates (mu), " +
-                    "Visual Novel DB (vndb), Steam Store (steam)."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -46,10 +29,24 @@ public class WebSearches : IMeidoHook
     {
         irc = ircComm;
 
-        var t = TriggerThreading.Threadpool;
+        var sites = new TopicHelp[] {
+            new TopicHelp(
+                "searches",
+                "Supported site specific searches are, with the trigger in parentheses: YouTube (yt), " +
+                "Wikipedia EN (wiki), MyAnimeList (mal), AniDB (anidb), MangaUpdates (mu), Visual Novel DB (vndb), " +
+                "Steam Store (steam).")
+        };
 
-        Triggers = new Trigger[] {
-            new Trigger("g", GoogleSearch, t),
+        var t = TriggerThreading.Threadpool;
+        Triggers = Trigger.Group(
+            
+            new Trigger("g", GoogleSearch, t) {
+                Help = new TriggerHelp(
+                    "<query>",
+                    "Returns the first 3 results of a Google Search on passed query. There are also a number of " +
+                    "triggers for site specific searches, see the 'searches' help subject for more information.")
+                { AlsoSee = sites }
+            },
             new Trigger("yt", YtSearch, t),
             new Trigger("wiki", WikiSearch, t),
             new Trigger("mal", MalSearch, t),
@@ -58,7 +55,7 @@ public class WebSearches : IMeidoHook
             new Trigger("vndb", VndbSearch, t),
             new Trigger("steam", SteamSearch, t)
             // maybe: urbandict, dict, animenewsnetwork
-        };
+        );
     }
 
 

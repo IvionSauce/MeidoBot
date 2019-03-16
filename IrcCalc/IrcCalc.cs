@@ -5,7 +5,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class Calc : IMeidoHook, IPluginIrcHandlers
+public class Calc : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 {
     public string Name
     {
@@ -14,18 +14,6 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
     public string Version
     {
         get { return "2.0"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"calc", @"calc <expression> - Calculates expression, accepted operators: ""+"", ""-"", ""*""," +
-                    @" ""/"", ""^""."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -41,12 +29,21 @@ public class Calc : IMeidoHook, IPluginIrcHandlers
     [ImportingConstructor]
     public Calc(IIrcComm irc, IMeidoComm meido)
     {
-        Triggers = new Trigger[] {
-            new Trigger("calc", HandleTrigger),
-            new Trigger("c", HandleTrigger),
-            new Trigger("defvar", DefVar),
-            new Trigger("var", DefVar)
-        };
+        Triggers = Trigger.Group(
+            
+            new Trigger(HandleTrigger, "calc", "c") {
+                Help = new TriggerHelp(
+                    "<expression>",
+                    "Evaluates mathematical expression. Accepted operators are: addition (+), " +
+                    "substraction (-), multiplication (*), division (/) and exponentiation (^ and **).")
+            },
+
+            new Trigger(DefVar, "defvar", "var") {
+                Help = new TriggerHelp(
+                    "<variable> <expression>",
+                    "Evaluates and assigns expression to variable.")
+            }
+        );
 
         IrcHandlers = new IIrcHandler[] {
             new IrcHandler<IQueryMsg>(HandleMessage)

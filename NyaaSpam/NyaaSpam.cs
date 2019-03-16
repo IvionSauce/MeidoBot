@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class NyaaSpam : IMeidoHook
+public class NyaaSpam : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
@@ -15,28 +15,6 @@ public class NyaaSpam : IMeidoHook
     public string Version
     {
         get { return "0.85"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"nyaa add", "nyaa add <pattern...> - Adds pattern(s), seperated by commas (,). Unless enclosed in " +
-                    "quotation marks (\"), in which case the pattern is added verbatim. (Ex: nyaa add show1, show2)"},
-                
-                {"nyaa del", "nyaa del <index...>|<pattern...> - Removes pattern(s) indicated by list of indices. " +
-                    "Can also accepts a list of patterns (or parts thereof) to be deleted. " +
-                    "Lists of indices/patterns are comma (,) seperated and indices can specified as a " +
-                    "number range \"x-y\". (Ex: nyaa del 4, 7, 0-2)"},
-                
-                {"nyaa show", "nyaa show - Gives an overview of all patterns that are checked for."},
-
-                {"nyaa bangs", "nyaa bangs - Shows all NyaaBangs that are currently supported. These are " +
-                    "(case insensitive) shorthands that can be used in patterns."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -79,8 +57,30 @@ public class NyaaSpam : IMeidoHook
         );
         meido.LoadAndWatchConfig("NyaaSpam.xml", xmlConf);
 
+        var bangs = new TopicHelp[] {
+            new TopicHelp("nyaa bangs", Bangs())
+        };
+        var nyaaHelp = new TriggerHelp(
+            () => string.Format(
+                "Commands to manipulate which patterns are periodically checked for at {0}", conf.Feed),
+            
+            new CommandHelp(
+                "add", "<pattern...>",
+                "Adds pattern(s), separated by commas (,). Unless enclosed in quotation marks (\"), in which case " +
+                "the pattern is added verbatim.") { AlsoSee = bangs },
+            
+            new CommandHelp(
+                "del", "<index...> | <pattern...>",
+                "Removes pattern(s) indicated by list of indices. Can also accept a list of patterns " +
+                "(or parts thereof) to be deleted. Lists of indices/patterns are comma (,) separated and indices can " +
+                "be specified as a number range (x-y). (Ex: nyaa del 4, 7, 0-2)"),
+            
+            new CommandHelp(
+                "show", "Gives an overview of all patterns that are checked for.")
+        ) { AlsoSee = bangs };
+
         Triggers = new Trigger[] {
-            new Trigger("nyaa", Nyaa, TriggerOption.ChannelOnly)
+            new Trigger("nyaa", Nyaa, TriggerOption.ChannelOnly) { Help = nyaaHelp }
         };
     }
 
@@ -139,7 +139,7 @@ public class NyaaSpam : IMeidoHook
         if (e.MessageArray.Length == 1)
         {
             e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
-                    conf.Feed, conf.Interval);
+                    conf.Feed, conf.Interval.Minutes);
 
             return;
         }
@@ -194,10 +194,6 @@ public class NyaaSpam : IMeidoHook
 
                 case "show":
                 ShowAll(e.Channel, e.Nick, assocPat);
-                return;
-
-                case "bangs":
-                Bangs(e.Nick);
                 return;
             }
         }
@@ -322,13 +318,12 @@ public class NyaaSpam : IMeidoHook
     }
 
 
-    void Bangs(string nick)
+    static IEnumerable<string> Bangs()
     {
-        irc.SendNotice(nick, "Supported NyaaBang shorthands:");
+        yield return "NyaaBangs are (case insensitive) shorthands that can be used in patterns.";
+        yield return "Currently supported NyaaBangs:";
         foreach (string desc in BangShorthands.GetDescriptions())
-        {
-            irc.SendNotice(nick, desc);
-        }
-        irc.SendNotice(nick, " -----");
+            yield return desc;
+        yield return " -----";
     }
 }

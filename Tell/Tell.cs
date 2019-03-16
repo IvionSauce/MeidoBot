@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcTell : IMeidoHook, IPluginIrcHandlers
+public class IrcTell : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 {
     public string Name
     {
@@ -15,23 +15,6 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     public string Version
     {
         get { return "0.15"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"tell", "tell [<nick> <message>] - Store message for nick, will be relayed when nick is active. " +
-                    "If called with 1 or 0 arguments this will function as tell-read. " +
-                    "See also: tell-read, tell-clear"},
-                
-                {"tell-read", "tell-read [n] - Read the next `n` messages, defaults to 5."},
-                
-                {"tell-clear", "tell-clear - Clears all your waiting messages."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -47,19 +30,34 @@ public class IrcTell : IMeidoHook, IPluginIrcHandlers
     [ImportingConstructor]
     public IrcTell(IIrcComm irc, IMeidoComm meido)
     {
-        this.irc = irc;
-        inboxes = new Inboxes(meido.DataDir);
+        var threading = TriggerThreading.Queue;
+        Triggers = Trigger.Group(
+            
+            new Trigger("tell", Tell, threading) {
+                Help = new TriggerHelp(
+                    "[<nick> <message>] | [count]",
+                    "Store message for nick, will be relayed when nick is active. If called with 1 or 0 arguments " +
+                    "this will read your tells, up to `count`.")
+            },
 
-        var t = TriggerThreading.Queue;
-        Triggers = new Trigger[] {
-            new Trigger("tell", Tell, t),
-            new Trigger("tell-read", Read, t),
-            new Trigger("tell-clear", Clear, t)
-        };
+            new Trigger(Read, threading, "tell-read", "tells") {
+                Help = new TriggerHelp(
+                    "[count]",
+                    "Read stored tell messages, up to `count` (defaults to 5).")
+            },
+
+            new Trigger("tell-clear", Clear, threading) {
+                Help = new TriggerHelp(
+                    "Clears all your stored tell messages.")
+            }
+        );
 
         IrcHandlers = new IIrcHandler[] {
-            new IrcHandler<IChannelMsg>(MessageHandler, t)
+            new IrcHandler<IChannelMsg>(MessageHandler, threading)
         };
+
+        this.irc = irc;
+        inboxes = new Inboxes(meido.DataDir);
     }
 
 

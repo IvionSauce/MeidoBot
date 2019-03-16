@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class UrlTitler : IMeidoHook, IPluginIrcHandlers
+public class UrlTitler : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 {
     public string Name
     {
@@ -16,25 +16,6 @@ public class UrlTitler : IMeidoHook, IPluginIrcHandlers
     public string Version
     {
         get { return "1.16"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"disable", "disable - Temporarily disable URL-Titling for you in current channel."},
-                {"enable", "enable - Re-enable (previously disabled) URL-Titling for you."},
-
-                {"query", "query <url...> - Query given URL(s) and return title or error."},
-                {"query-dbg", "query-dbg <url...> - Query given URL(s) and return title or error. " +
-                    "(Includes extra information)"},
-                
-                {"dump", "dump <url...> - Dumps HTML content of given URL(s) to a local file for inspection. " +
-                    "(Owner only)"}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -81,22 +62,36 @@ public class UrlTitler : IMeidoHook, IPluginIrcHandlers
         };
 
         // Trigger handling.
-        Triggers = new Trigger[] {
-            new Trigger("disable", Disable, TriggerOption.ChannelOnly),
-            new Trigger("enable", Enable, TriggerOption.ChannelOnly),
-            new Trigger("dump", Dump),
-
-            new Trigger(
-                msg => qTriggers.Query(msg, false),
-                TriggerThreading.Threadpool,
-                "query", "q"
-            ),
-            new Trigger(
-                msg => qTriggers.Query(msg, true),
-                TriggerThreading.Threadpool,
-                "query-dbg", "qd"
-            )
-        };
+        Triggers = Trigger.Group(
+            
+            new Trigger("disable", Disable, TriggerOption.ChannelOnly) {
+                Help = new TriggerHelp(
+                    "Temporarily disable URL-Titling for you in current channel.")
+            },
+            new Trigger("enable", Enable, TriggerOption.ChannelOnly) {
+                Help = new TriggerHelp(
+                    "Re-enable (previously disabled) URL-Titling for you.")
+            }
+        ).AddGroup(
+            new Trigger(msg => qTriggers.Query(msg, false), TriggerThreading.Threadpool,
+                        "query", "q") {
+                Help = new TriggerHelp(
+                    "<url...>",
+                    "Query given URL(s) and return title or error.")
+            },
+            new Trigger(msg => qTriggers.Query(msg, true), TriggerThreading.Threadpool,
+                        "query-dbg", "qd") {
+                Help = new TriggerHelp(
+                    "<url...>",
+                    "Query given URL(s) and return title or error. (Includes extra information)")
+            }
+        ).AddGroup(
+            new Trigger("dump", Dump) {
+                Help = new TriggerHelp(
+                    "<url...>",
+                    "Dumps HTML content of given URL(s) to a local file for inspection. (Owner only)")
+            }
+        );
     }
 
 

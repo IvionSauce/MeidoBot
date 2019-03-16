@@ -9,7 +9,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class IrcChainey : IMeidoHook, IPluginIrcHandlers
+public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 {
     public string Name
     {
@@ -18,14 +18,6 @@ public class IrcChainey : IMeidoHook, IPluginIrcHandlers
     public string Version
     {
         get { return "9999"; } // ENDLESS NINE
-    }
-    
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>();
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

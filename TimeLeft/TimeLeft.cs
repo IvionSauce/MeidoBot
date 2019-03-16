@@ -10,7 +10,7 @@ using MeidoCommon;
 using System.ComponentModel.Composition;
 
 [Export(typeof(IMeidoHook))]
-public class TimeLeft : IMeidoHook
+public class TimeLeft : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
@@ -19,21 +19,6 @@ public class TimeLeft : IMeidoHook
     public string Version
     {
         get { return "0.32"; }
-    }
-    
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"timeleft set", "timeleft set <name> <date> - Date must be in YYYY-MM-DD. Will replace entry if " +
-                    "already exists."},
-                {"timeleft del", "timeleft del <name> - Removes exact name (case insensitive) from tracking."},
-                {"timeleft", "timeleft [name] - Check on the timeleft of name, name doesn't have to be exact. " +
-                    "If no name is specified, will show all currently tracking names."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -72,7 +57,22 @@ public class TimeLeft : IMeidoHook
         irc = ircComm;
 
         Triggers = new Trigger[] {
-            new Trigger("timeleft", HandleTrigger)
+            
+            new Trigger("timeleft", HandleTrigger) {
+                Help = new TriggerHelp(
+                    "[name]",
+                    "Check on the timeleft of `name`, name doesn't have to be exact. If no name is specified, will " +
+                    "show all currently tracking names.",
+
+                    new CommandHelp(
+                        "set", "<name> <date>",
+                        "Date must be in YYYY-MM-DD. Will replace entry if already exists."),
+                    
+                    new CommandHelp(
+                        "del", "<name>",
+                        "Removes exact name (case insensitive) from tracking.")
+                )
+            }
         };
     }
     

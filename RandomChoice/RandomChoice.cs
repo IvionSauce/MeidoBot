@@ -9,7 +9,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class IrcRandom : IMeidoHook
+public class IrcRandom : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
@@ -18,24 +18,6 @@ public class IrcRandom : IMeidoHook
     public string Version
     {
         get { return "1.25"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"d", "d <options> - Takes either a range of numbers (c x-y) or a list of options seperated by" +
-                     @" ""or""/"","". If the list of options contains neither, it seperates the options by space."},
-
-                {"cd", "cd [seconds] - Want to simulwatch something? Countdown is the tool for you! Invoking cd " +
-                    "will provide you with an automatic countdown (default/min: 3s, max: 10s) " +
-                    "and end in a spectacular launch!"},
-
-                {"8ball", "8ball [question] - Ask the Magic 8-Ball any yes or no question."}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -51,7 +33,29 @@ public class IrcRandom : IMeidoHook
     [ImportingConstructor]
     public IrcRandom(IIrcComm ircComm, IMeidoComm meido)
     {
-        irc = ircComm;
+        var threading = TriggerThreading.Threadpool;
+        Triggers = new Trigger[] {
+            
+            new Trigger(Choose, "choose", "decide", "d") {
+                Help = new TriggerHelp(
+                    "<option...>",
+                    @"Takes a list of options separated by "","" and/or ""or"". " +
+                    "If the list of options contains neither, then options will be separated by space.")
+            },
+
+            new Trigger(Countdown, threading, "countdown", "cd") {
+                Help = new TriggerHelp(
+                    "[seconds]",
+                    "Want to simulwatch something? Countdown is the tool for you! Invoking this will provide you " +
+                    "with an automatic countdown (default/min: 3s, max: 10s) and a spectacular launch!")
+            },
+
+            new Trigger(EightBall, threading, "8ball") {
+                Help = new TriggerHelp(
+                    "[question]",
+                    "Ask the Magic 8-Ball any yes or no question.")
+            }
+        };
 
         // Setting up configuration.
         var xmlConf = new XmlConfig2<Config>(
@@ -61,12 +65,7 @@ public class IrcRandom : IMeidoHook
             Configure
         );
         meido.LoadAndWatchConfig("RandomChoice.xml", xmlConf);
-
-        Triggers = new Trigger[] {
-            new Trigger("d", Choose),
-            new Trigger("cd", Countdown, TriggerThreading.Threadpool),
-            new Trigger("8ball", EightBall, TriggerThreading.Threadpool)
-        };
+        irc = ircComm;
     }
 
     void Configure(Config config)

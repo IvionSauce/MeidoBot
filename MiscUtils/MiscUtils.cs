@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 
 
 [Export(typeof(IMeidoHook))]
-public class MiscUtils : IMeidoHook
+public class MiscUtils : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
@@ -15,24 +15,6 @@ public class MiscUtils : IMeidoHook
     public string Version
     {
         get { return "0.54"; }
-    }
-
-    public Dictionary<string,string> Help
-    {
-        get 
-        {
-            return new Dictionary<string, string>()
-            {
-                {"say", "say [channel] <message> - If bot is in the specified channel, send message to the channel. " +
-                    "If no channel is given, message will be sent to current channel."},
-                
-                {"timer", "timer <duration> [message] - Starts a timer. Duration is in minutes."},
-                {"timer stop", "timer stop [index] - Stops previously started timer, if no number specified will " +
-                    "stop all previously started timers."},
-                {"timer change", "timer change <index> <delta> - Change previously started timer by delta. Delta is " +
-                    "in minutes. Shorthand: timer <delta> [index]"}
-            };
-        }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
@@ -54,9 +36,31 @@ public class MiscUtils : IMeidoHook
         log = meido.CreateLogger(this);
         timerTrig = new TimerTrigger();
 
+        var timerHelp = new TriggerHelp(
+            "<duration> [message]",
+            "Starts a timer. Duration is either in the form of '1h45m30s' (where each part, h/m/s, is optional) or " +
+            "just a number, which is taken to be minutes. If called with no arguments this'll give an overview of " +
+            "all your running timers.",
+
+            new CommandHelp(
+                "stop", "[index]",
+                "Stops previously started timer. If called without an index all timers are stopped."),
+            new CommandHelp(
+                "change", "<index> <delta>",
+                "Change previously started timer by `delta`. Delta is either in the form of '1h45m30s' or just " +
+                "minutes as a bare number. Delta can be prefixed with either + or -, to substract or add to " +
+                "the timer (in fact, the shorthand requires you do so).\nShorthand: timer <delta> [index]")
+        );
+
         Triggers = new Trigger[] {
-            new Trigger("timer", timerTrig.Timer),
-            new Trigger("say", Say)
+            new Trigger("timer", timerTrig.Timer) { Help = timerHelp },
+
+            new Trigger("say", Say) {
+                Help = new TriggerHelp(
+                    "[channel] <message>",
+                    "If bot is in the specified channel, send message to the channel. If no channel is given, " +
+                    "message will be sent to current channel.")
+            }
         };
     }
 
