@@ -11,7 +11,7 @@ namespace MeidoCommon.ExtensionMethods
             if (seq != null)
                 return seq.Where(el => el != null);
             else
-                return new T[0];
+                return Enumerable.Empty<T>();
         }
     }
 }

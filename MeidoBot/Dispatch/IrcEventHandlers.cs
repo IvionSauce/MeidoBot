@@ -8,6 +8,7 @@ namespace MeidoBot
     class IrcEventHandlers
     {
         static readonly HashSet<Type> allowedTypes;
+        static readonly IIrcHandler[] EmptyHandlers;
         readonly Dictionary<Type, List<IIrcHandler>> typedHandlers;
         readonly Logger log;
 
@@ -23,6 +24,7 @@ namespace MeidoBot
                 typeof(ITriggerMsg)
             };
             allowedTypes.TrimExcess();
+            EmptyHandlers = new IIrcHandler[0];
         }
 
         public IrcEventHandlers(Logger log)
@@ -76,7 +78,7 @@ namespace MeidoBot
                 return handlers;
             }
 
-            return new IIrcHandler[0];
+            return EmptyHandlers;
         }
     }
 }

@@ -21,7 +21,7 @@ namespace MeidoCommon
                 if (Parent != null)
                     return Parent.Children.Where(node => node != this);
 
-                return new IHelpNode[0];
+                return Enumerable.Empty<IHelpNode>();
             }
         }
 
@@ -29,6 +29,10 @@ namespace MeidoCommon
         {
             get { return Subcommands; }
         }
+
+        // For initializing when there are no (sub)commands.
+        internal static ReadOnlyCollection<CommandHelp> EmptyCommands =
+            new ReadOnlyCollection<CommandHelp>(new CommandHelp[0]);
 
 
         // Shared argument checking and field initialization.
@@ -47,7 +51,7 @@ namespace MeidoCommon
 
             Command = command;
             if (initSubcommands)
-                Subcommands = new ReadOnlyCollection<CommandHelp>(new CommandHelp[0]);
+                Subcommands = EmptyCommands;
         }
 
         // Commands with no subcommands.

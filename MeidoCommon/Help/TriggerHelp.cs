@@ -29,7 +29,8 @@ namespace MeidoCommon
                            where tr.Help != null
                            select tr.Help;
                 }
-                return new IHelpNode[0];
+
+                return Enumerable.Empty<IHelpNode>();
             }
         }
 
@@ -46,7 +47,7 @@ namespace MeidoCommon
             bool initCommands) : base(dHelp, parameters)
         {
             if (initCommands)
-                Commands = new ReadOnlyCollection<CommandHelp>(new CommandHelp[0]);
+                Commands = CommandHelp.EmptyCommands;
         }
 
         // Triggers with no command subdivision.

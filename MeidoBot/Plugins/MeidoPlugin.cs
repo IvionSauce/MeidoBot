@@ -45,13 +45,13 @@ namespace MeidoBot
             var withHelp = plugin as IPluginHelp;
 
             Triggers = withTriggers != null ?
-                withTriggers.Triggers.NoNull() : new Trigger[0];
+                withTriggers.Triggers.NoNull() : Enumerable.Empty<Trigger>();
 
             Handlers = withHandlers != null ?
-                withHandlers.IrcHandlers.NoNull() : new IIrcHandler[0];
+                withHandlers.IrcHandlers.NoNull() : Enumerable.Empty<IIrcHandler>();
 
             Help = withHelp != null ?
-                withHelp.Help.NoNull() : new TopicHelp[0];
+                withHelp.Help.NoNull() : Enumerable.Empty<TopicHelp>();
         }
     }
 }
