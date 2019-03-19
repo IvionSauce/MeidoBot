@@ -39,7 +39,7 @@ namespace MeidoBot
             const string command = "PRIVMSG";
 
             int maxMsgLength = 512 - CountNonMessageCharacters(command.Length, target.Length);
-            var messages = MessageTools.Split(message, maxMsgLength);
+            var messages = MessageSplit.IrcSplit(message, maxMsgLength);
 
             foreach (string msg in messages)
             {
@@ -74,7 +74,7 @@ namespace MeidoBot
             const string command = "NOTICE";
 
             int maxMsgLength = 512 - CountNonMessageCharacters(command.Length, target.Length);
-            var messages = MessageTools.Split(message, maxMsgLength);
+            var messages = MessageSplit.IrcSplit(message, maxMsgLength);
 
             foreach (string msg in messages)
             {

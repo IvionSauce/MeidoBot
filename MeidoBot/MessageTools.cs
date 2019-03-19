@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text;
+using System.Globalization;
 using System.Collections.Generic;
 
 
@@ -21,59 +21,127 @@ namespace MeidoBot
                 case '#': // standard channel
                 case '&': // channel local to server
                 case '+': // no channel modes
-                case '!': // safe channels
+                case '!': // safe channel
                     return true;
                 default:
                     return false;
             }
         }
+    }
 
 
-        // It should be noted that the 512 character limit for IRC messages means 512 bytes/octets. This is why we
-        // need to look up how much bytes a certain character needs in UTF-8 (the encoding we use to send the messages).
+    // It should be noted that the 512 character limit for IRC messages means 512 bytes/octets. This is why we
+    // need to look up how many bytes a certain character needs in UTF-8 (the encoding we use to send the messages).
 
-        public static List<string> Split(string message, int maxByteCount)
+    // Besides that, Unicode has graphemes: which are 1 visual character, but are made out of multiple concrete
+    // characters/codepoints. We want to cut at grapheme boundaries, so we'll jump graphemes instead of chars.
+
+    class MessageSplit
+    {
+        readonly string message;
+        readonly int[] utf8Widths;
+        readonly int widthSum;
+
+
+        public MessageSplit(string message)
         {
-            var splitMessages = new List<string>();
-
-            int start = 0;
-            while (start < message.Length)
+            this.message = message;
+            utf8Widths = new int[message.Length];
+            for (int i = 0; i < message.Length; i++)
             {
-                var shortMsg = Shorten(message, start, maxByteCount);
-                splitMessages.Add(shortMsg);
-                start += shortMsg.Length;
+                var width = Utf8Width(message[i]);
+                utf8Widths[i] = width;
+                widthSum += width;
             }
-
-            return splitMessages;
         }
 
 
-        public static string Shorten(string message, int start, int maxByteCount)
+        public static List<string> IrcSplit(string message, int maxByteCount)
         {
-            var tmpMsg = new StringBuilder();
+            var m = new MessageSplit(message);
+            return m.GetChunks(maxByteCount);
+        }
 
-            int byteCount = 0;
-            for (int i = start; i < message.Length; i++)
+        public List<string> GetChunks(int maxByteCount)
+        {
+            var chunks = new List<string>();
+
+            // Only worry about graphemes when we actually need to cut.
+            if (widthSum <= maxByteCount)
+                chunks.Add(message);
+            else
             {
-                char currentChar = message[i];
-                int width = Utf8Width(currentChar);
+                // Index into message for current grapheme, for reading grapheme
+                // byte widths and to know where a cut ends (not inclusive).
+                int graphemeIdx = 0;
+                // Index into message for where to start cutting.
+                int substringIdx = 0;
+                int byteCount = 0;
+                int remaining = widthSum;
 
-                if ( (byteCount + width) <= maxByteCount)
+                foreach (int len in GraphemeLengths(message))
                 {
-                    tmpMsg.Append(currentChar);
+                    int width = GraphemeWidth(graphemeIdx, len);
+                    // If the width of the current grapheme pushes us past the limit, make the cut.
+                    if (byteCount + width > maxByteCount)
+                    {
+                        // Cut up to, but not including, the current grapheme.
+                        int count = graphemeIdx - substringIdx;
+                        chunks.Add( message.Substring(substringIdx, count) );
+                        // Next substring should start where we ended.
+                        substringIdx = graphemeIdx;
+
+                        // Early loop exit: remainder doesn't need to get cut.
+                        remaining -= byteCount;
+                        if (remaining <= maxByteCount)
+                            break;
+                        
+                        byteCount = 0;
+                    }
                     byteCount += width;
+                    // Update for next loop.
+                    graphemeIdx += len;
                 }
-                else
-                    break;
+                // Last substring to sweep up the remainder.
+                chunks.Add( message.Substring(substringIdx, message.Length - substringIdx) );
             }
 
-            return tmpMsg.ToString();
+            return chunks;
+        }
+
+        int GraphemeWidth(int start, int count)
+        {
+            int width = 0;
+            for (int i = 0; i < count; i++)
+            {
+                width += utf8Widths[start + i];
+            }
+            return width;
+        }
+
+        static int[] GraphemeLengths(string message)
+        {
+            // Using indices in the main (foreach) loop leads to too much clutter.
+            // (Because of the look-ahead to see where the grapheme stops)
+            // Since both indices and lengths are ints, let's reuse the array.
+            int[] indices = StringInfo.ParseCombiningCharacters(message);
+
+            int last = indices.Length - 1;
+            for (int i = 0; i < last; i++)
+            {
+                // Update index to actually be length.
+                indices[i] = indices[i + 1] - indices[i];
+            }
+            indices[last] = message.Length - indices[last];
+
+            return indices;
         }
 
 
+        // Width of a _single_ codepoint (represented in C# as `char`).
         static int Utf8Width(char c)
         {
-            int codepoint = (int)c;
+            var codepoint = (int)c;
 
             if (codepoint <= 0x007F)
                 return 1;
