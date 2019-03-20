@@ -141,21 +141,26 @@ namespace MeidoBot
         }
 
 
-        // Width of a _single_ codepoint (represented in C# as `char`).
         static int Utf8Width(char c)
         {
             var codepoint = (int)c;
 
+            // ASCII takes 1 byte.
             if (codepoint <= 0x007F)
                 return 1;
+            // UTF-8 can encode part of the BMP in 2 bytes...
             if (codepoint <= 0x07FF)
                 return 2;
-            if (codepoint <= 0xFFFF)
-                return 3;
-            if (codepoint <= 0x10FFFF)
-                return 4;
+            
+            // Special case: we're dealing with UTF-16 chars, everything outside the BMP (0000–​FFFF)
+            // is encoded as a surrogate _pair_. Conveniently planes outside the BMP need 4 bytes in UTF-8.
+            // So return 2 for each of the pair (this assumes a well-formed string).
+            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.Surrogate)
+                return 2;
 
-            throw new NotSupportedException("Passed character exceeds UTF-8 limits.");
+            // The other part of the BMP.
+            // `codepoint <= 0xFFFF` (char.MaxValue, and the last codepoint of the BMP)
+            return 3;
         }
     }
 }
