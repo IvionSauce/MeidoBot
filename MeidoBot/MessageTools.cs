@@ -47,11 +47,13 @@ namespace MeidoBot
         {
             this.message = message;
             utf8Widths = new int[message.Length];
-            for (int i = 0; i < message.Length; i++)
+
+            int index = 0;
+            while (index < message.Length)
             {
-                var width = Utf8Width(message[i]);
-                utf8Widths[i] = width;
-                widthSum += width;
+                // DoCodepoint monkeys with the index, depending on whether we
+                // have a normal UTF-16 char or a surrogate pair.
+                widthSum += DoCodepoint(ref index);
             }
         }
 
@@ -141,6 +143,38 @@ namespace MeidoBot
         }
 
 
+        // A codepoint can be 1 or 2 UTF-16 chars.
+        // Returns byte width of the codepoint when encoded in UTF-8.
+        int DoCodepoint(ref int index)
+        {
+            char highSurrogate = message[index];
+            if (highSurrogate >= 0xD800 &&
+                highSurrogate <= 0xDBFF &&
+                index + 1 < message.Length)
+            {
+                char lowSurrogate = message[index + 1];
+                // Valid surrogate pair.
+                if (lowSurrogate >= 0xDC00 && lowSurrogate <= 0xDFFF)
+                {
+                    // We're dealing with UTF-16 chars, everything outside the BMP (0000–​FFFF) is encoded
+                    // as a surrogate _pair_. Conveniently planes outside the BMP need 4 bytes in UTF-8.
+                    // So set byte width to 2 for each of the pair.
+                    utf8Widths[index] = 2;
+                    utf8Widths[index + 1] = 2;
+
+                    index += 2;
+                    return 4;
+                }
+            }
+
+            // For regular UTF-16 chars and surrogates without their partner this will
+            // set the right width.
+            utf8Widths[index] = Utf8Width(highSurrogate);
+            index++;
+            return utf8Widths[index];
+        }
+
+
         static int Utf8Width(char c)
         {
             var codepoint = (int)c;
@@ -151,13 +185,6 @@ namespace MeidoBot
             // UTF-8 can encode part of the BMP in 2 bytes...
             if (codepoint <= 0x07FF)
                 return 2;
-            
-            // Special case: we're dealing with UTF-16 chars, everything outside the BMP (0000–​FFFF)
-            // is encoded as a surrogate _pair_. Conveniently planes outside the BMP need 4 bytes in UTF-8.
-            // So return 2 for each of the pair (this assumes a well-formed string).
-            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.Surrogate)
-                return 2;
-
             // The other part of the BMP.
             // `codepoint <= 0xFFFF` (char.MaxValue, and the last codepoint of the BMP)
             return 3;
