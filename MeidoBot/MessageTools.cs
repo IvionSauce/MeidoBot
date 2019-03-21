@@ -100,36 +100,43 @@ namespace MeidoBot
         int SeekToCutIndex(int start, int maxByteCount, out int bytesRead)
         {
             var textEnum = StringInfo.GetTextElementEnumerator(message, start);
+            if (!textEnum.MoveNext())
+                throw new InvalidOperationException("Starting index was end of string.");
+            
+            int currentIdx = textEnum.ElementIndex;
+            int byteCount = 0;
+            bool seeking = true;
 
-            if (textEnum.MoveNext())
+            while (seeking)
             {
-                int currentIdx = textEnum.ElementIndex;
-                int byteCount = 0;
-
-                while (textEnum.MoveNext())
+                int nextIdx;
+                if (textEnum.MoveNext())
+                    nextIdx = textEnum.ElementIndex;
+                else
                 {
-                    int nextIdx = textEnum.ElementIndex;
-
-                    // Length of the current grapheme (in number of chars), starting at `currentIdx`.
-                    int length = nextIdx - currentIdx;
-                    // Number of bytes necessary to represent grapheme in UTF-8.
-                    int width = GraphemeWidth(currentIdx, length);
-                    // If the current grapheme pushes us past the limit, make the cut.
-                    if (byteCount + width > maxByteCount)
-                    {
-                        bytesRead = byteCount;
-                        // Cut up to, but not including, the current grapheme.
-                        return currentIdx;
-                    }
-                    byteCount += width;
-                    currentIdx = nextIdx;
+                    // Handle last grapheme.
+                    nextIdx = message.Length;
+                    seeking = false;
                 }
+                // Length of the current grapheme (in number of chars), starting at `currentIdx`.
+                int length = nextIdx - currentIdx;
+                // Number of bytes necessary to represent grapheme in UTF-8.
+                int width = GraphemeWidth(currentIdx, length);
+                // If the current grapheme pushes us past the limit, make the cut.
+                if (byteCount + width > maxByteCount)
+                {
+                    bytesRead = byteCount;
+                    // Cut up to, but not including, the current grapheme.
+                    return currentIdx;
+                }
+                byteCount += width;
+                currentIdx = nextIdx;
             }
 
-            // Handling cleanup of the final grapheme and cases where we can't MoveNext are annoying,
-            // the caller should've already determined whether the remainder is small enough to
-            // fit inside one message chunk (thus no more need to search for a place to cut).
-            throw new InvalidOperationException("Caller should ensure remaining bytes are greater than max bytes.");
+            // We've reached the end of string and the remaining grapheme(s)
+            // are smaller than `maxByteCount`.
+            bytesRead = byteCount;
+            return message.Length;
         }
 
         int GraphemeWidth(int start, int count)
