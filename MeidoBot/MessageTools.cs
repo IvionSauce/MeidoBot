@@ -33,8 +33,8 @@ namespace MeidoBot
     // It should be noted that the 512 character limit for IRC messages means 512 bytes/octets. This is why we
     // need to look up how many bytes a certain character needs in UTF-8 (the encoding we use to send the messages).
 
-    // Besides that, Unicode has graphemes: which are 1 visual character, but are made out of multiple concrete
-    // characters/codepoints. We want to cut at grapheme boundaries, so we'll jump graphemes instead of chars.
+    // Besides that, Unicode has graphemes: which are 1 visual character, but are made out of multiple codepoints.
+    // We want to cut at grapheme boundaries, so we'll iterate graphemes instead of chars.
 
     class MessageSplit
     {
@@ -72,28 +72,44 @@ namespace MeidoBot
             if (widthSum <= maxByteCount)
                 chunks.Add(message);
             else
+                CutMessageInto(chunks, maxByteCount);
+
+            return chunks;
+        }
+
+        void CutMessageInto(List<string> chunks, int maxByteCount)
+        {
+            // Index into message for where to start cutting.
+            int chunkStart = 0;
+            // Total remaining bytes.
+            int remaining = widthSum;
+
+            while (remaining > maxByteCount)
             {
-                // Index into message for where to start cutting.
-                int chunkStart = 0;
-                // Total remaining bytes.
-                int remaining = widthSum;
-
-                while (remaining > maxByteCount)
+                int bytesRead;
+                int cutIdx = SeekToCutIndex(chunkStart, maxByteCount, out bytesRead);
+                if (cutIdx > chunkStart)
                 {
-                    int bytesRead;
-                    int cutIdx = SeekToCutIndex(chunkStart, maxByteCount, out bytesRead);
-                    remaining -= bytesRead;
-
                     chunks.Add( message.Substring(chunkStart, cutIdx - chunkStart) );
                     // Next chunk should start where we ended.
                     chunkStart = cutIdx;
                 }
-                // Remainder is smaller or equal to maxByteCount, last chunk goes to end of string.
-                chunks.Add( message.Substring(chunkStart, message.Length - chunkStart) );
+                // Oh no, we're stuck - this is due to a grapheme not fitting inside
+                // `maxByteCount`. So we skip it.
+                else
+                {
+                    chunkStart = SkipGrapheme(chunkStart, out bytesRead);
+                    // If this skip puts us at the end of string return immediately,
+                    // there is no remainder.
+                    if (chunkStart == message.Length)
+                        return;
+                }
+                remaining -= bytesRead;
             }
-
-            return chunks;
+            // Remainder is smaller or equal to maxByteCount, last chunk goes to end of string.
+            chunks.Add( message.Substring(chunkStart, message.Length - chunkStart) );
         }
+
 
         // Move over grapheme boundaries to find a place to cut such that the resulting substring
         // takes equal to or less than `maxByteCount` bytes.
@@ -139,6 +155,25 @@ namespace MeidoBot
             return message.Length;
         }
 
+        // Method for skipping over pesky, overly long graphemes (longer than max bytes).
+        // This should be extemely rare.
+        int SkipGrapheme(int start, out int bytesSkipped)
+        {
+            var textEnum = StringInfo.GetTextElementEnumerator(message, start);
+            if (!textEnum.MoveNext())
+                throw new InvalidOperationException("Starting index was end of string.");
+
+            int currentIdx = textEnum.ElementIndex;
+            int nextIdx;
+            if (textEnum.MoveNext())
+                nextIdx = textEnum.ElementIndex;
+            else
+                nextIdx = message.Length;
+
+            bytesSkipped = GraphemeWidth(start, nextIdx - currentIdx);
+            return nextIdx;
+        }
+
         int GraphemeWidth(int start, int count)
         {
             int width = 0;
@@ -165,7 +200,7 @@ namespace MeidoBot
                 {
                     // We're dealing with UTF-16 chars, everything outside the BMP (0000–​FFFF) is encoded
                     // as a surrogate _pair_. Conveniently planes outside the BMP need 4 bytes in UTF-8.
-                    // So set byte width to 2 for each of the pair.
+                    // So set byte width to 2 for each of the pair. This is a futzy hack.
                     utf8Widths[index] = 2;
                     utf8Widths[index + 1] = 2;
 
