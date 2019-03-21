@@ -211,9 +211,10 @@ namespace MeidoBot
 
             // For regular UTF-16 chars and surrogates without their partner this will
             // set the right width.
-            utf8Widths[index] = Utf8Width(highSurrogate);
+            int width = Utf8Width(highSurrogate);
+            utf8Widths[index] = width;
             index++;
-            return utf8Widths[index];
+            return width;
         }
 
 
