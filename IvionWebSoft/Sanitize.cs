@@ -21,7 +21,7 @@ namespace IvionWebSoft
             int index = FirstNonWhitespace(s);
             var state = State.Reading;
 
-            for (; index < s.Length; index++)
+            while (index < s.Length)
             {
                 char c = s[index];
 
@@ -34,18 +34,19 @@ namespace IvionWebSoft
                         builder.Append(' ');
                         state = State.Squashing;
                     }
-                    else
+                    else if (!char.IsControl(c))
                         builder.Append(c);
+                    
+                    index++;
                     break;
 
                     // Having encountered whitespace ignore all subsequent whitespace characters.
                     // Return to normal reading state upon encountering non-whitespace.
                     case State.Squashing:
-                    if (!char.IsWhiteSpace(c))
-                    {
-                        builder.Append(c);
+                    if (char.IsWhiteSpace(c))
+                        index++;
+                    else
                         state = State.Reading;
-                    }
                     break;
                 }
             }
