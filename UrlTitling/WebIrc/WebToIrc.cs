@@ -62,6 +62,7 @@ namespace WebIrc
             var generic = new UrlLoadInstructions(
                 uri => true,
                 SizeConstants.HtmlDefault,
+                true,
                 (req, html) => GenericHandler(req)
             );
             urlInstructions = new UrlLoadInstructions[] {
@@ -127,7 +128,9 @@ namespace WebIrc
             {
                 if (instruction.Match(request.Uri))
                 {
+                    // Set options as per instructions.
                     urlFetcher.MaxSizeHtml = instruction.FetchSize;
+                    urlFetcher.FollowMetaRefreshes = instruction.FollowMetaRefreshes;
 
                     var result = urlFetcher.Load(request.Uri);
                     request.Resource = result.Page;
