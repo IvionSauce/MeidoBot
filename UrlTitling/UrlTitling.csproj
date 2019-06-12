@@ -54,6 +54,7 @@
     <Compile Include="WebIrc\UrlTools.cs" />
     <Compile Include="WebIrc\BinaryHandler.cs" />
     <Compile Include="WebIrc\UrlLoadInstructions.cs" />
+    <Compile Include="WebIrc\SizeConstants.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

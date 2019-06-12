@@ -17,7 +17,7 @@ namespace WebIrc
         {
             LoadInstructions = new UrlLoadInstructions(
                 uri => uri.Host.Equals("wikipedia.org", StringComparison.OrdinalIgnoreCase),
-                1024*1024,
+                SizeConstants.Wikipedia,
                 WikipediaSummarize
             );
         }

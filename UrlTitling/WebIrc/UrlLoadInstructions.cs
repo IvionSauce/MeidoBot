@@ -19,7 +19,7 @@ namespace WebIrc
         {
             Twitter = new UrlLoadInstructions(
                 uri => uri.Host.Equals("twitter.com", StringComparison.OrdinalIgnoreCase),
-                16*1024,
+                SizeConstants.Twitter,
                 (req, html) => req.CreateResult(true)
             );
 
@@ -27,7 +27,7 @@ namespace WebIrc
                 uri =>
                 uri.Host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
                 uri.Host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase),
-                96*1024,
+                SizeConstants.Youtube,
                 MiscHandlers.YoutubeWithDuration
             );
         }

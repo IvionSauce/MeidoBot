@@ -29,7 +29,7 @@ namespace WebIrc
         readonly MetaRefreshFollower urlFollower;
 
         // Pre-HTML junctions. (These usually get their info from APIs)
-        readonly Func<TitlingRequest, TitlingResult>[] PreHtmlHandlers;
+        readonly Func<TitlingRequest, TitlingResult>[] preHtmlHandlers;
         // Instructions for various URLs, how much to get and what to do with it.
         readonly UrlLoadInstructions[] urlInstructions;
 
@@ -41,9 +41,6 @@ namespace WebIrc
 
         public WebToIrc()
         {
-            const int DefaultFetchSizeHtml = 16*1024;
-            const int DefaultFetchSizeOther = 64*1024;
-
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
@@ -51,10 +48,10 @@ namespace WebIrc
 
             urlFollower = new MetaRefreshFollower() {
                 Cookies = new CookieContainer(),
-                FetchSizeNonHtml = DefaultFetchSizeOther
+                FetchSizeNonHtml = SizeConstants.NonHtmlDefault
             };
 
-            PreHtmlHandlers = new Func<TitlingRequest, TitlingResult>[] {
+            preHtmlHandlers = new Func<TitlingRequest, TitlingResult>[] {
                 Danbo.HandleRequest,
                 Gelbo.HandleRequest,
                 Chan.HandleRequest
@@ -64,7 +61,7 @@ namespace WebIrc
             // previous instructions.
             var generic = new UrlLoadInstructions(
                 uri => true,
-                DefaultFetchSizeHtml,
+                SizeConstants.HtmlDefault,
                 (req, html) => GenericHandler(req)
             );
             urlInstructions = new UrlLoadInstructions[] {
@@ -79,7 +76,7 @@ namespace WebIrc
         public TitlingResult WebInfo(string uriString)
         {
             if (uriString == null)
-                throw new ArgumentNullException("uriString");
+                throw new ArgumentNullException(nameof(uriString));
 
             Uri uri;
             try
@@ -97,9 +94,9 @@ namespace WebIrc
         public TitlingResult WebInfo(Uri uri)
         {
             if (uri == null)
-                throw new ArgumentNullException("uri");
-            else if (!uri.IsAbsoluteUri)
-                throw new ArgumentException("Uri must be absolute: " + uri);
+                throw new ArgumentNullException(nameof(uri));
+            if (!uri.IsAbsoluteUri)
+                throw new ArgumentException("Uri must be absolute: " + uri, nameof(uri));
 
             if (TitlingRequest.IsSchemeSupported(uri))
                 return WebInfo( new TitlingRequest(uri) );
@@ -114,12 +111,12 @@ namespace WebIrc
         public TitlingResult WebInfo(TitlingRequest request)
         {
             if (request == null)
-                throw new ArgumentNullException("request");
+                throw new ArgumentNullException(nameof(request));
             // TitlingRequest ensures that what we get passed is an absolute URI with a scheme we support. Most
             // importantly this relieves the individual handlers of checking for those conditions.
 
 
-            foreach (var handler in PreHtmlHandlers)
+            foreach (var handler in preHtmlHandlers)
             {
                 var result = handler(request);
                 if (result != null)
@@ -152,7 +149,7 @@ namespace WebIrc
         }
 
 
-        TitlingResult HandleHtml(
+        static TitlingResult HandleHtml(
             TitlingRequest request,
             HtmlPage page,
             Func<TitlingRequest, string, TitlingResult> handler)
