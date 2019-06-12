@@ -53,6 +53,7 @@
     <Compile Include="QueryTriggers.cs" />
     <Compile Include="WebIrc\UrlTools.cs" />
     <Compile Include="WebIrc\BinaryHandler.cs" />
+    <Compile Include="WebIrc\UrlLoadInstructions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IvionSoft\IvionSoft.csproj">

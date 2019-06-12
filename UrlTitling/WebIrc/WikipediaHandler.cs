@@ -10,6 +10,18 @@ namespace WebIrc
         public int MaxCharacters { get; set; }
         public string ContinuationSymbol { get; set; }
 
+        internal readonly UrlLoadInstructions LoadInstructions;
+
+
+        public WikipediaHandler()
+        {
+            LoadInstructions = new UrlLoadInstructions(
+                uri => uri.Host.Equals("wikipedia.org", StringComparison.OrdinalIgnoreCase),
+                1024*1024,
+                WikipediaSummarize
+            );
+        }
+
 
         public TitlingResult WikipediaSummarize(TitlingRequest req, string htmlDoc)
         {

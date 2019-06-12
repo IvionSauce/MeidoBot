@@ -26,7 +26,8 @@ namespace WebIrc
 
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
-        readonly MetaRefreshFollower urlFollower = new MetaRefreshFollower();
+        readonly MetaRefreshFollower urlFollower;
+        readonly UrlLoadInstructions Generic;
 
 
         static WebToIrc()
@@ -40,8 +41,16 @@ namespace WebIrc
             Gelbo = new GelboHandler();
             Wiki = new WikipediaHandler();
 
-            urlFollower.Cookies = new CookieContainer();
-            urlFollower.FetchSizeNonHtml = 64*1024;
+            urlFollower = new MetaRefreshFollower() {
+                Cookies = new CookieContainer(),
+                FetchSizeNonHtml = 64*1024
+            };
+
+            Generic = new UrlLoadInstructions(
+                uri => true,
+                64*1024,
+                (req, html) => GenericHandler(req)
+            );
         }
 
 
