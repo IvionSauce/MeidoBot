@@ -20,13 +20,13 @@ namespace WebIrc
 
         public CookieContainer Cookies
         {
-            get { return urlFollower.Cookies; }
+            get { return urlFetcher.Cookies; }
         }
 
 
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
-        readonly MetaRefreshFollower urlFollower;
+        readonly WebUriFetcher urlFetcher;
 
         // Pre-HTML junctions. (These usually get their info from APIs)
         readonly Func<TitlingRequest, TitlingResult>[] preHtmlHandlers;
@@ -46,9 +46,9 @@ namespace WebIrc
             Gelbo = new GelboHandler();
             Wiki = new WikipediaHandler();
 
-            urlFollower = new MetaRefreshFollower() {
+            urlFetcher = new WebUriFetcher() {
                 Cookies = new CookieContainer(),
-                FetchSizeNonHtml = SizeConstants.NonHtmlDefault
+                MaxSizeNonHtml = SizeConstants.NonHtmlDefault
             };
 
             preHtmlHandlers = new Func<TitlingRequest, TitlingResult>[] {
@@ -127,9 +127,9 @@ namespace WebIrc
             {
                 if (instruction.Match(request.Uri))
                 {
-                    urlFollower.MaxSizeHtml = instruction.FetchSize;
+                    urlFetcher.MaxSizeHtml = instruction.FetchSize;
 
-                    var result = urlFollower.Load(request.Uri);
+                    var result = urlFetcher.Load(request.Uri);
                     request.Resource = result.Page;
 
                     // HTML handling.

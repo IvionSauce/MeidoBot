@@ -59,8 +59,8 @@ class QueryTriggers
 
     static string Dump(Uri url)
     {
-        var follower = new MetaRefreshFollower();
-        var result = follower.Load(url);
+        var fetcher = new WebUriFetcher();
+        var result = fetcher.Load(url);
 
         if (result.IsHtml)
         {
