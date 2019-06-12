@@ -16,7 +16,7 @@ namespace WebIrc
         public WikipediaHandler()
         {
             LoadInstructions = new UrlLoadInstructions(
-                uri => uri.Host.Equals("wikipedia.org", StringComparison.OrdinalIgnoreCase),
+                uri => uri.Host.EndsWith("wikipedia.org", StringComparison.OrdinalIgnoreCase),
                 SizeConstants.Wikipedia,
                 WikipediaSummarize
             );

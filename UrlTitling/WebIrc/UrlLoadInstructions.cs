@@ -25,7 +25,7 @@ namespace WebIrc
 
             Youtube = new UrlLoadInstructions(
                 uri =>
-                uri.Host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+                uri.Host.Equals("www.youtube.com", StringComparison.OrdinalIgnoreCase) ||
                 uri.Host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase),
                 SizeConstants.Youtube,
                 MiscHandlers.YoutubeWithDuration
