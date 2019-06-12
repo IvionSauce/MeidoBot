@@ -99,7 +99,18 @@ namespace WebIrc
 
         const string resetCode = "\u000F";
         
-        
+
+        public TitlingResult HandleRequest(TitlingRequest req)
+        {
+            if (req.Url.Contains("donmai.us/posts/",
+                                 StringComparison.OrdinalIgnoreCase))
+            {
+                return PostToIrc(req);
+            }
+
+            return null;
+        }
+
         public TitlingResult PostToIrc(TitlingRequest req)
         {
             DanboPost postInfo = DanboTools.GetPostInfo(req.Url);
@@ -181,6 +192,18 @@ namespace WebIrc
 
     public class GelboHandler : BooruHandler
     {
+
+        public TitlingResult HandleRequest(TitlingRequest req)
+        {
+            if (req.Url.Contains("gelbooru.com/index.php?page=post&s=view&id=",
+                                 StringComparison.OrdinalIgnoreCase))
+            {
+                return PostToIrc(req);
+            }
+
+            return null;
+        }
+
         public TitlingResult PostToIrc(TitlingRequest req)
         {
             BooruPost postInfo = GelboTools.GetPostInfo(req.Url);

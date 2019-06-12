@@ -11,13 +11,21 @@ namespace WebIrc
         public int TopicMaxChars { get; set; }
         public string ContinuationSymbol { get; set; }
 
-        private enum Source
+        enum Source
         {
             FourChan,
             ArchiveMoe
         }
 
-        
+
+        public TitlingResult HandleRequest(TitlingRequest req)
+        {
+            if (Supports(req))
+                return ThreadTopicToIrc(req);
+
+            return null;
+        }
+
         public TitlingResult ThreadTopicToIrc(TitlingRequest req)
         {
             ChanPost post;
@@ -88,11 +96,11 @@ namespace WebIrc
             if (url.Contains("boards.4chan.org/", StringComparison.OrdinalIgnoreCase))
                 return Source.FourChan;
             // Guard against URL's pointing to an image.
-            else if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase) &&
-                     !url.Contains("/image/", StringComparison.OrdinalIgnoreCase))
+            if (url.Contains("archive.moe/", StringComparison.OrdinalIgnoreCase) &&
+                !url.Contains("/image/", StringComparison.OrdinalIgnoreCase))
                 return Source.ArchiveMoe;
-            else
-                return null;
+
+            return null;
         }
 
 

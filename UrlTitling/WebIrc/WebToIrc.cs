@@ -27,6 +27,10 @@ namespace WebIrc
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
         readonly MetaRefreshFollower urlFollower;
+
+        // Pre-HTML junctions. (These usually get their info from APIs)
+        readonly Func<TitlingRequest, TitlingResult>[] PreHtmlHandlers;
+        // Instructions for various URLs, how much to get and what to do with it.
         readonly UrlLoadInstructions[] urlInstructions;
 
 
@@ -37,6 +41,9 @@ namespace WebIrc
 
         public WebToIrc()
         {
+            const int DefaultFetchSizeHtml = 16*1024;
+            const int DefaultFetchSizeOther = 64*1024;
+
             Chan = new ChanHandler();
             Danbo = new DanboHandler();
             Gelbo = new GelboHandler();
@@ -44,12 +51,20 @@ namespace WebIrc
 
             urlFollower = new MetaRefreshFollower() {
                 Cookies = new CookieContainer(),
-                FetchSizeNonHtml = 64*1024
+                FetchSizeNonHtml = DefaultFetchSizeOther
             };
 
+            PreHtmlHandlers = new Func<TitlingRequest, TitlingResult>[] {
+                Danbo.HandleRequest,
+                Gelbo.HandleRequest,
+                Chan.HandleRequest
+            };
+
+            // Generic instructions, for all URLs not matched by
+            // previous instructions.
             var generic = new UrlLoadInstructions(
                 uri => true,
-                64*1024,
+                DefaultFetchSizeHtml,
                 (req, html) => GenericHandler(req)
             );
             urlInstructions = new UrlLoadInstructions[] {
@@ -104,23 +119,12 @@ namespace WebIrc
             // importantly this relieves the individual handlers of checking for those conditions.
 
 
-            // Danbooru handling.
-            if (request.Url.Contains("donmai.us/posts/", StringComparison.OrdinalIgnoreCase))
+            foreach (var handler in PreHtmlHandlers)
             {
-                return Danbo.PostToIrc(request);
+                var result = handler(request);
+                if (result != null)
+                    return result;
             }
-            // Gelbooru handling.
-            if (request.Url.Contains("gelbooru.com/index.php?page=post&s=view&id=",
-                                          StringComparison.OrdinalIgnoreCase))
-            {
-                return Gelbo.PostToIrc(request);
-            }
-            // Foolz and 4chan handling.
-            if (ChanHandler.Supports(request))
-            {
-                return Chan.ThreadTopicToIrc(request);
-            }
-
 
             foreach (var instruction in urlInstructions)
             {
@@ -170,7 +174,6 @@ namespace WebIrc
             }
             // If defined and not of ridiculous length make it available to TitleBuilder.
             request.IrcTitle.HtmlTitle = htmlTitle;
-
             return handler(request, page.Content);
         }
 
