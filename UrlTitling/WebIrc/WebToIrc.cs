@@ -27,13 +27,14 @@ namespace WebIrc
         internal static UrlTitleComparer UrlTitle { get; private set; }
 
         readonly MetaRefreshFollower urlFollower;
-        readonly UrlLoadInstructions Generic;
+        readonly UrlLoadInstructions[] urlInstructions;
 
 
         static WebToIrc()
         {
             UrlTitle = new UrlTitleComparer();
         }
+
         public WebToIrc()
         {
             Chan = new ChanHandler();
@@ -46,11 +47,17 @@ namespace WebIrc
                 FetchSizeNonHtml = 64*1024
             };
 
-            Generic = new UrlLoadInstructions(
+            var generic = new UrlLoadInstructions(
                 uri => true,
                 64*1024,
                 (req, html) => GenericHandler(req)
             );
+            urlInstructions = new UrlLoadInstructions[] {
+                UrlLoadInstructions.Youtube,
+                UrlLoadInstructions.Twitter,
+                Wiki.LoadInstructions,
+                generic
+            };
         }
 
 
@@ -113,32 +120,38 @@ namespace WebIrc
             {
                 return Chan.ThreadTopicToIrc(request);
             }
-            // Twitter handling.
-            // Because following Meta Refreshes on Twitter will lead us to the mobile site.
-            if (MiscHandlers.IsTwitter(request))
-            {
-                return MiscHandlers.Twitter(request, Cookies);
-            }
 
-            var result = urlFollower.Load(request.Uri);
-            request.Resource = result.Page;
 
-            // HTML handling.
-            if (result.IsHtml)
+            foreach (var instruction in urlInstructions)
             {
-                return HandleHtml(request, result.Page);
-            }
-            // Media/Binary handling.
-            if (ParseMedia && result.Bytes.Success)
-            {
-                return BinaryHandler.BinaryToIrc(request, result.Bytes);
+                if (instruction.Match(request.Uri))
+                {
+                    urlFollower.MaxSizeHtml = instruction.FetchSize;
+
+                    var result = urlFollower.Load(request.Uri);
+                    request.Resource = result.Page;
+
+                    // HTML handling.
+                    if (result.IsHtml)
+                    {
+                        return HandleHtml(request, result.Page, instruction.Handler);
+                    }
+                    // Media/Binary handling.
+                    if (ParseMedia && result.Bytes.Success)
+                    {
+                        return BinaryHandler.BinaryToIrc(request, result.Bytes);
+                    }
+                }
             }
 
             return request.CreateResult(false);
         }
 
 
-        TitlingResult HandleHtml(TitlingRequest request, HtmlPage page)
+        TitlingResult HandleHtml(
+            TitlingRequest request,
+            HtmlPage page,
+            Func<TitlingRequest, string, TitlingResult> handler)
         {
             const int maxTitleLength = 1024;
 
@@ -150,7 +163,7 @@ namespace WebIrc
                 request.AddMessage("No <title> found, or title element was empty/whitespace.");
                 return request.CreateResult(false);
             }
-            else if (htmlTitle.Length > maxTitleLength)
+            if (htmlTitle.Length > maxTitleLength)
             {
                 request.AddMessage("HTML title length was in excess of 1024 characters, assuming spam.");
                 return request.CreateResult(false);
@@ -158,19 +171,7 @@ namespace WebIrc
             // If defined and not of ridiculous length make it available to TitleBuilder.
             request.IrcTitle.HtmlTitle = htmlTitle;
 
-            // Youtube handling.
-            if (htmlTitle.EndsWith("- YouTube", StringComparison.Ordinal))
-            {
-                return MiscHandlers.YoutubeWithDuration(request, page.Content);
-            }
-            // Wikipedia handling.
-            else if (request.Url.Contains("wikipedia.org/", StringComparison.OrdinalIgnoreCase))
-            {
-                return Wiki.WikipediaSummarize(request, page.Content);
-            }
-            // Other URLs.
-            else
-                return GenericHandler(request);
+            return handler(request, page.Content);
         }
 
         static void ReportCharsets(TitlingRequest req, HtmlPage page)
@@ -191,17 +192,18 @@ namespace WebIrc
                 return req.CreateResult(true);
             // If Threshold is set to 0 that would still mean that titles that had 0 similarity with their URLs would
             // get printed. Set to a negative value to never print any title.
-            else if (Threshold < 0)
+            if (Threshold < 0)
                 return req.CreateResult(false);
 
             double urlTitleSimilarity = UrlTitle.Similarity(req.Url, req.IrcTitle.HtmlTitle);
             req.AddMessage(
-                string.Format("URL-Title Similarity: {0} [Threshold: {1}]", urlTitleSimilarity, Threshold));
+                string.Format("URL-Title Similarity: {0} [Threshold: {1}]", urlTitleSimilarity, Threshold)
+            );
 
             if (urlTitleSimilarity <= Threshold)
                 return req.CreateResult(true);
-            else
-                return req.CreateResult(false);
+
+            return req.CreateResult(false);
         }
     }
 }
