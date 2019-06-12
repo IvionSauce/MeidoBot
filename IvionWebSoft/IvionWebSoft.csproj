@@ -55,7 +55,7 @@
     <Compile Include="WikipediaArticle.cs" />
     <Compile Include="HtmlTagExtract.cs" />
     <Compile Include="StreamExtentions.cs" />
-    <Compile Include="MetaRefreshFollower.cs" />
+    <Compile Include="WebUriFetcher.cs" />
     <Compile Include="EncHelp.cs" />
     <Compile Include="WebResources\HtmlPage.cs" />
     <Compile Include="WebResources\WebBytes.cs" />

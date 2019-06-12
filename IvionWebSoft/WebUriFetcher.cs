@@ -12,24 +12,26 @@ namespace IvionWebSoft
     }
 
 
-    public class MetaRefreshFollower
+    public class WebUriFetcher
     {
         public int MaxSizeHtml { get; set; }
-        public int FetchSizeNonHtml { get; set; }
+        public int MaxSizeNonHtml { get; set; }
 
         public int Timeout { get; set; }
         public string UserAgent { get; set; }
         public CookieContainer Cookies { get; set; }
 
+        const int MaxRefreshes = 10;
+        public bool FollowMetaRefreshes { get; set; }
         UriLimit MetaRefreshLimitation { get; set; }
 
 
-        public MetaRefreshFollower()
+        public WebUriFetcher()
         {
             // Default maximum is 1MB.
             MaxSizeHtml = 1048576;
             // Don't download non-HTML by default
-            FetchSizeNonHtml = 0;
+            MaxSizeNonHtml = 0;
 
             // Default is 30 seconds.
             Timeout = 30000;
@@ -39,24 +41,31 @@ namespace IvionWebSoft
         }
 
 
-        public FollowerResult Load(Uri uri)
+        public FetcherResult Load(Uri uri)
         {
-            return Load(uri, true, 0, null);
+            if (uri == null)
+                throw new ArgumentNullException(nameof(uri));
+
+            // Use `int.MaxValue` as a special value (don't follow redirects).
+            // Really, any number larger than `MaxRefreshes` would do.
+            return Load(
+                uri, true,
+                FollowMetaRefreshes ? 0 : int.MaxValue,
+                null
+            );
         }
 
-        FollowerResult Load(Uri uri, bool useCookies, int redirects, string previousPage)
+        FetcherResult Load(Uri uri, bool useCookies, int redirects, string previousPage)
         {
             var req = SetupRequest(uri, useCookies);
-            var wb = WebBytes.Create(req, MaxSizeHtml, FetchSizeNonHtml);
+            var wb = WebBytes.Create(req, MaxSizeHtml, MaxSizeNonHtml);
 
             if (wb.ContentIsHtml)
             {
                 var page = WebString.Create(wb, EncHelp.Windows1252);
 
-                // Only follow a HTML/"Meta Refresh" URL 10 times, we don't want to get stuck in a loop.
-                const int MaxRedirects = 10;
                 Uri refreshUrl;
-                if (redirects < MaxRedirects &&
+                if (redirects < MaxRefreshes &&
                     TryGetMetaRefresh(page, out refreshUrl) &&
                     VerifyRefresh(page.Location, refreshUrl))
                 {
@@ -68,15 +77,14 @@ namespace IvionWebSoft
                         return Load(refreshUrl, useCookies, (redirects + 1), page.Document);
                 }
 
-                return new FollowerResult(wb, page);
+                return new FetcherResult(wb, page);
             }
             // Silently handle cookie exceptions, Mono/.NET can be very strict with which cookies it accepts.
-            else if (!wb.Success && wb.Exception.InnerException is CookieException)
+            if (!wb.Success && wb.Exception.InnerException is CookieException)
                 return Load(uri, false, redirects, previousPage);
 
             // If either not HTML or there was an error in getting the resource, return as-is.
-            else
-                return new FollowerResult(wb);
+            return new FetcherResult(wb);
         }
 
         WebRequest SetupRequest(Uri url, bool useCookies)
@@ -111,7 +119,7 @@ namespace IvionWebSoft
                 if (Uri.TryCreate(page.Location, metaRefresh, out refreshUrl))
                     return true;
                 // Absolute refresh URL.
-                else if (Uri.TryCreate(metaRefresh, UriKind.Absolute, out refreshUrl))
+                if (Uri.TryCreate(metaRefresh, UriKind.Absolute, out refreshUrl))
                     return true;
             }
 
@@ -143,7 +151,7 @@ namespace IvionWebSoft
     }
 
 
-    public class FollowerResult
+    public class FetcherResult
     {
         public WebBytes Bytes { get; private set; }
         public HtmlPage Page { get; private set; }
@@ -154,16 +162,16 @@ namespace IvionWebSoft
         }
 
 
-        internal FollowerResult(WebBytes bytes, WebString page)
+        internal FetcherResult(WebBytes bytes, WebString page)
         {
             Bytes = bytes;
             Page = new HtmlPage(bytes, page);
         }
 
-        public FollowerResult(WebBytes bytes)
+        public FetcherResult(WebBytes bytes)
         {
             if (bytes == null)
-                throw new ArgumentNullException("bytes");
+                throw new ArgumentNullException(nameof(bytes));
 
             Bytes = bytes;
             Page = HtmlPage.Create(bytes);
