@@ -1,5 +1,4 @@
 using System;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace IvionWebSoft
@@ -7,66 +6,43 @@ namespace IvionWebSoft
     public class WeatherUnderground
     {
         public string ApiKey { get; private set; }
-        readonly string wuQuery;
+        readonly string owmQuery;
 
 
         public WeatherUnderground(string apiKey)
         {
             if (apiKey == null)
-                throw new ArgumentNullException("apiKey");
+                throw new ArgumentNullException(nameof(apiKey));
 
             ApiKey = apiKey;
-            wuQuery = string.Concat("http://api.wunderground.com/api/", apiKey, "/conditions/q/");
+            owmQuery = string.Concat(
+                "https://api.openweathermap.org/data/2.5/weather?appid=", apiKey,
+                "&units=metric&q="
+            );
         }
 
 
         public WeatherConditions GetConditions(string location)
         {
             if (location == null)
-                throw new ArgumentNullException("location");
+                throw new ArgumentNullException(nameof(location));
 
-            return InternalGet(location);
-        }
+            var query = string.Concat(owmQuery, Uri.EscapeDataString(location));
 
-        WeatherConditions InternalGet(string query)
-        {
-            const string format = ".json";
-            var currentQuery = string.Concat(wuQuery, query, format);
-
-            var queryResult = WebString.Download(currentQuery);
+            var queryResult = WebString.Download(query);
             if (!queryResult.Success)
                 return new WeatherConditions(queryResult);
 
             var json = JObject.Parse(queryResult.Document);
-            var observation = json["current_observation"];
-            var results = json["response"]["results"];
-            var error = json["response"]["error"];
+            var message = (string)json["message"];
 
-            // For some queries it returns a very barebones JSON string, with no observation or error.
-            if (observation == null && results == null && error == null)
+            if (string.IsNullOrEmpty(message))
             {
-                var ex = new JsonParseException("Server returned neither result or error.");
-                return new WeatherConditions(queryResult.Location, ex);
+                return new WeatherConditions(queryResult.Location, json);
             }
-            else if (error == null)
-            {
-                // Only one result.
-                if (observation != null)
-                {
-                    return new WeatherConditions(queryResult.Location, observation);
-                }
-                // Multiple results, return the first result.
-                else
-                {
-                    var zmw = (string)results[0]["zmw"];
-                    return InternalGet( "zmw:" + zmw );
-                }
-            }
-            // Return error reported (via JSON) by the server.
             else
             {
-                var errorMsg = (string)error["description"];
-                var ex = new JsonErrorException(errorMsg);
+                var ex = new JsonErrorException(message);
                 return new WeatherConditions(queryResult.Location, ex);
             }
         }
@@ -80,18 +56,15 @@ namespace IvionWebSoft
 
         public double TemperatureInC { get; private set; }
         public double TemperatureInF { get; private set; }
-        public string RelativeHumidity { get; private set; }
+        public double RelativeHumidity { get; private set; }
 
-        public double PrecipitationInInches { get; private set; }
-        public double PrecipitationInMillimeters { get; private set; }
+        //public double PrecipitationInInches { get; private set; }
+        //public double PrecipitationInMillimeters { get; private set; }
 
         public string WindDirection { get; private set; }
 
-        public double WindSpeedInMph { get; private set; }
-        public double WindGustInMph { get; private set; }
-
         public double WindSpeedInKph { get; private set; }
-        public double WindGustInKph { get; private set; }
+        public double WindSpeedInMph { get; private set; }
 
 
         public WeatherConditions(WebResource resource) : base(resource) {}
@@ -100,23 +73,24 @@ namespace IvionWebSoft
 
         internal WeatherConditions(Uri uri, JToken observation) : base(uri)
         {
-            WeatherLocation = (string)observation["display_location"]["full"];
-            Description = (string)observation["weather"];
-            
-            TemperatureInC = (double)observation["temp_c"];
-            TemperatureInF = (double)observation["temp_f"];
-            RelativeHumidity = (string)observation["relative_humidity"];
+            WeatherLocation =
+                (string)observation["name"] + ", " +
+                (string)observation["sys"]["country"];
 
-            PrecipitationInInches = ToDouble( observation["precip_today_in"] );
-            PrecipitationInMillimeters = ToDouble( observation["precip_today_metric"] );
-            
-            WindDirection = (string)observation["wind_dir"];
-            
-            WindSpeedInMph = (double)observation["wind_mph"];
-            WindGustInMph = (double)observation["wind_gust_mph"];
-            
-            WindSpeedInKph = (double)observation["wind_kph"];
-            WindGustInKph = (double)observation["wind_gust_kph"];
+            Description = (string)observation["weather"][0]["main"];
+
+            TemperatureInC = (double)observation["main"]["temp"];
+            // Convert to Fahrenheit.
+            TemperatureInF = (TemperatureInC * 9/5) + 32;
+            RelativeHumidity = (double)observation["main"]["humidity"];
+
+            WindDirection = DegreesToDirection(observation["wind"]["deg"]);
+
+            var windspeed = (double)observation["wind"]["speed"];
+            // Wind speed is in m/s, convert to km/h and mph.
+            WindSpeedInKph = windspeed * 3.6;
+            // Approximate mph, 4 significant digits should be enough.
+            WindSpeedInMph = windspeed * 2.237;
         }
 
 
@@ -128,6 +102,38 @@ namespace IvionWebSoft
                 return num;
             else
                 return 0;
+        }
+
+        static string DegreesToDirection(JToken windDegrees)
+        {
+            var deg = (int)windDegrees;
+
+            if (deg >= 0)
+            {
+                // Cardinal directions first, allow 10 degrees of error
+                // on either side. N=0, E=90, S=180, W=270
+                if (deg >= 350 || deg <= 10)
+                    return "N";
+                if (deg >= 80 && deg <= 100)
+                    return "E";
+                if (deg >= 170 && deg <= 190)
+                    return "S";
+                if (deg >= 260 && deg <= 280)
+                    return "W";
+
+                // Since we've done the cardinal directions above, these
+                // are quite simple checks.
+                if (deg < 90)
+                    return "NE";
+                if (deg < 180)
+                    return "SE";
+                if (deg < 270)
+                    return "SW";
+                if (deg < 360)
+                    return "NW";
+            }
+
+            return "???";
         }
     }
 }
