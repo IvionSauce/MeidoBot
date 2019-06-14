@@ -50,7 +50,7 @@
     <Compile Include="WebTools.cs" />
     <Compile Include="GoogleTools.cs" />
     <Compile Include="Exceptions.cs" />
-    <Compile Include="WeatherUnderground.cs" />
+    <Compile Include="OpenWeatherMap.cs" />
     <Compile Include="WikipediaTools.cs" />
     <Compile Include="WikipediaArticle.cs" />
     <Compile Include="HtmlTagExtract.cs" />

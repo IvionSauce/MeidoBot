@@ -3,13 +3,13 @@ using Newtonsoft.Json.Linq;
 
 namespace IvionWebSoft
 {
-    public class WeatherUnderground
+    public class OpenWeatherMap
     {
         public string ApiKey { get; private set; }
         readonly string owmQuery;
 
 
-        public WeatherUnderground(string apiKey)
+        public OpenWeatherMap(string apiKey)
         {
             if (apiKey == null)
                 throw new ArgumentNullException(nameof(apiKey));
