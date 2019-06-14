@@ -22,7 +22,7 @@ namespace IvionWebSoft
 
     public static class DanboTools
     {
-        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai.us/posts/(\d+)");
+        static readonly Regex danboUrlRegexp = new Regex(@"(?i)donmai\.us/posts/(\d+)");
 
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace IvionWebSoft
 
     public static class GelboTools
     {
-        static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru.com/index.php\?page=post&s=view&id=(\d+)");
+        static readonly Regex gelboUrlRegexp = new Regex(@"(?i)gelbooru\.com/index\.php\?page=post&s=view&id=(\d+)");
 
 
         /// <summary>

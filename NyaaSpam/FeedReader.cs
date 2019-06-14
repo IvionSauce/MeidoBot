@@ -50,14 +50,12 @@ class FeedReader
 
     public static TimeSpan DetermineDueTime(TimeSpan intervalTs)
     {
-        const int hour = 60;
         var dueTime = intervalTs;
-
-        int interval = intervalTs.Minutes;
         // If an hour is cleanly divided by specified interval, make the interval/period align on
         // multiples of the interval.
-        if ((hour % interval) == 0)
+        if (IntervalAligns(intervalTs))
         {
+            int interval = intervalTs.Minutes;
             var now = DateTimeOffset.Now;
             int mult = (now.Minute / interval) + 1;
             int mins = interval * mult;
@@ -73,6 +71,14 @@ class FeedReader
         }
 
         return dueTime;
+    }
+
+    static bool IntervalAligns(TimeSpan interval)
+    {
+        const int hour = 60;
+
+        return interval.TotalMinutes < hour &&
+               (hour % interval.Minutes) == 0;
     }
 
 
