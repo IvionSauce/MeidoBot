@@ -106,9 +106,9 @@ namespace IvionWebSoft
 
         static string DegreesToDirection(JToken windDegrees)
         {
-            var deg = (int)windDegrees;
-
-            if (deg >= 0)
+            int deg;
+            if (int.TryParse((string)windDegrees, out deg) &&
+                deg >= 0)
             {
                 // Cardinal directions first, allow 10 degrees of error
                 // on either side. N=0, E=90, S=180, W=270
@@ -133,7 +133,7 @@ namespace IvionWebSoft
                     return "NW";
             }
 
-            return "???";
+            return string.Empty;
         }
     }
 }
