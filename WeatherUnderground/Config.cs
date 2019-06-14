@@ -3,19 +3,19 @@ using System.Xml.Linq;
 
 public class Config
 {
-    public string WeatherUndergroundApiKey { get; set; }
+    public string OpenWeatherMapApiKey { get; set; }
 
 
     public Config(XElement xml)
     {
-        WeatherUndergroundApiKey = (string)xml.Element("wu-api-key") ?? string.Empty;
+        OpenWeatherMapApiKey = (string)xml.Element("owm-api-key") ?? string.Empty;
     }
 
 
     public static XElement DefaultConfig()
     {
         var config =
-            new XElement("config", new XElement("wu-api-key", string.Empty));
+            new XElement("config", new XElement("owm-api-key", string.Empty));
         return config;
     }
 }

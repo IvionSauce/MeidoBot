@@ -12,7 +12,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 {
     public string Name
     {
-        get { return "WeatherUnderground"; }
+        get { return "WeatherService"; }
     }
     public string Version
     {
@@ -26,7 +26,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
     readonly ILog log;
 
     readonly object _locker = new object();
-    WeatherUnderground weather;
+    OpenWeatherMap weather;
 
     readonly string storagePath;
     readonly Storage<string> defaultLocations;
@@ -47,7 +47,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
                 Help = new TriggerHelp(
                     "[location] | @<nick>",
                     "Reports weather conditions at location. Will use your default location if called " +
-                    "without arguments. (Powered by WeatherUnderground)")
+                    "without arguments. (Powered by OpenWeatherMap)")
             },
 
             new Trigger("W", SetWeatherLocation, TriggerThreading.Queue) {
@@ -67,10 +67,10 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
             log,
             Configure
         );
-        meido.LoadAndWatchConfig("WeatherUnderground.xml", xmlConf);
+        meido.LoadAndWatchConfig("WeatherService.xml", xmlConf);
 
         // Setting up locations database/dict.
-        storagePath = meido.DataPathTo("_weatherunderground.xml");
+        storagePath = meido.DataPathTo("weather-locations.xml");
         try
         {
             defaultLocations = Storage<string>.Deserialize(storagePath);
@@ -85,9 +85,9 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
     {
         lock (_locker)
         {
-            if (!string.IsNullOrWhiteSpace(conf.WeatherUndergroundApiKey))
+            if (!string.IsNullOrWhiteSpace(conf.OpenWeatherMapApiKey))
             {
-                weather = new WeatherUnderground(conf.WeatherUndergroundApiKey);
+                weather = new OpenWeatherMap(conf.OpenWeatherMapApiKey);
             }
             else
             {
@@ -173,24 +173,19 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
     static string Format(WeatherConditions cond)
     {
-        // Only put Wind Gust in if it has a sensible value, ie higher than the normal Wind Speed.
         string wind;
-        if (cond.WindGustInKph <= cond.WindSpeedInKph || cond.WindGustInMph <= cond.WindSpeedInMph)
-        {
-            wind = string.Format("{0} km/h ({1} mph)", cond.WindSpeedInKph, cond.WindSpeedInMph);
-        }
+        if (string.IsNullOrEmpty(cond.WindDirection))
+            wind = "[Wind]";
         else
-        {
-            wind = string.Format("{0} -> {1} km/h ({2} -> {3} mph)", cond.WindSpeedInKph, cond.WindGustInKph,
-                                 cond.WindSpeedInMph, cond.WindGustInMph);
-        }
-
-        return string.Format("[ {0} ] {1} :: {2}°C ({3}°F) :: Humidity {4} :: " +
-                             "Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
-                             cond.WeatherLocation, cond.Description,
-                             cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
-                             cond.PrecipitationInMillimeters, cond.PrecipitationInInches,
-                             cond.WindDirection, wind);
+            wind = string.Format("[Wind {0}]", cond.WindDirection);
+        
+        return string.Format(
+            "[ {0} ] {1} :: {2:0.#}°C ({3:0.#}°F) :: Humidity {4}% :: " +
+            //"Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
+            "{5} {6:0.#} km/h ({7:0.#} mph)",
+            cond.WeatherLocation, cond.Description,
+            cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
+            wind, cond.WindSpeedInKph, cond.WindSpeedInMph);
     }
 
 
