@@ -63,7 +63,7 @@ namespace WebIrc
                 uri => true,
                 SizeConstants.HtmlDefault,
                 true,
-                (req, html) => GenericHandler(req)
+                GenericHandler
             );
             urlInstructions = new UrlLoadInstructions[] {
                 UrlLoadInstructions.Youtube,
@@ -138,7 +138,10 @@ namespace WebIrc
                     // HTML handling.
                     if (result.IsHtml)
                     {
-                        return HandleHtml(request, result.Page, instruction.Handler);
+                        return HandleHtml(
+                            request, result.Page,
+                            instruction.Handler ?? GenericHandler
+                        );
                     }
                     // Media/Binary handling.
                     if (ParseMedia && result.Bytes.Success)
@@ -186,8 +189,8 @@ namespace WebIrc
             req.AddMessage(encInfo);
         }
 
-
-        TitlingResult GenericHandler(TitlingRequest req)
+        // To conform to the signature we accept the HTML document. We don't need it.
+        TitlingResult GenericHandler(TitlingRequest req, string htmlDoc)
         {
             // Because the similarity can only be 1 max, allow all titles to be printed if Threshold is set to 1 or
             // higher. The similarity would always be equal to or less than 1.
