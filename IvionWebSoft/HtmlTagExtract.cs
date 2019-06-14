@@ -15,9 +15,7 @@ namespace IvionWebSoft
                 @"(?i)(?<=<\? ?xml version=[""']1.0[""'] encoding=[""'])" + 
                 @"[\w-]+(?=[""'] ?\?>)");
         
-        static readonly Regex headRegexp =
-            new Regex(
-                @"(?i)(?s)(?<=<head[^<>]*>).*?(?=</head>\s*<)");
+        static readonly Regex headRegexp = new Regex(@"(?i)<head[^<>]*>");
         
         static readonly Regex[] charsetRegexps =
         {
@@ -63,7 +61,7 @@ namespace IvionWebSoft
         public static string GetXmlCharset(string docString)
         {
             if (docString == null)
-                throw new ArgumentNullException("docString");
+                throw new ArgumentNullException(nameof(docString));
 
             // Hack to make finding the XML charset declaration faster, it should be at the start of the document
             // so limit to searching the first 100 characters.
@@ -85,23 +83,39 @@ namespace IvionWebSoft
         /// <summary>
         /// Returns the head of an HTML document, if not defined or found returns null.
         /// </summary>
-        /// <returns>The content between &lthead&gt and &lt/head&gt.</returns>
+        /// <returns>The content between &lt;head&gt; and &lt;/head&gt;.</returns>
         /// <exception cref="ArgumentNullException">Thrown if htmlString is null.</exception>
         /// <param name="htmlString">String content of an (X)HTML document.</param>
-        public static string GetHtmlHead(string htmlString)
+        public static string GetHtmlHead(string htmlString, bool requireClosingTag)
         {
             if (htmlString == null)
-                throw new ArgumentNullException("htmlString");
-            
-            Match head = headRegexp.Match(htmlString);
-            
-            if (head.Success)
-                return head.Value;
-            else
-                return null;
+                throw new ArgumentNullException(nameof(htmlString));
+
+            var headMatch = headRegexp.Match(htmlString);
+            if (headMatch.Success)
+            {
+                int headStart = headMatch.Index + headMatch.Length;
+                int headEnd = htmlString.IndexOf("</head>", headStart,
+                                                 StringComparison.OrdinalIgnoreCase);
+
+                // If we do not find a closing tag we can opt to have the
+                // rest of the HTML string function as head, or partial head.
+                if (headEnd < 0 && !requireClosingTag)
+                    headEnd = htmlString.Length;
+
+                if (headEnd > headStart)
+                {
+                    return htmlString.Substring(
+                        headStart,
+                        headEnd - headStart
+                    );
+                }
+            }
+
+            return null;
         }
-        
-        
+
+
         /// <summary>
         /// Returns charset defined in the (X)HTML string, if not defined or found returns null.
         /// </summary>
@@ -111,19 +125,20 @@ namespace IvionWebSoft
         public static string GetMetaCharset(string htmlString)
         {
             if (htmlString == null)
-                throw new ArgumentNullException("htmlString");
+                throw new ArgumentNullException(nameof(htmlString));
             
-            string head = GetHtmlHead(htmlString);
-            if (head == null)
-                return null;
-            
-            foreach (Regex regexp in charsetRegexps)
+            string head = GetHtmlHead(htmlString, false);
+            if (head != null)
             {
-                Match charset = regexp.Match(head);
-                
-                if (charset.Success)
-                    return charset.Value;
+                foreach (Regex regexp in charsetRegexps)
+                {
+                    Match charset = regexp.Match(head);
+
+                    if (charset.Success)
+                        return charset.Value;
+                }
             }
+
             return null;
         }
         
@@ -137,19 +152,20 @@ namespace IvionWebSoft
         public static string GetMetaRefresh(string htmlString)
         {
             if (htmlString == null)
-                throw new ArgumentNullException("htmlString");
+                throw new ArgumentNullException(nameof(htmlString));
             
-            string head = GetHtmlHead(htmlString);
-            if (head == null)
-                return null;
-            
-            foreach (Regex regexp in metaRefreshRegexps)
+            string head = GetHtmlHead(htmlString, false);
+            if (head != null)
             {
-                Match metaRefresh = regexp.Match(head);
-                
-                if (metaRefresh.Success)
-                    return metaRefresh.Value;
+                foreach (Regex regexp in metaRefreshRegexps)
+                {
+                    Match metaRefresh = regexp.Match(head);
+
+                    if (metaRefresh.Success)
+                        return metaRefresh.Value;
+                }
             }
+
             return null;
         }
     }
