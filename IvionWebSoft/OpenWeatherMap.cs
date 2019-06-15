@@ -77,11 +77,12 @@ namespace IvionWebSoft
                 (string)observation["name"] + ", " +
                 (string)observation["sys"]["country"];
 
-            Description = (string)observation["weather"][0]["main"];
+            Description =
+                Capitalize((string)observation["weather"][0]["description"]);
 
             TemperatureInC = (double)observation["main"]["temp"];
             // Convert to Fahrenheit.
-            TemperatureInF = (TemperatureInC * 9/5) + 32;
+            TemperatureInF = (TemperatureInC * 1.8) + 32;
             RelativeHumidity = (double)observation["main"]["humidity"];
 
             WindDirection = DegreesToDirection(observation["wind"]["deg"]);
@@ -94,14 +95,23 @@ namespace IvionWebSoft
         }
 
 
-        static double ToDouble(JToken el)
+        static string Capitalize(string s)
+        {
+            if (!string.IsNullOrEmpty(s))
+            {
+                return char.ToUpper(s[0]) + s.Substring(1);
+            }
+            return s;
+        }
+
+        static double ToDouble(JToken el, double defaultValue)
         {
             var str = (string)el;
             double num;
             if (double.TryParse(str, out num))
                 return num;
             else
-                return 0;
+                return defaultValue;
         }
 
         static string DegreesToDirection(JToken windDegrees)
