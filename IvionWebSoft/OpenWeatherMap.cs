@@ -94,10 +94,10 @@ namespace IvionWebSoft
 
             WindDirection = DegreesToDirection(observation["wind"]["deg"]);
 
-            var windspeed = (double)observation["wind"]["speed"];
             // Wind speed is in m/s, convert to km/h and mph.
-            WindSpeedInKph = windspeed * 3.6;
             // Approximate mph, 4 significant digits should be enough.
+            var windspeed = (double)observation["wind"]["speed"];
+            WindSpeedInKph = windspeed * 3.6;
             WindSpeedInMph = windspeed * 2.237;
 
             // Same as wind speed, but wind gust is usually absent, so
@@ -105,16 +105,6 @@ namespace IvionWebSoft
             var windgust = ToDouble(observation["wind"]["gust"], 0);
             WindGustInKph = windgust * 3.6;
             WindGustInMph = windgust * 2.237;
-        }
-
-
-        static string Capitalize(string s)
-        {
-            if (!string.IsNullOrEmpty(s))
-            {
-                return char.ToUpper(s[0]) + s.Substring(1);
-            }
-            return s;
         }
 
         static double Precip(JToken rainEl, JToken snowEl)
@@ -129,16 +119,6 @@ namespace IvionWebSoft
                 sum += ToDouble(snowEl["1h"], 0);
 
             return sum;
-        }
-
-        static double ToDouble(JToken el, double defaultValue)
-        {
-            var str = (string)el;
-            double num;
-            if (double.TryParse(str, out num))
-                return num;
-            else
-                return defaultValue;
         }
 
         static string DegreesToDirection(JToken windDegrees)
@@ -173,6 +153,26 @@ namespace IvionWebSoft
             }
 
             return string.Empty;
+        }
+
+
+        static double ToDouble(JToken el, double defaultValue)
+        {
+            var str = (string)el;
+            double num;
+            if (double.TryParse(str, out num))
+                return num;
+            else
+                return defaultValue;
+        }
+
+        static string Capitalize(string s)
+        {
+            if (!string.IsNullOrEmpty(s))
+            {
+                return char.ToUpper(s[0]) + s.Substring(1);
+            }
+            return s;
         }
     }
 }
