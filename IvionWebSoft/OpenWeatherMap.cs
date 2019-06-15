@@ -58,13 +58,16 @@ namespace IvionWebSoft
         public double TemperatureInF { get; private set; }
         public double RelativeHumidity { get; private set; }
 
-        //public double PrecipitationInInches { get; private set; }
-        //public double PrecipitationInMillimeters { get; private set; }
+        public double PrecipitationInMillimeters { get; private set; }
+        public double PrecipitationInInches { get; private set; }
 
         public string WindDirection { get; private set; }
 
         public double WindSpeedInKph { get; private set; }
         public double WindSpeedInMph { get; private set; }
+
+        public double WindGustInKph { get; private set; }
+        public double WindGustInMph { get; private set; }
 
 
         public WeatherConditions(WebResource resource) : base(resource) {}
@@ -85,6 +88,10 @@ namespace IvionWebSoft
             TemperatureInF = (TemperatureInC * 1.8) + 32;
             RelativeHumidity = (double)observation["main"]["humidity"];
 
+            PrecipitationInMillimeters = Precip(observation["rain"], observation["snow"]);
+            // Convert to inches.
+            PrecipitationInInches = PrecipitationInMillimeters / 25.4;
+
             WindDirection = DegreesToDirection(observation["wind"]["deg"]);
 
             var windspeed = (double)observation["wind"]["speed"];
@@ -92,6 +99,12 @@ namespace IvionWebSoft
             WindSpeedInKph = windspeed * 3.6;
             // Approximate mph, 4 significant digits should be enough.
             WindSpeedInMph = windspeed * 2.237;
+
+            // Same as wind speed, but wind gust is usually absent, so
+            // use `ToDouble`.
+            var windgust = ToDouble(observation["wind"]["gust"], 0);
+            WindGustInKph = windgust * 3.6;
+            WindGustInMph = windgust * 2.237;
         }
 
 
@@ -102,6 +115,20 @@ namespace IvionWebSoft
                 return char.ToUpper(s[0]) + s.Substring(1);
             }
             return s;
+        }
+
+        static double Precip(JToken rainEl, JToken snowEl)
+        {
+            // Futz rain and snow together to get total percipitation.
+            // We also need to check for null because these elements are
+            // usually absent.
+            double sum = 0;
+            if (rainEl != null)
+                sum += ToDouble(rainEl["1h"], 0);
+            if (snowEl != null)
+                sum += ToDouble(snowEl["1h"], 0);
+
+            return sum;
         }
 
         static double ToDouble(JToken el, double defaultValue)
