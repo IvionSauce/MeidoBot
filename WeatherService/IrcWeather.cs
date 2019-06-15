@@ -121,7 +121,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         if (TryGetConditions(location, out cond))
         {
             if (cond.Success)
-                irc.SendMessage(e.ReturnTo, Format(cond));
+                irc.SendMessage(e.ReturnTo, WeatherFormat.IrcFormat(cond));
             else
                 e.Reply(cond.Exception.Message);
         }
@@ -169,23 +169,6 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         }
 
         return false;
-    }
-
-    static string Format(WeatherConditions cond)
-    {
-        string wind;
-        if (string.IsNullOrEmpty(cond.WindDirection))
-            wind = "[Wind]";
-        else
-            wind = string.Format("[Wind {0}]", cond.WindDirection);
-        
-        return string.Format(
-            "[ {0} ] {1} :: {2:0.#}°C ({3:0.#}°F) :: Humidity {4}% :: " +
-            //"Precipitation {5} mm ({6} in) :: [Wind {7}] {8}",
-            "{5} {6:0.#} km/h ({7:0.#} mph)",
-            cond.WeatherLocation, cond.Description,
-            cond.TemperatureInC, cond.TemperatureInF, cond.RelativeHumidity,
-            wind, cond.WindSpeedInKph, cond.WindSpeedInMph);
     }
 
 
