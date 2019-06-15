@@ -116,9 +116,11 @@ namespace IvionWebSoft
 
         static string DegreesToDirection(JToken windDegrees)
         {
-            int deg;
-            if (int.TryParse((string)windDegrees, out deg) &&
-                deg >= 0)
+            var deg = (int)Math.Round(
+                ToDouble(windDegrees, -1),
+                MidpointRounding.AwayFromZero
+            );
+            if (deg >= 0 && deg <= 360)
             {
                 // Cardinal directions first, allow 10 degrees of error
                 // on either side. N=0, E=90, S=180, W=270
