@@ -7,30 +7,33 @@ namespace IvionWebSoft
     public class OpenWeatherMap
     {
         public string ApiKey { get; private set; }
-        readonly string owmQuery;
+        readonly string cityQuery;
+        readonly string zipQuery;
 
 
         public OpenWeatherMap(string apiKey)
         {
-            if (apiKey == null)
-                throw new ArgumentNullException(nameof(apiKey));
+            apiKey.ThrowIfNullOrWhiteSpace(nameof(apiKey));
 
             ApiKey = apiKey;
-            owmQuery = string.Concat(
-                "https://api.openweathermap.org/data/2.5/weather?appid=", apiKey,
-                "&units=metric&q="
-            );
+
+            string shared =
+                "https://api.openweathermap.org/data/2.5/weather?appid=" +
+                apiKey + "&units=metric";
+
+            cityQuery = shared + "&q=";
+            zipQuery = shared + "&zip=";
         }
 
 
-        public WeatherConditions GetConditions(string location)
+        public WeatherConditions GetConditions(WeatherLocation location)
         {
             if (location == null)
                 throw new ArgumentNullException(nameof(location));
+            if (!location.Success)
+                throw new ArgumentException("WeatherLocation must have a valid value.", nameof(location));
 
-            var query = string.Concat(owmQuery, Uri.EscapeDataString(location));
-
-            var queryResult = WebString.Download(query);
+            var queryResult = WebString.Download( MakeQuery(location) );
             if (!queryResult.Success)
                 return new WeatherConditions(queryResult);
 
@@ -46,6 +49,16 @@ namespace IvionWebSoft
                 var ex = new JsonErrorException(message);
                 return new WeatherConditions(queryResult.Location, ex);
             }
+        }
+
+        string MakeQuery(WeatherLocation location)
+        {
+            var queryData = Uri.EscapeDataString(location.ToString());
+
+            if (location.IsCityQuery)
+                return cityQuery + queryData;
+            else
+                return zipQuery + queryData;
         }
     }
 
