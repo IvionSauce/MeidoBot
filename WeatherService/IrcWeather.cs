@@ -45,15 +45,16 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
             
             new Trigger("w", WeatherSearch, TriggerThreading.Queue) {
                 Help = new TriggerHelp(
-                    "[location] | @<nick>",
-                    "Reports weather conditions at location. Will use your default location if called " +
-                    "without arguments. (Powered by OpenWeatherMap)")
+                    "<city>,[country] | <zip>,[country] | @<nick>",
+                    "Reports weather conditions at location. Location can have an optional 2-letter country code " +
+                    "(ISO 3166) at the end to more precisely indicate the location. " +
+                    "Will use your default location if called without arguments. (Powered by OpenWeatherMap)")
             },
 
             new Trigger("W", SetWeatherLocation, TriggerThreading.Queue) {
                 Help = new TriggerHelp(
-                    "<location>",
-                    "Sets your default weather location to `location`.")
+                    "<city>,[country] | <zip>,[country]",
+                    "Sets your default weather location.")
             }
         );
 
@@ -106,7 +107,14 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
         if (!string.IsNullOrWhiteSpace(location))
         {
-            WeatherSearch(e, location);
+            var weatherLoc = WeatherLocation.Parse(location);
+            if (weatherLoc.Success)
+                WeatherSearch(e, weatherLoc);
+            else
+            {
+                e.Reply("Invalid query format. Please use \"city, country\" or \"zip, country\", " +
+                        "where country is a 2-letter country code (ISO 3166).");
+            }
         }
         else
         {
@@ -115,7 +123,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         }
     }
 
-    void WeatherSearch(ITriggerMsg e, string location)
+    void WeatherSearch(ITriggerMsg e, WeatherLocation location)
     {
         WeatherConditions cond;
         if (TryGetConditions(location, out cond))
@@ -155,7 +163,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
     }
 
     // Wraps locking and null-checking.
-    bool TryGetConditions(string location, out WeatherConditions cond)
+    bool TryGetConditions(WeatherLocation location, out WeatherConditions cond)
     {
         cond = null;
 
