@@ -148,10 +148,13 @@ namespace WebIrc
                     {
                         return BinaryHandler.BinaryToIrc(request, result.Bytes);
                     }
+
+                    return request.CreateResult(false);
                 }
             }
 
-            return request.CreateResult(false);
+            throw new InvalidOperationException(
+                "Reached end of method, this should not happen. There should be a catch-all in urlInstructions.");
         }
 
 
