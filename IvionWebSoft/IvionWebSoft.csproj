@@ -66,6 +66,7 @@
     <Compile Include="WebResources\ChanPost.cs" />
     <Compile Include="UrlTitleComparer.cs" />
     <Compile Include="Sanitize.cs" />
+    <Compile Include="WeatherLocation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="WebResources\" />
