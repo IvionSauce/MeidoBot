@@ -108,8 +108,10 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         if (!string.IsNullOrWhiteSpace(location))
         {
             var weatherLoc = WeatherLocation.Parse(location);
-            if (weatherLoc.Success)
+            if (weatherLoc.IsValidQuery && VerifyCountry(weatherLoc.Country))
+            {
                 WeatherSearch(e, weatherLoc);
+            }
             else
             {
                 e.Reply("Invalid query format. Please use \"city, country\" or \"zip, country\", " +
@@ -160,6 +162,13 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
             location = defaultLocations.Get(e.Nick);
 
         return location;
+    }
+
+    static bool VerifyCountry(string country)
+    {
+        // No country is fine, but if we got one make sure it's
+        // just 2 characters long.
+        return country == null || country.Length == 2;
     }
 
     // Wraps locking and null-checking.
