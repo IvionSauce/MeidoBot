@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace IvionWebSoft
@@ -80,8 +81,7 @@ namespace IvionWebSoft
                 (string)observation["name"] + ", " +
                 (string)observation["sys"]["country"];
 
-            Description =
-                Capitalize((string)observation["weather"][0]["description"]);
+            Description = FormatDescs(observation["weather"]);
 
             TemperatureInC = (double)observation["main"]["temp"];
             // Convert to Fahrenheit.
@@ -105,6 +105,18 @@ namespace IvionWebSoft
             var windgust = ToDouble(observation["wind"]["gust"], 0);
             WindGustInKph = windgust * 3.6;
             WindGustInMph = windgust * 2.237;
+        }
+
+        static string FormatDescs(JToken weatherList)
+        {
+
+            var descs =
+                from weather in weatherList
+                select (string)weather["description"] into desc
+                where !string.IsNullOrEmpty(desc)
+                select Capitalize(desc);
+
+            return string.Join(", ", descs);
         }
 
         static double Precip(JToken rainEl, JToken snowEl)
