@@ -71,10 +71,11 @@ namespace IvionWebSoft
             if (!Success)
                 return string.Empty;
 
+            var place = City ?? Zip.ToString();
             if (Country == null)
-                return City ?? Zip.ToString();
-
-            return City ?? Zip + Seperator + Country;
+                return place;
+            else
+                return place + Seperator + Country;
         }
 
 
