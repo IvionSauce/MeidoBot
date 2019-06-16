@@ -30,7 +30,7 @@ namespace IvionWebSoft
         {
             if (location == null)
                 throw new ArgumentNullException(nameof(location));
-            if (!location.Success)
+            if (!location.IsValidQuery)
                 throw new ArgumentException("WeatherLocation must have a valid value.", nameof(location));
 
             var queryResult = WebString.Download( MakeQuery(location) );

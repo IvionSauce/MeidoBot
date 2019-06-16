@@ -14,14 +14,14 @@ namespace IvionWebSoft
         {
             get { return Zip > 0; }
         }
-        public bool Success
+        public bool IsValidQuery
         {
             get { return IsCityQuery || IsZipQuery; }
         }
 
-        readonly string City;
-        readonly int Zip;
-        readonly string Country;
+        public readonly string City;
+        public readonly int Zip;
+        public readonly string Country;
 
         const char Seperator = ',';
 
@@ -68,7 +68,7 @@ namespace IvionWebSoft
 
         public override string ToString()
         {
-            if (!Success)
+            if (!IsValidQuery)
                 return string.Empty;
 
             var place = City ?? Zip.ToString();
