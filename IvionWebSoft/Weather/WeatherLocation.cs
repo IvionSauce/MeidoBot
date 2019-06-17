@@ -60,9 +60,9 @@ namespace IvionWebSoft
 
         WeatherLocation(string city, int zip, string country)
         {
-            City = city;
+            City = city?.Trim();
             Zip = zip;
-            Country = country;
+            Country = country?.Trim();
         }
 
 
@@ -87,7 +87,7 @@ namespace IvionWebSoft
             var split =
                 (from item in query.Split(Seperator)
                 where !string.IsNullOrWhiteSpace(item)
-                select item.Trim()).ToArray();
+                select item).ToArray();
 
             if (split.Length > 0 && split.Length < 3)
             {
