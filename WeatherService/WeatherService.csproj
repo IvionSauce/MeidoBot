@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{E3D4A39E-C3C6-4F08-8E77-6FCACA0AC891}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>WeatherUnderground</RootNamespace>
-    <AssemblyName>WeatherUnderground</AssemblyName>
+    <RootNamespace>WeatherService</RootNamespace>
+    <AssemblyName>WeatherService</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
