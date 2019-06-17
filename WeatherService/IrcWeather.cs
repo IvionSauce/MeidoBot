@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Net;
 using System.Collections.Generic;
 using IvionSoft;
 using IvionWebSoft;
@@ -132,6 +133,8 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         {
             if (cond.Success)
                 irc.SendMessage(e.ReturnTo, WeatherFormat.IrcFormat(cond));
+            else if (cond.HttpErrorIs(HttpStatusCode.NotFound))
+                e.Reply("Sorry, couldn't find anything for query '{0}'.", location);
             else
                 e.Reply(cond.Exception.Message);
         }
