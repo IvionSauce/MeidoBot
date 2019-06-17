@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 
 
 namespace IvionWebSoft
@@ -40,6 +41,33 @@ namespace IvionWebSoft
             Location = resource.Location;
             Success = resource.Success;
             Exception = resource.Exception;
+        }
+
+
+        public bool TryGetHttpError(out HttpStatusCode error)
+        {
+            var webEx = Exception as WebException;
+            if (webEx != null && webEx.Status == WebExceptionStatus.ProtocolError)
+            {
+                var resp = webEx.Response as HttpWebResponse;
+                if (resp != null)
+                {
+                    error = resp.StatusCode;
+                    return true;
+                }
+            }
+
+            error = default(HttpStatusCode);
+            return false;
+        }
+
+        public bool HttpErrorIs(HttpStatusCode error)
+        {
+            HttpStatusCode status;
+            if (TryGetHttpError(out status))
+                return status == error;
+
+            return false;
         }
     }
 }
