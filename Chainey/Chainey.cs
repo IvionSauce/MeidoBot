@@ -58,6 +58,7 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         var t = TriggerThreading.Queue;
         Triggers = new Trigger[] {
             new Trigger("markov", Markov, t),
+            new Trigger(MarkovNick, t, "markov-nick", "nicksay"),
             new Trigger("remove", Remove, t)
         };
 
@@ -71,31 +72,38 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     // Chainey triggers.
     // -----------------
 
+    // remove <sentence>
     void Remove(ITriggerMsg e)
     {
         if (meido.AuthLevel(e.Nick) >= 2)
         {
-            var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length -1);
+            var toRemove = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             chainey.Remove(toRemove);
             e.Reply("Removed sentence.");
         }
     }
 
+    // markov [seeds]
     void Markov(ITriggerMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        msg = msg.Slice(1, 0);
+        EmitSentence(e.ReturnTo, msg, e.Nick);
+    }
 
-        string source;
-        // markov --nick <nick> [seeds]
-        if (msg.Length > 2 && msg[1] == "--nick")
+    // markov-nick <nick> [seeds]
+    void MarkovNick(ITriggerMsg e)
+    {
+        var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        if (msg.Length > 1)
         {
-            source = msg[2].ToUpperInvariant();
+            var source = msg[1].ToUpperInvariant();
 
             List<Sentence> sentences;
             // When we have seeds.
-            if (msg.Length > 3)
+            if (msg.Length > 2)
             {
-                msg = msg.Slice(3, 0);
+                msg = msg.Slice(2, 0);
                 sentences = chainey.Build(msg, source, false);
             }
             // When we don't have seeds.
@@ -104,12 +112,6 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
             if (sentences.Count > 0)
                 SendSentence(e.ReturnTo, sentences[0], e.Nick);
-        }
-        // markov [seeds]
-        else
-        {
-            msg = msg.Slice(1, 0);
-            EmitSentence(e.ReturnTo, msg, e.Nick);
         }
     }
 
