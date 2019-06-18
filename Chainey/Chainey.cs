@@ -56,11 +56,28 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         irc = ircComm;
 
         var t = TriggerThreading.Queue;
-        Triggers = new Trigger[] {
-            new Trigger("markov", Markov, t),
-            new Trigger(MarkovNick, t, "markov-nick", "nicksay"),
-            new Trigger("remove", Remove, t)
-        };
+        Triggers = Trigger.Group(
+            
+            new Trigger("markov", Markov, t) {
+                Help = new TriggerHelp(
+                    "<seeds>",
+                    "Builds reply with markov chains using the specified seeds.")
+            },
+
+            new Trigger(MarkovNick, t, "markov-nick", "nicksay") {
+                Help = new TriggerHelp(
+                    "<nick> [seeds]",
+                    "Builds reply with markov chains based on `seeds`, with the contraint that the words " +
+                    "of the reply have been said by `nick` at some point.")
+            },
+
+            new Trigger(Remove, t, "markov-remove", "remove") {
+                Help = new TriggerHelp(
+                    "<sentence>",
+                    "Remove sentence and its constituent words from the markov chains database. " +
+                    "(Admin only)")
+            }
+        );
 
         IrcHandlers = new IIrcHandler[] {
             new IrcHandler<IChannelMsg>(MessageHandler, t)
@@ -83,7 +100,7 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         }
     }
 
-    // markov [seeds]
+    // markov <seeds>
     void Markov(ITriggerMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
