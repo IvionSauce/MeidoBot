@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 namespace Chainey
 {
-    public class SqliteBrain : IBrainBackend
+    public class SqliteBrain : IBrainBackend, IDisposable
     {
         public int Order { get; private set; }
 
@@ -27,61 +27,65 @@ namespace Chainey
                 if (value > 0)
                     _maxWords = value;
                 else
-                    throw new ArgumentOutOfRangeException("value", "MaxWords cannot be 0 or negative.");
+                    throw new ArgumentOutOfRangeException(nameof(value), "MaxWords cannot be 0 or negative.");
             }
         }
 
-        readonly ThreadLocalSqlite localSqlite;
+        readonly SqliteConnection conn;
 
 
         public SqliteBrain(string file, int order)
         {
             file.ThrowIfNullOrWhiteSpace("file");
             if (order < 1)
-                throw new ArgumentOutOfRangeException("order", "Cannot be 0 or negative.");
+                throw new ArgumentOutOfRangeException(nameof(order), "Cannot be 0 or negative.");
 
-            localSqlite = new ThreadLocalSqlite(file);
+            var connStr = "URI=file:" + file + ";Journal Mode=WAL";
+            conn = new SqliteConnection(connStr);
+            // We'll keep the connection open for the lifetime of this object,
+            // let's see how that goes.
+            conn.Open();
+
             Order = order;
             MaxWords = 100;
 
-            using (var connection = new SqliteConnection("URI=file:" + file))
+            using (var cmd = new SqliteCommand(conn))
             {
-                connection.Open();
+                // ----- Populate the database with tables, if necessary -----
+                cmd.CommandText = "CREATE TABLE IF NOT EXISTS WordCount(" +
+                    "word TEXT PRIMARY KEY COLLATE NOCASE," +
+                    "count INTEGER NOT NULL DEFAULT 1) WITHOUT ROWID";
+                cmd.ExecuteNonQuery();
 
-                using (var cmd = new SqliteCommand(connection))
-                {
-                    // ----- Populate the database with tables, if necessary -----
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS WordCount(" +
-                        "word TEXT PRIMARY KEY COLLATE NOCASE," +
-                        "count INTEGER NOT NULL DEFAULT 1) WITHOUT ROWID";
-                    cmd.ExecuteNonQuery();
+                cmd.CommandText = "CREATE TABLE IF NOT EXISTS Chains(" +
+                    "id INTEGER PRIMARY KEY," +
+                    "backward TEXT NOT NULL DEFAULT ''," +
+                    "chain TEXT NOT NULL," +
+                    "forward TEXT NOT NULL DEFAULT ''," +
+                    "UNIQUE(chain, backward, forward))";
+                cmd.ExecuteNonQuery();
 
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Chains(" +
-                        "id INTEGER PRIMARY KEY," +
-                        "backward TEXT NOT NULL DEFAULT ''," +
-                        "chain TEXT NOT NULL," +
-                        "forward TEXT NOT NULL DEFAULT ''," +
-                        "UNIQUE(chain, backward, forward))";
-                    cmd.ExecuteNonQuery();
+                cmd.CommandText = "CREATE TABLE IF NOT EXISTS Sources(" +
+                    "id INTEGER PRIMARY KEY," +
+                    "source TEXT NOT NULL," +
+                    "UNIQUE(source))";
+                cmd.ExecuteNonQuery();
 
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Sources(" +
-                        "id INTEGER PRIMARY KEY," +
-                        "source TEXT NOT NULL," +
-                        "UNIQUE(source))";
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS SrcMap(" +
-                        "sId INTEGER," +
-                        "cId INTEGER," +
-                        "FOREIGN KEY(sId) REFERENCES Sources(id)," +
-                        "FOREIGN KEY(cId) REFERENCES Chains(id) ON DELETE CASCADE," +
-                        "UNIQUE(sId, cId)," +
-                        "UNIQUE(cId, sId))";
-                    cmd.ExecuteNonQuery();
-                }
-
-                connection.Close();
+                cmd.CommandText = "CREATE TABLE IF NOT EXISTS SrcMap(" +
+                    "sId INTEGER," +
+                    "cId INTEGER," +
+                    "FOREIGN KEY(sId) REFERENCES Sources(id)," +
+                    "FOREIGN KEY(cId) REFERENCES Chains(id) ON DELETE CASCADE," +
+                    "UNIQUE(sId, cId)," +
+                    "UNIQUE(cId, sId))";
+                cmd.ExecuteNonQuery();
             }
+        }
+
+        public void Dispose()
+        {
+            conn.Close();
+            conn.Dispose();
         }
 
 
@@ -103,16 +107,15 @@ namespace Chainey
         public void AddSentence(string[] sentenceWords, string source)
         {
             if (sentenceWords == null)
-                throw new ArgumentNullException("sentenceWords");
+                throw new ArgumentNullException(nameof(sentenceWords));
             // Return early if there's nothing to do.
-            else if (sentenceWords.Length < Order)
+            if (sentenceWords.Length < Order)
                 return;
             
             string[][] chains = MarkovTools.TokenizeSentence(sentenceWords, Order);
 
             var sw = Stopwatch.StartNew();
 
-            var conn = localSqlite.GetDb();
             using (SqliteTransaction tr = conn.BeginTransaction())
             using (SqliteCommand insertCmd = conn.CreateCommand(),
                    sourcesCmd = conn.CreateCommand())
@@ -192,14 +195,13 @@ namespace Chainey
         public void RemoveSentence(string[] sentenceWords)
         {
             if (sentenceWords == null)
-                throw new ArgumentNullException("sentenceWords");
+                throw new ArgumentNullException(nameof(sentenceWords));
             // Return early if there's nothing to do.
-            else if (sentenceWords.Length < Order)
+            if (sentenceWords.Length < Order)
                 return;
             
             string[][] chains = MarkovTools.TokenizeSentence(sentenceWords, Order);
 
-            var conn = localSqlite.GetDb();
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "PRAGMA foreign_keys = ON";
@@ -272,11 +274,10 @@ namespace Chainey
         public IEnumerable<long> WordCount(IEnumerable<string> words)
         {
             if (words == null)
-                throw new ArgumentNullException("words");
+                throw new ArgumentNullException(nameof(words));
 
             const string countSql = "SELECT count FROM WordCount WHERE word=@Word";
 
-            var conn = localSqlite.GetDb();
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = countSql;
@@ -365,9 +366,8 @@ namespace Chainey
         public IEnumerable<Sentence> BuildSentences(IEnumerable<string> seeds, string source)
         {
             if (seeds == null)
-                throw new ArgumentNullException("seeds");
+                throw new ArgumentNullException(nameof(seeds));
 
-            var conn = localSqlite.GetDb();
             using (var buildVectors = new BuilderVectors(conn, source))
             {
                 foreach (string seed in seeds)
@@ -386,7 +386,6 @@ namespace Chainey
 
         public IEnumerable<Sentence> BuildRandomSentences(string source)
         {
-            var conn = localSqlite.GetDb();
             using (var buildVectors = new BuilderVectors(conn, source))
             {
                 buildVectors.PrepareRandomSql();
