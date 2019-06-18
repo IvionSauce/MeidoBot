@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Threading;
 using Chainey;
 using IvionSoft;
 // Using directives for plugin use.
@@ -33,24 +32,11 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
     readonly Config conf = new Config();
 
-    // Housekeeping for producer-consumer queue.
-    readonly Queue<IChannelMsg> MessageQueue = new Queue<IChannelMsg>();
-    readonly object _locker = new object();
-
     const string nickPlaceholder = "||NICK||";
 
 
     public void Stop()
-    {
-        for (int i = 0; i < conf.Threads; i++)
-        {
-            lock (_locker)
-            {
-                MessageQueue.Enqueue(null);
-                Monitor.Pulse(_locker);
-            }
-        }
-    }
+    {}
     
     [ImportingConstructor]
     public IrcChainey(IIrcComm ircComm, IMeidoComm meidoComm)
@@ -62,55 +48,17 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
         chainey.Filter = false;
 
-        for (int i = 0; i < conf.Threads; i++)
-            new Thread(Consume).Start();
-
         irc = ircComm;
 
+        var t = TriggerThreading.Queue;
         Triggers = new Trigger[] {
-            new Trigger("markov", Markov),
-            new Trigger("remove", Remove)
+            new Trigger("markov", Markov, t),
+            new Trigger("remove", Remove, t)
         };
 
         IrcHandlers = new IIrcHandler[] {
-            new IrcHandler<IChannelMsg>(Handler)
+            new IrcHandler<IChannelMsg>(MessageHandler, t)
         };
-    }
-
-
-    // --------------------------------------------------
-    // Boilerplate for the threaded handling of messages.
-    // --------------------------------------------------
-
-    void Handler(IChannelMsg e)
-    {
-        if (e.Trigger == null)
-        {
-            lock (_locker)
-            {
-                MessageQueue.Enqueue(e);
-                Monitor.Pulse(_locker);
-            }
-        }
-    }
-
-    void Consume()
-    {
-        IChannelMsg message;
-        while (true)
-        {
-            lock (_locker)
-            {
-                while (MessageQueue.Count == 0)
-                    Monitor.Wait(_locker);
-
-                message = MessageQueue.Dequeue();
-            }
-            if (message != null)
-                ThreadedHandler(message);
-            else
-                return;
-        }
     }
 
 
@@ -165,7 +113,7 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     // Handling of messages (learning and replying).
     // ---------------------------------------------
 
-    void ThreadedHandler(IChannelMsg e)
+    void MessageHandler(IChannelMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
         if (msg.Length == 0)
