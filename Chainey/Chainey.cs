@@ -27,6 +27,8 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     readonly IMeidoComm meido;
     readonly ILog log;
 
+    // Keep Sqlite backend around because we need to dispose of it.
+    readonly SqliteBrain backend;
     readonly BrainFrontend chainey;
     readonly Random rnd = new Random();
 
@@ -36,7 +38,9 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
 
     public void Stop()
-    {}
+    {
+        backend.Dispose();
+    }
     
     [ImportingConstructor]
     public IrcChainey(IIrcComm ircComm, IMeidoComm meidoComm)
@@ -45,7 +49,8 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         log = meido.CreateLogger(this);
 
         conf.Location = meidoComm.DataPathTo("chainey.sqlite");
-        chainey = new BrainFrontend( new SqliteBrain(conf.Location, conf.Order) );
+        backend = new SqliteBrain(conf.Location, conf.Order);
+        chainey = new BrainFrontend(backend);
         chainey.Filter = false;
 
         irc = ircComm;
