@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using Chainey;
 using IvionSoft;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -140,7 +141,8 @@ public class IrcChainey : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     void MessageHandler(IChannelMsg e)
     {
         var msg = e.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-        if (msg.Length == 0)
+        // Don't process if it's empty or a probable trigger call.
+        if (msg.Length == 0 || e.StartsWithTriggerPrefix())
             return;
 
         string first = msg[0];
