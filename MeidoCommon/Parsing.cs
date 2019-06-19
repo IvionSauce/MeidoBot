@@ -45,5 +45,41 @@ namespace MeidoCommon.Parsing
 
             return ts;
         }
+
+
+        public static bool StartsWithTriggerPrefix(this IIrcMsg msg)
+        {
+            if (msg == null)
+                throw new ArgumentNullException(nameof(msg));
+            
+            return StartsWithTriggerPrefix(msg.Message);
+        }
+
+        public static bool StartsWithTriggerPrefix(this string message)
+        {
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+
+            if (message.Length > 0)
+            {
+                // Record of trigger prefixes I've seen in the wild.
+                switch (message[0])
+                {
+                    case '.':
+                    // Special exception for dot, since they're commonly
+                    // used as ellipsis.
+                    if (message.Length > 1 && message[1] == '.')
+                        break;
+                    return true;
+
+                    case '!':
+                    case '@':
+                    case '~':
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
