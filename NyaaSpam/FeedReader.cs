@@ -38,13 +38,11 @@ class FeedReader
     
     public void Start()
     {
-        var period = conf.Interval;
-
         tmr = new Timer(
             ReadFeed,
             null,
-            DetermineDueTime(period),
-            period
+            DetermineDueTime(conf.Interval),
+            Timeout.InfiniteTimeSpan
         );
     }
 
@@ -85,6 +83,23 @@ class FeedReader
     public void Stop()
     {
         tmr.Dispose();
+    }
+
+    // Due to drift, a few seconds over several weeks, we need to manually reschedule
+    // and recalculate the due time.
+    void Reschedule()
+    {
+        try
+        {
+            tmr.Change(
+                DetermineDueTime(conf.Interval),
+                Timeout.InfiniteTimeSpan
+            );
+        }
+        catch (ObjectDisposedException)
+        {
+            // Timer is stopped, no need for rescheduling.
+        }
     }
 
 
@@ -131,6 +146,8 @@ class FeedReader
         }
         else
             log.Error("No items were processed in ReadFeed: RSS/Atom feed had 0 items.");
+
+        Reschedule();
     }
 
     SyndicationFeed OpenFeed()
