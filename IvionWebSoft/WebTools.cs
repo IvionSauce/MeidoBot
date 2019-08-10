@@ -13,8 +13,8 @@ namespace IvionWebSoft
     /// </summary>
     public static class WebTools
     {
-        // Try to match "length_seconds": \d+[,}]
-        static readonly Regex ytRegexp = new Regex(@"(?<=""length_seconds"":\s?"")\d+(?=""[,}])");
+        // Try to match \\u0026dur=\d+\\u0026
+        static readonly Regex ytRegexp = new Regex(@"(?<=\\\\u0026dur=)\d+.\d+(?=\\\\u0026)");
 
 
         /// <summary>
@@ -60,8 +60,10 @@ namespace IvionWebSoft
             Match timeMatch = ytRegexp.Match(htmlString);
             if (timeMatch.Success)
             {
-                var seconds = int.Parse(timeMatch.Value);
-                return TimeSpan.FromSeconds(seconds);
+                var seconds = double.Parse(timeMatch.Value);
+                return TimeSpan.FromSeconds(
+                    Math.Round(seconds, MidpointRounding.AwayFromZero)
+                );
             }
             else
                 return TimeSpan.Zero;

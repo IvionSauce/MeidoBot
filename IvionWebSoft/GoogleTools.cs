@@ -11,7 +11,7 @@ namespace IvionWebSoft
     {
         // Example: <div class="jfp3ef"><a href="/url?q=https://en.wikipedia.org/wiki/Cowboy_Bebop&amp;sa=U&amp;ved=2ahUKEwiz7L_i-sPiAhWI66QKHX-DBGIQFjAMegQIChAB&amp;usg=AOvVaw3SnjtMGuu5NiDY2AWChYaP"><div class="BNeawe vvjwJb AP7Wnd">Cowboy Bebop - Wikipedia</div>
         static readonly Regex resultsRegexp = new Regex(
-            @"<div class=""jfp3ef"">\s*" +
+            @"<div class=""(?:jfp3ef|kCrYT)"">\s*" +
             @"<a href=""/url\?q=([^<>""]+)&amp;sa=[^<>""]+"">\s*" +
             @"<div class=""BNeawe vvjwJb AP7Wnd"">(.+?)</div>");
         
@@ -22,7 +22,7 @@ namespace IvionWebSoft
         public static SearchResults Search(string query)
         {
             if (query == null)
-                throw new ArgumentNullException("query");
+                throw new ArgumentNullException(nameof(query));
 
             var results = WebString.Download( GoogleUrl(query) );
             if (!results.Success)
@@ -93,7 +93,7 @@ namespace IvionWebSoft
         public static string ReplaceBoldTags(string title, string beginReplacement, string endReplacement)
         {
             if (title == null)
-                throw new ArgumentNullException("title");
+                throw new ArgumentNullException(nameof(title));
 
             return boldRegExp.Replace(title, string.Concat(beginReplacement, "$2", endReplacement));
         }
