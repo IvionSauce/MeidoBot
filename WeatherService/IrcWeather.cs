@@ -122,7 +122,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
         else
         {
             e.Reply("Either specify a location or set your default location with the 'W' trigger. " +
-                    "(That is a upper case W)");
+                    "(That is an upper case W)");
         }
     }
 
