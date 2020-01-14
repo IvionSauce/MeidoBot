@@ -106,46 +106,46 @@ class FeedReader
     void ReadFeed(object data)
     {
         var feed = OpenFeed();
-        if (feed == null)
-            return;
-
-        SanitizeLastPrinted();
-        // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. Which is a
-        // possibility, since feed.Items could be empty...
-        DateTimeOffset latestPublish = DateTimeOffset.MinValue;
-        // So let's track that (it's also nice for logging).
-        int itemsSeen = 0;
-        foreach (SyndicationItem item in feed.Items)
+        if (feed != null)
         {
-            // Save the most recent publishing date for later.
-            if (itemsSeen == 0)
-                latestPublish = item.PublishDate;
-
-            itemsSeen++;
-            // Once we hit items that we probably already have printed, stop processing the rest.
-            if (item.PublishDate <= lastPrintedTime)
-                break;
-            // Skip processing items in categories we don't care about.
-            if (Skip(item, conf.SkipCategories))
-                continue;
-            
-            string[] channels = patterns.PatternMatch(item.Title.Text);
-            foreach (string channel in channels)
+            SanitizeLastPrinted();
+            // Assign it a value, else the C# compiler thinks it will be unassigned once the loop exits. Which is a
+            // possibility, since feed.Items could be empty...
+            DateTimeOffset latestPublish = DateTimeOffset.MinValue;
+            // So let's track that (it's also nice for logging).
+            int itemsSeen = 0;
+            foreach (SyndicationItem item in feed.Items)
             {
-                irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
-            }
-        }
+                // Save the most recent publishing date for later.
+                if (itemsSeen == 0)
+                    latestPublish = item.PublishDate;
 
-        if (itemsSeen > 0)
-        {
-            log.Verbose("Read {0} item(s) from feed. Most recent publish date is {1:s}",
-                        itemsSeen, latestPublish.ToLocalTime());
-            
-            lastPrintedTime = latestPublish;
-            dtFile.Write(latestPublish);
+                itemsSeen++;
+                // Once we hit items that we probably already have printed, stop processing the rest.
+                if (item.PublishDate <= lastPrintedTime)
+                    break;
+                // Skip processing items in categories we don't care about.
+                if (Skip(item, conf.SkipCategories))
+                    continue;
+                
+                string[] channels = patterns.PatternMatch(item.Title.Text);
+                foreach (string channel in channels)
+                {
+                    irc.SendMessage(channel, "号外! 号外! 号外! \u0002:: {0} ::\u000F {1}", item.Title.Text, item.Id);
+                }
+            }
+
+            if (itemsSeen > 0)
+            {
+                log.Verbose("Read {0} item(s) from feed. Most recent publish date is {1:s}",
+                            itemsSeen, latestPublish.ToLocalTime());
+                
+                lastPrintedTime = latestPublish;
+                dtFile.Write(latestPublish);
+            }
+            else
+                log.Error("No items were processed in ReadFeed: RSS/Atom feed had 0 items.");
         }
-        else
-            log.Error("No items were processed in ReadFeed: RSS/Atom feed had 0 items.");
 
         Reschedule();
     }
