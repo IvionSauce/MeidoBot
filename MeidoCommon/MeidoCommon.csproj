@@ -47,7 +47,6 @@
     <Compile Include="XmlConfig2.cs" />
     <Compile Include="Trigger.cs" />
     <Compile Include="IrcHandler.cs" />
-    <Compile Include="Parsing.cs" />
     <Compile Include="Help\TopicHelp.cs" />
     <Compile Include="Help\DynamicHelp.cs" />
     <Compile Include="Help\TriggerHelp.cs" />
@@ -55,9 +54,11 @@
     <Compile Include="Tools.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Help\Common.cs" />
+    <Compile Include="Parsing\Parse.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
     <Folder Include="Help\" />
+    <Folder Include="Parsing\" />
   </ItemGroup>
 </Project>
