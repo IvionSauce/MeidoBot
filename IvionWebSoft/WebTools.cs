@@ -14,7 +14,7 @@ namespace IvionWebSoft
     public static class WebTools
     {
         // Try to match \\u0026dur=\d+\\u0026
-        static readonly Regex ytRegexp = new Regex(@"(?<=\\\\u0026dur=)\d+.\d+(?=\\\\u0026)");
+        static readonly Regex ytRegexp = new Regex(@"(\\\\u0026|%26)dur(=|%3D)(\d+.\d+)(\\\\u0026|%26)?");
 
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace IvionWebSoft
             Match timeMatch = ytRegexp.Match(htmlString);
             if (timeMatch.Success)
             {
-                var seconds = double.Parse(timeMatch.Value);
+                var seconds = double.Parse(timeMatch.Groups[3].Value);
                 return TimeSpan.FromSeconds(
                     Math.Round(seconds, MidpointRounding.AwayFromZero)
                 );
