@@ -55,6 +55,8 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Help\Common.cs" />
     <Compile Include="Parsing\Parse.cs" />
+    <Compile Include="Parsing\GetArgs.cs" />
+    <Compile Include="Parsing\ArgEnumerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Throttling\" />
