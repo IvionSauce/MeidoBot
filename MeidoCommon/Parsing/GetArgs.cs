@@ -38,12 +38,12 @@ namespace MeidoCommon.Parsing
             return GetArg(msg.MessageArray.Skip(1), out argument);
         }
 
-        public static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
+        static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
 
-            argument = null;
+            argument = string.Empty;
             int skipCount = 0;
 
             foreach (var arg in argv)
@@ -63,7 +63,10 @@ namespace MeidoCommon.Parsing
         public static string GetArg(this IIrcMsg msg, out List<string> rest)
         {
             var tmp = GetArgs(msg, 1, out rest);
-            return tmp[0];
+            if (tmp != null)
+                return tmp[0];
+            else
+                return string.Empty;
         }
 
         public static string[] GetArgs(this IIrcMsg msg, int count)
@@ -79,8 +82,7 @@ namespace MeidoCommon.Parsing
             return GetArgs(msg.MessageArray.Skip(1), count, out rest);
         }
 
-
-        public static string[] GetArgs(this IEnumerable<string> argv, int count, out List<string> rest)
+        static string[] GetArgs(this IEnumerable<string> argv, int count, out List<string> rest)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
