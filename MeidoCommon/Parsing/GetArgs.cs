@@ -7,6 +7,8 @@ namespace MeidoCommon.Parsing
 {
     public static class ParseArgs
     {
+        // --- Straightforward and not flexible extension methods for getting arguments ---
+
         public static string ArgString(this IIrcMsg msg)
         {
             return string.Join(" ", ArgArray(msg));
@@ -40,6 +42,15 @@ namespace MeidoCommon.Parsing
         }
 
 
+        // --- LINQy extension methods for getting arguments ---
+
+        // Well, this one is not LINQy, but sometimes only care about the arg.
+        public static string GetArg(this IIrcMsg msg)
+        {
+            GetArg(msg, out string arg);
+            return arg;
+        }
+
         public static IEnumerable<string> GetArg(this IIrcMsg msg, out string argument)
         {
             if (msg == null)
@@ -66,6 +77,9 @@ namespace MeidoCommon.Parsing
             return argv.Skip(skipCount);
         }
 
+
+        // --- Conventional (not LINQ) extensions methods for getting arguments ---
+        // These use ArgEnumerator as backend.
 
         public static string GetArg(this IIrcMsg msg, out List<string> rest)
         {
@@ -105,6 +119,7 @@ namespace MeidoCommon.Parsing
 
                 while (idx < count && argEnum.NextArg())
                 {
+                    // ArgEnumerator already does TryGetArg for us.
                     arguments[idx] = argEnum.CurrentArg;
                 }
 
@@ -117,6 +132,8 @@ namespace MeidoCommon.Parsing
             return arguments;
         }
 
+
+        // --- Helper methods for users to test if they got arguments ---
 
         public static bool Success(params string[] arguments)
         {
@@ -137,6 +154,8 @@ namespace MeidoCommon.Parsing
         }
 
 
+        // Common, internal helper function such that all argument getting methods get and
+        // spit out arguments in the same fashion.
         internal static bool TryGetArg(string possibleArg, out string argument)
         {
             argument = (possibleArg ?? string.Empty).Trim();
