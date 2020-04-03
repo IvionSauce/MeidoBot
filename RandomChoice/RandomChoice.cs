@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using IvionSoft;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -76,7 +77,7 @@ public class IrcRandom : IMeidoHook, IPluginTriggers
 
     void Choose(ITriggerMsg e)
     {
-        string choice = RandomChoice.RndChoice(e.MessageArray);
+        string choice = RandomChoice.RndChoice(e.ArgArray());
         if (choice != null)
             e.Reply(choice);
     }
@@ -86,9 +87,8 @@ public class IrcRandom : IMeidoHook, IPluginTriggers
     {
         const int maxCountdownSec = 10;
         const int minCountdownSec = 3;
-        int tminus;
         // cd [seconds]
-        if ( e.MessageArray.Length == 2 && int.TryParse(e.MessageArray[1], out tminus) )
+        if ( int.TryParse(e.GetArg(), out int tminus) )
         {
             if (tminus >= minCountdownSec && tminus <= maxCountdownSec)
                 Countdown(e.ReturnTo, tminus);
@@ -161,14 +161,14 @@ static class RandomChoice
     }
 
 
-    public static string RndChoice(string[] message)
+    public static string RndChoice(string[] args)
     {
-        if (message.Length < 2)
+        if (args.Length == 0)
             return null;
         
         // If first and only argument is a number sequence in the form of X-Y return a random int between X and Y.
-        Match numberSeq = Regex.Match(message[1], @"^(\d+)-(\d+)$");
-        if (numberSeq.Success && message.Length == 2)
+        Match numberSeq = Regex.Match(args[0], @"^(\d+)-(\d+)$");
+        if (numberSeq.Success && args.Length == 1)
         {
             int begin, end;
             try
@@ -196,49 +196,45 @@ static class RandomChoice
         // Else assume that it's a collection of options, so extract those options and choose a random member.
         else
         {
-            List<string> options = ConstructOptions(message);
+            List<string> options = ConstructOptions(args);
             return ChooseRndItem(options);
         }
     }
 
 
-    static List<string> ConstructOptions(string[] message)
+    static List<string> ConstructOptions(string[] args)
     {
         var options = new List<string>();
         var tempOption = new List<string>();
 
-        // Start at index 1 because the array we got passed contains the trigger at index 0.
-        for (int i = 1; i < message.Length; i++)
+        foreach (var word in args)
         {
-            var word = message[i];
-
             if ( word.Equals("or", StringComparison.OrdinalIgnoreCase) )
             {
                 if (tempOption.Count != 0)
                 {
-                    options.Add( string.Join(" ", tempOption) );
+                    options.Add( tempOption.ToJoined() );
                     tempOption.Clear();
                 }
             }
             else if ( word.EndsWith(",", StringComparison.OrdinalIgnoreCase) )
             {
                 string removedComma = word.Substring(0, word.Length - 1);
-                if (!removedComma.IsEmptyOrWhiteSpace())
+                if (removedComma != string.Empty)
                     tempOption.Add(removedComma);
 
                 if (tempOption.Count != 0)
                 {
-                    options.Add( string.Join(" ", tempOption) );
+                    options.Add( tempOption.ToJoined() );
                     tempOption.Clear();
                 }
             }
-            else if (!word.IsEmptyOrWhiteSpace())
+            else
                 tempOption.Add(word);
         }
 
         // If there are no ","s or "or"s, and hence just one option (stored in tempOption), assume that the options
-        // are delimited by spaces. Return options as array.
-        // Otherwise return collected options as an array.
+        // are delimited by spaces.
         if (options.Count == 0)
             return tempOption;
 

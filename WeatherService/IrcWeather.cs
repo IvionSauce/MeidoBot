@@ -3,6 +3,7 @@ using System.Net;
 using System.Collections.Generic;
 using IvionSoft;
 using IvionWebSoft;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -128,8 +129,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
     void WeatherSearch(ITriggerMsg e, WeatherLocation location)
     {
-        WeatherConditions cond;
-        if (TryGetConditions(location, out cond))
+        if (TryGetConditions(location, out WeatherConditions cond))
         {
             if (cond.Success)
                 irc.SendMessage(e.ReturnTo, WeatherFormat.IrcFormat(cond));
@@ -147,12 +147,10 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
     string GetLocation(ITriggerMsg e)
     {
-        string location;
-        if (e.MessageArray.Length > 1)
+        // w <location>
+        var location = e.MessageWithoutTrigger();
+        if (!string.IsNullOrEmpty(location))
         {
-            // w <location>
-            location = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
-
             // w @<nick>
             // Special form to query weather location associated with `nick`.
             if (location.Length > 1 && location[0] == '@')
@@ -196,13 +194,14 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
     void SetWeatherLocation(ITriggerMsg e)
     {
-        if (e.MessageArray.Length > 1)
+        var location = e.MessageWithoutTrigger();
+        if (!string.IsNullOrEmpty(location))
         {
-            var location = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             defaultLocations.Set(e.Nick, location);
             defaultLocations.Serialize(storagePath);
-
             e.Reply("Your default location has been set to '{0}'.", location);
         }
+        else
+            e.Reply("Your current default location is '{0}'.", defaultLocations.Get(e.Nick));
     }
 }

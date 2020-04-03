@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using IvionWebSoft;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -102,9 +103,9 @@ public class WebSearches : IMeidoHook, IPluginTriggers
 
     void ExecuteSearch(ITriggerMsg e, Site site)
     {
-        if (e.MessageArray.Length > 1)
+        var searchTerms = e.MessageWithoutTrigger();
+        if (!string.IsNullOrEmpty(searchTerms))
         {
-            var searchTerms = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             var results = site.Search(searchTerms);
 
             if (results.Success)
