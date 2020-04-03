@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -67,41 +68,41 @@ public class MiscUtils : IMeidoHook, IPluginTriggers
 
     void Say(ITriggerMsg e)
     {
-        string channel = null;
+        string channel = e.GetArg(out List<string> rest);
         string message = null;
         // say [channel] <message>
         // Send message to specified channel.
-        if ( e.MessageArray.Length > 2 && e.MessageArray[1].StartsWith("#", StringComparison.Ordinal) )
+        if (channel.StartsWith("#", StringComparison.Ordinal) && rest.Count > 0)
         {
-            channel = e.MessageArray[1];
-            message = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
+            message = rest.ToJoined();
         }
         // say <message>
         // Send message to current channel.
-        else if (e.MessageArray.Length > 1)
+        else
         {
             channel = e.Channel;
-            message = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
+            message = e.MessageWithoutTrigger();
         }
 
-        if ( Say(channel, message) )
+        if ( ParseArgs.Success(channel, message) && Say(channel, message) )
         {
-            string origin = e.Channel ?? "PM";
-            log.Message("Say: {0}/{1} -> {2}", origin, e.Nick, channel);
+            string origin = string.Empty;
+            if (e.Channel != null)
+                origin = '/' + e.Channel;
+
+            log.Message("Say: {0}{1} -> {2}", e.Nick, origin, channel);
         }
     }
 
     bool Say(string channel, string message)
     {
-        if (!string.IsNullOrEmpty(channel) && InChannel(channel))
+        if (InChannel(channel))
         {
             irc.SendMessage(channel, message);
             return true;
         }
-        else
-            return false;
+        return false;
     }
-
 
     bool InChannel(string channel)
     {

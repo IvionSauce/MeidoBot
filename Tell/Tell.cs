@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using MeidoCommon.Formatting;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -64,8 +65,11 @@ public class IrcTell : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     public void Tell(ITriggerMsg e)
     {
         // tell <nick> <message>
-        string destinationNick, message;
-        if (TryGetArgs(e.MessageArray, out destinationNick, out message))
+        var message =
+            e.GetArg(out string destinationNick)
+            .ToJoined(JoinedOptions.TrimExterior);
+
+        if (ParseArgs.Success(destinationNick, message))
         {
             var inbox = inboxes.GetOrNew(destinationNick);
 
@@ -84,28 +88,12 @@ public class IrcTell : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
             Read(e);
     }
 
-    static bool TryGetArgs(string[] ircMsg, out string toNick, out string tellMsg)
-    {
-        if (ircMsg.Length > 2)
-        {
-            toNick = ircMsg[1].Trim();
-            tellMsg = string.Join(" ", ircMsg, 2, ircMsg.Length - 2).Trim();
-
-            if (toNick != string.Empty && tellMsg != string.Empty)
-                return true;
-        }
-
-        toNick = null;
-        tellMsg = null;
-        return false;
-    }
-
 
     public void Read(ITriggerMsg e)
     {
         // tell-read [amount]
         var inbox = inboxes.Get(e.Nick);
-        var tells = inbox.Read(GetAmount(e.MessageArray));
+        var tells = inbox.Read(Amount(e.GetArg()));
         if (tells.Length > 0)
         {
             foreach (TellEntry tellMsg in tells)
@@ -118,19 +106,14 @@ public class IrcTell : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
             irc.SendNotice(e.Nick, "No messages to read.");
     }
 
-    static int GetAmount(string[] msg)
+    static int Amount(string amountArg)
     {
         const int stdAmount = 5;
 
-        if (msg.Length > 1)
+        if (int.TryParse(amountArg, out int amount) && amount > 0)
         {
-            int amount;
-            if (int.TryParse(msg[1], out amount) && amount > 0)
-            {
-                return amount;
-            }
+            return amount;
         }
-
         return stdAmount;
     }
 

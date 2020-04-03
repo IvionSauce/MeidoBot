@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MeidoCommon.Parsing;
 using Calculation;
 // Using directives for plugin use.
 using MeidoCommon;
@@ -53,9 +54,9 @@ public class Calc : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
     void HandleTrigger(ITriggerMsg e)
     {
-        if (e.MessageArray.Length > 1)
+        var exprStr = e.MessageWithoutTrigger();
+        if (exprStr.HasValue())
         {
-            var exprStr = string.Join(" ", e.MessageArray, 1, e.MessageArray.Length - 1);
             var expr = VerifiedExpression.Parse(exprStr, CalcEnv);
 
             if (expr.Success)
@@ -96,16 +97,15 @@ public class Calc : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
     void DefVar(ITriggerMsg e)
     {
-        string symbol;
-        string expression;
-        if (TryGetArgs(e.MessageArray, out symbol, out expression))
+        var expression = e.GetArg(out string symbol).ToJoined();
+
+        if (ParseArgs.Success(symbol, expression))
         {
             var expr = VerifiedExpression.Parse(expression, CalcEnv);
             if (CheckPreconditions(e, expr, symbol))
             {
                 double result = ShuntingYard.Calculate(expr);
-                double previous;
-                if (CalcEnv.Variable(symbol, out previous))
+                if (CalcEnv.Variable(symbol, out double previous))
                 {
                     e.Reply("{0} = {1} (Previous value: {2})", symbol, result, previous);
                 }
@@ -131,21 +131,5 @@ public class Calc : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
         }
 
         return true;
-    }
-
-    static bool TryGetArgs(string[] msg, out string symbol, out string expression)
-    {
-        if (msg.Length > 2)
-        {
-            symbol = msg[1];
-            expression = string.Join(" ", msg, 2, msg.Length - 2);
-
-            if (symbol != string.Empty)
-                return true;
-        }
-
-        symbol = null;
-        expression = null;
-        return false;
     }
 }
