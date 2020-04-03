@@ -23,18 +23,13 @@ namespace MeidoCommon.Parsing
 
         public bool NextArg()
         {
-            bool retval = false;
+            bool gotArg = false;
 
-            while (!retval)
+            while (!gotArg)
             {
-                bool nextSucces = argNumerator.MoveNext();
-                if (nextSucces)
+                if (argNumerator.MoveNext())
                 {
-                    if (!string.IsNullOrWhiteSpace(argNumerator.Current))
-                    {
-                        CurrentArg = argNumerator.Current;
-                        retval = true;
-                    }
+                    gotArg = ParseArgs.TryGetArg(argNumerator.Current, out CurrentArg);
                 }
                 else
                 {
@@ -43,7 +38,7 @@ namespace MeidoCommon.Parsing
                 }
             }
 
-            return retval;
+            return gotArg;
         }
 
 

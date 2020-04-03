@@ -59,11 +59,8 @@ namespace MeidoCommon.Parsing
             foreach (var arg in argv)
             {
                 skipCount++;
-                if (!string.IsNullOrWhiteSpace(arg))
-                {
-                    argument = arg;
+                if (TryGetArg(arg, out argument))
                     break;
-                }
             }
 
             return argv.Skip(skipCount);
@@ -137,6 +134,16 @@ namespace MeidoCommon.Parsing
         public static bool HasValue(this string arg)
         {
             return !string.IsNullOrWhiteSpace(arg);
+        }
+
+
+        internal static bool TryGetArg(string possibleArg, out string argument)
+        {
+            argument = (possibleArg ?? string.Empty).Trim();
+            if (argument != string.Empty)
+                return true;
+
+            return false;
         }
     }
 }
