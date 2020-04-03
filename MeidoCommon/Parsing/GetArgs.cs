@@ -44,10 +44,15 @@ namespace MeidoCommon.Parsing
 
         // --- LINQy extension methods for getting arguments ---
 
-        // Well, this one is not LINQy, but sometimes only care about the arg.
+        // Well, these two are not LINQy, but sometimes you only care about the arg.
         public static string GetArg(this IIrcMsg msg)
         {
             GetArg(msg, out string arg);
+            return arg;
+        }
+        public static string GetArg(this IEnumerable<string> argv)
+        {
+            GetArg(argv, out string arg);
             return arg;
         }
 
@@ -59,7 +64,7 @@ namespace MeidoCommon.Parsing
             return GetArg(msg.MessageArray.Skip(1), out argument);
         }
 
-        static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
+        public static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
@@ -103,7 +108,7 @@ namespace MeidoCommon.Parsing
             return GetArgs(msg.MessageArray.Skip(1), count, out rest);
         }
 
-        static string[] GetArgs(this IEnumerable<string> argv, int count, out List<string> rest)
+        public static string[] GetArgs(this IEnumerable<string> argv, int count, out List<string> rest)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
