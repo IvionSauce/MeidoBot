@@ -29,6 +29,16 @@ namespace MeidoCommon.Parsing
             return arguments ?? new string[0];
         }
 
+        public static string MessageWithoutTrigger(this IIrcMsg msg)
+        {
+            if (msg == null)
+                throw new ArgumentNullException(nameof(msg));
+            if (string.IsNullOrEmpty(msg.Trigger))
+                throw new ArgumentException("Message doesn't have a trigger.");
+
+            return msg.Message.Substring(msg.MessageArray[0].Length + 1);
+        }
+
 
         public static IEnumerable<string> GetArg(this IIrcMsg msg, out string argument)
         {
@@ -108,6 +118,25 @@ namespace MeidoCommon.Parsing
             }
 
             return arguments;
+        }
+
+
+        public static bool Success(params string[] arguments)
+        {
+            if (arguments == null)
+                throw new ArgumentNullException(nameof(arguments));
+
+            foreach (var arg in arguments)
+            {
+                if (!arg.HasValue())
+                    return false;
+            }
+            return true;
+        }
+
+        public static bool HasValue(this string arg)
+        {
+            return !string.IsNullOrWhiteSpace(arg);
         }
     }
 }
