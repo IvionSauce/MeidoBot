@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using MeidoCommon;
 using MeidoCommon.Parsing;
 
@@ -11,9 +12,12 @@ class TimerTrigger
     public void Timer(ITriggerMsg e)
     {
         var timers = ircTimers.GetTimers(e.Nick);
+        var command =
+            e.GetArg(out List<string> rest)
+            .ToLowerInvariant();
 
         // timer
-        if (e.MessageArray.Length == 1)
+        if (!command.HasValue())
         {
             EmitDescriptions(timers.Descriptions(), e);
             return;
@@ -21,42 +25,49 @@ class TimerTrigger
 
         // timer <delta> [index]
         // Delta is +N or -N
-        if (e.MessageArray[1].Length > 1)
-        {
-            char deltaSign = e.MessageArray[1][0];
-            if (deltaSign == '+' || deltaSign == '-')
-            {
-                TimerChangeShorthand(e, timers);
-                return;
-            }
-        }
+        char deltaSign = command[0];
+        if (deltaSign == '+' || deltaSign == '-')
+            TimerChange(
+                ParseIdx(rest.GetArg(), 0),
+                ParseTs(command),
+                e, timers
+            );
 
         // timer stop [index]
-        if (e.MessageArray[1] == "stop")
-            TimerStop(e, timers);
+        else if (command == "stop")
+            TimerStop(
+                ParseIdx(rest.GetArg(), -1),
+                e, timers
+            );
         
         // timer change <index> <delta>
-        else if (e.MessageArray.Length == 4 && e.MessageArray[1] == "change")
-            TimerChange(e, timers);
+        else if (command == "change")
+        {
+            var args = rest.GetArgs(2);
+            if (ParseArgs.Success(args))
+                TimerChange(
+                    ParseIdx(args[0], -1),
+                    ParseTs(args[1]),
+                    e, timers
+                );
+        }
 
         // timer <duration> [message]
         else
-            TimerStart(e, timers);
+            TimerStart(
+                ParseTs(command),
+                rest.ToJoined(JoinedOptions.TrimExterior),
+                e, timers
+            );
     }
 
 
     // timer <duration> [message]
-    static void TimerStart(ITriggerMsg e, Timers timers)
+    static void TimerStart(TimeSpan duration, string message, ITriggerMsg e, Timers timers)
     {
         // Return if invalid or negative duration.
-        var duration = ParseTs(e.MessageArray[1]);
         if (duration <= TimeSpan.Zero)
             return;
-
-        // Grab message if one is given.
-        string message = null;
-        if (e.MessageArray.Length > 2)
-            message = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
 
         int tmrNo = timers.Enqueue(duration, e, message);
         if (tmrNo >= 0)
@@ -66,37 +77,13 @@ class TimerTrigger
     }
 
 
-    // timer change <index> <delta>
-    static void TimerChange(ITriggerMsg e, Timers timers)
-    {
-        var delta = ParseTs(e.MessageArray[3]);
-        int index = IrcTimers.Parse(e.MessageArray[2], -1);
-
-        TimerChange(index, delta, e, timers);
-    }
-
-    // timer <delta> [index]
-    // Delta is +N or -N
-    static void TimerChangeShorthand(ITriggerMsg e, Timers timers)
-    {
-        var delta = ParseTs(e.MessageArray[1]);
-        int index;
-        if (e.MessageArray.Length >= 3)
-            index = IrcTimers.Parse(e.MessageArray[2], -1);
-        else
-            index = 0;
-
-        TimerChange(index, delta, e, timers);
-    }
-
     static void TimerChange(int index, TimeSpan delta, ITriggerMsg e, Timers timers)
     {
         // Return if invalid or 0 delta.
         if (delta == TimeSpan.Zero)
             return;
 
-        TimerDescription desc;
-        if (timers.Change(index, delta, out desc))
+        if (timers.Change(index, delta, out TimerDescription desc))
         {
             if (string.IsNullOrEmpty(desc.Message))
                 e.Reply("Changed timer {0} to {1} ({2}).",
@@ -111,10 +98,10 @@ class TimerTrigger
 
 
     // timer stop [index]
-    static void TimerStop(ITriggerMsg e, Timers timers)
+    static void TimerStop(int index, ITriggerMsg e, Timers timers)
     {
         // Stop all timers.
-        if (e.MessageArray.Length == 2)
+        if (index < 0)
         {
             timers.StopAll();
             e.Reply("Stopped all your timers.");
@@ -122,9 +109,7 @@ class TimerTrigger
         // Stop one timer.
         else
         {
-            int index = IrcTimers.Parse(e.MessageArray[2], -1);
-            TimerDescription desc;
-            if (timers.Stop(index, out desc))
+            if (timers.Stop(index, out TimerDescription desc))
             {
                 if (string.IsNullOrEmpty(desc.Message))
                     e.Reply("Stopped timer {0} :: {1}/{2}",
@@ -136,23 +121,6 @@ class TimerTrigger
             else
                 e.Reply("No such timer.");
         }
-    }
-
-
-    static TimeSpan ParseTs(string s)
-    {
-        TimeSpan ts = TimeSpan.Zero;
-
-        double minutes;
-        // Interpret a bare number as minutes.
-        if (double.TryParse(s, out minutes))
-            ts = TimeSpan.FromMinutes(minutes);
-        // Otherwise assume it's a short time string.
-        // Ex: 1h45m30s
-        else
-            ts = Parse.ShortTimeString(s);
-
-        return ts;
     }
 
 
@@ -168,5 +136,29 @@ class TimerTrigger
     {
         msg.SendNotice("[{0}] {1} :: {2} ({3})",
                        desc.Index, desc.Message, desc.Duration.Str(), desc.Remaining.Str());
+    }
+
+
+    public static int ParseIdx(string s, int defaultValue)
+    {
+        if (int.TryParse(s, out int val))
+            return val;
+        else
+            return defaultValue;
+    }
+
+    static TimeSpan ParseTs(string s)
+    {
+        TimeSpan ts = TimeSpan.Zero;
+
+        // Interpret a bare number as minutes.
+        if (double.TryParse(s, out double minutes))
+            ts = TimeSpan.FromMinutes(minutes);
+        // Otherwise assume it's a short time string.
+        // Ex: 1h45m30s
+        else
+            ts = Parse.ShortTimeString(s);
+
+        return ts;
     }
 }

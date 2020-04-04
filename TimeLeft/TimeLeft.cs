@@ -5,6 +5,7 @@ using System.Threading;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
 using IvionSoft;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -78,45 +79,43 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     
     public void HandleTrigger(ITriggerMsg e)
     {
+        string command =
+            e.GetArg(out List<string> rest)
+            .ToLowerInvariant();
+
         // timeleft
-        if (e.MessageArray.Length == 1)
+        if (!command.HasValue())
         {
             ShowAll(e.ReturnTo);
             return;
         }
 
-        string command = e.MessageArray[1];
-
         // timeleft set Title 2104-01-01
-        if ( (command == "set" || command == "add") && e.MessageArray.Length >= 4 )
+        if ( (command == "set" || command == "add") && rest.Count >= 2 )
         {
-            Set(e.Nick, e.MessageArray);
+            Set(e.Nick, rest);
         }
 
         // timeleft del Title
-        else if (command == "del" && e.MessageArray.Length >= 3)
+        else if (command == "del")
         {
-            Del(e.Nick, e.MessageArray);
+            Del(e.Nick, rest.ToJoined());
         }
 
         // timeleft Title
         else
-        {
-            Show(e.ReturnTo, e.MessageArray);
-        }
+            Show(e.ReturnTo, e.MessageWithoutTrigger());
     }
 
 
-    void Set(string nick, string[] message)
+    void Set(string nick, IList<string> args)
     {
-        string[] dateArr = message[message.Length - 1].Split('-');
-        if (dateArr.Length != 3)
-            return;
-        
-        int year, month, day;
-        if (int.TryParse( dateArr[0], out year ) &&
-            int.TryParse( dateArr[1], out month ) &&
-            int.TryParse( dateArr[2], out day ))
+        string[] dateArray = args[args.Count - 1].Split('-');
+
+        if (dateArray.Length == 3 &&
+            int.TryParse( dateArray[0], out int year ) &&
+            int.TryParse( dateArray[1], out int month ) &&
+            int.TryParse( dateArray[2], out int day ))
         {
             DateTime date;
             try
@@ -127,8 +126,8 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
             {
                 return;
             }
-            // Subtract 3 from length, since we don't want the final argument - the date.
-            var name = string.Join(" ", message, 2, message.Length - 3);
+            // Subtract 1 since we don't want the final argument - the date.
+            var name = string.Join(" ", args, 0, args.Count - 1);
             var unit = new TimeLeftUnit(name, date);
 
             lock (_locker)
@@ -141,10 +140,8 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     }
 
 
-    void Del(string nick, string[] message)
+    void Del(string nick, string name)
     {
-        var name = string.Join(" ", message, 2, message.Length - 2);
-
         bool removed;
         lock (_locker)
         {
@@ -158,10 +155,8 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     }
 
 
-    void Show(string target, string[] message)
+    void Show(string target, string name)
     {
-        var name = string.Join(" ", message, 1, message.Length - 1);
-
         TimeLeftUnit unit;
         lock (_locker)
             unit = storage.Get(name);
@@ -191,13 +186,12 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
             SendTime(target, unit.Name, unit.Date);
     }
 
+
     static TimeLeftUnit[] SortByDate(IEnumerable<TimeLeftUnit> tlunits)
     {
-        var sorted = (from tlu in tlunits
-                      orderby tlu.Date
-                      select tlu);
-
-        return sorted.ToArray();
+        return
+            tlunits.OrderBy(tlu => tlu.Date)
+            .ToArray();
     }
 
 

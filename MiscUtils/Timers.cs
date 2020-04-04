@@ -14,22 +14,12 @@ class IrcTimers
     {
         const int MaxTimersCount = 5;
 
-        Timers timers;
-        if (!nickToTimers.TryGetValue(nick, out timers))
+        if (!nickToTimers.TryGetValue(nick, out Timers timers))
         {
             timers = new Timers(MaxTimersCount);
             nickToTimers[nick] = timers;
         }
         return timers;
-    }
-
-    public static int Parse(string s, int defaultValue)
-    {
-        int val;
-        if (int.TryParse(s, out val))
-            return val;
-        else
-            return defaultValue;
     }
 }
 
