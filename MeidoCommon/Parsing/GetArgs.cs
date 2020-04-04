@@ -97,7 +97,20 @@ namespace MeidoCommon.Parsing
 
         public static string[] GetArgs(this IIrcMsg msg, int count)
         {
-            return GetArgs(msg, count, out List<string> rest);
+            if (msg == null)
+                throw new ArgumentNullException(nameof(msg));
+
+            return GetArgs(msg.MessageArray.Skip(1), count);
+        }
+
+        public static string[] GetArgs(this IEnumerable<string> argv, int count)
+        {
+            if (argv == null)
+                throw new ArgumentNullException(nameof(argv));
+            if (count < 1)
+                throw new ArgumentOutOfRangeException(nameof(count), "Cannot be 0 or negative.");
+
+            return InternalGetArgs(argv, 0 - count, out List<string> rest);
         }
 
         public static string[] GetArgs(this IIrcMsg msg, int count, out List<string> rest)
@@ -115,23 +128,28 @@ namespace MeidoCommon.Parsing
             if (count < 1)
                 throw new ArgumentOutOfRangeException(nameof(count), "Cannot be 0 or negative.");
 
-            var arguments = new string[count];
+            return InternalGetArgs(argv, count, out rest);
+        }
+
+        static string[] InternalGetArgs(IEnumerable<string> argv, int count, out List<string> rest)
+        {
+            // Negative count signals to not get remaining.
+            bool getRest = count > 0;
+            var arguments = new string[Math.Abs(count)];
             rest = null;
 
             using (var argEnum = new ArgEnumerator(argv))
             {
                 int idx = 0;
 
-                while (idx < count && argEnum.NextArg())
+                while (idx < arguments.Length && argEnum.MoveNext())
                 {
                     // ArgEnumerator already does TryGetArg for us.
-                    arguments[idx] = argEnum.CurrentArg;
+                    arguments[idx] = argEnum.Current;
                 }
 
-                if (idx == (count - 1))
+                if (getRest)
                     rest = argEnum.GetRemaining();
-                else
-                    arguments = null;
             }
 
             return arguments;
