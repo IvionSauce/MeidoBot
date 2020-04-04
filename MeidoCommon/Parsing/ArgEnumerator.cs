@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
@@ -6,10 +7,36 @@ namespace MeidoCommon.Parsing
 {
     public class ArgEnumerator : IDisposable
     {
-        public string CurrentArg;
+        public bool ToLower { get; set; }
+
+        string _current;
+        public string Current
+        {
+            get { return _current; }
+            private set
+            {
+                if (ToLower)
+                    _current = value.ToLowerInvariant();
+                else
+                    _current = value;
+            }
+        }
 
         readonly IEnumerator<string> argNumerator;
 
+
+        public ArgEnumerator(IIrcMsg msg)
+        {
+            if (msg == null)
+                throw new ArgumentNullException(nameof(msg));
+
+            argNumerator =
+                msg.MessageArray
+                .Skip(1)
+                .GetEnumerator();
+
+            Current = string.Empty;
+        }
 
         public ArgEnumerator(IEnumerable<string> argv)
         {
@@ -17,11 +44,11 @@ namespace MeidoCommon.Parsing
                 throw new ArgumentNullException(nameof(argv));
 
             argNumerator = argv.GetEnumerator();
-            CurrentArg = string.Empty;
+            Current = string.Empty;
         }
 
 
-        public bool NextArg()
+        public bool MoveNext()
         {
             bool gotArg = false;
 
@@ -29,16 +56,24 @@ namespace MeidoCommon.Parsing
             {
                 if (argNumerator.MoveNext())
                 {
-                    gotArg = ParseArgs.TryGetArg(argNumerator.Current, out CurrentArg);
+                    gotArg = ParseArgs.TryGetArg(argNumerator.Current, out string arg);
+                    Current = arg;
                 }
                 else
                 {
-                    CurrentArg = string.Empty;
+                    Current = string.Empty;
                     break;
                 }
             }
 
             return gotArg;
+        }
+
+        public string Next()
+        {
+            // Nothing can slow me down; two actions to get the next arg? Tedious!
+            MoveNext();
+            return Current;
         }
 
 
@@ -56,7 +91,7 @@ namespace MeidoCommon.Parsing
                     remain.Add(argNumerator.Current);
             }
 
-            CurrentArg = string.Empty;
+            Current = string.Empty;
             return remain;
         }
 
