@@ -9,6 +9,8 @@ namespace MeidoCommon.Parsing
     {
         public bool ToLower { get; set; }
 
+        // Null and string.Empty will hold special meaning: it'll be null before any attempt
+        // at reading args, it'll be string.Empty after exhausting the enumerator.
         string _current;
         public string Current
         {
@@ -16,7 +18,7 @@ namespace MeidoCommon.Parsing
             private set
             {
                 if (ToLower)
-                    _current = value.ToLowerInvariant();
+                    _current = value?.ToLowerInvariant();
                 else
                     _current = value;
             }
@@ -34,8 +36,6 @@ namespace MeidoCommon.Parsing
                 msg.MessageArray
                 .Skip(1)
                 .GetEnumerator();
-
-            Current = string.Empty;
         }
 
         public ArgEnumerator(IEnumerable<string> argv)
@@ -44,7 +44,6 @@ namespace MeidoCommon.Parsing
                 throw new ArgumentNullException(nameof(argv));
 
             argNumerator = argv.GetEnumerator();
-            Current = string.Empty;
         }
 
 
@@ -52,7 +51,7 @@ namespace MeidoCommon.Parsing
         {
             bool gotArg = false;
 
-            while (!gotArg)
+            while ( !(gotArg || Current == string.Empty) )
             {
                 if (argNumerator.MoveNext())
                 {
@@ -60,10 +59,7 @@ namespace MeidoCommon.Parsing
                     Current = arg;
                 }
                 else
-                {
                     Current = string.Empty;
-                    break;
-                }
             }
 
             return gotArg;
@@ -99,6 +95,7 @@ namespace MeidoCommon.Parsing
         public void Reset()
         {
             argNumerator.Reset();
+            Current = null;
         }
 
         public void Dispose()
