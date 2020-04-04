@@ -37,7 +37,7 @@ namespace MeidoBot
 
         public void Trigger(ITriggerMsg msg)
         {
-            var request = HelpRequest.FromHelpTrigger(msg.MessageArray, triggers.Prefix);
+            var request = HelpRequest.FromHelpTrigger(msg, triggers.Prefix);
             // Help trigger with query: lookup query and print help.
             if (request.IsValid)
             {

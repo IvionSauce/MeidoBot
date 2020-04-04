@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Meebey.SmartIrc4net;
 using MeidoCommon;
+using MeidoCommon.Parsing;
 
 
 namespace MeidoBot
@@ -24,32 +26,31 @@ namespace MeidoBot
         {
             if (meidoComm.AuthLevel(msg.Nick) >= 2)
             {
-                string trigger = null;
-                if (msg.MessageArray.Length > 1)
-                    trigger = msg.MessageArray[1];
+                string trigger = msg.GetArg(out List<string> argv);
 
                 // Admin triggers.
                 switch (trigger)
                 {
                     case "j":
                     case "join":
-                    for (int i = 2; i < msg.MessageArray.Length; i++)
-                        irc.RfcJoin(msg.MessageArray[i]);
+                    foreach (var chan in argv)
+                        irc.RfcJoin(chan);
 
                     return;
 
                     case "p":
                     case "part":
-                    for (int i = 2; i < msg.MessageArray.Length; i++)
-                        irc.RfcPart(msg.MessageArray[i]);
+                    foreach (var chan in argv)
+                        irc.RfcPart(chan);
                     
                     return;
 
                     case "nick":
-                    if (msg.MessageArray.Length == 3)
+                    var newNick = argv.GetArg();
+                    if (newNick.HasValue())
                     {
-                        msg.Reply("Attempting to change nick from {0} to {1}.", irc.Nickname, msg.MessageArray[2]);
-                        irc.RfcNick(msg.MessageArray[2]);
+                        msg.Reply("Attempting to change nick from {0} to {1}.", irc.Nickname, newNick);
+                        irc.RfcNick(newNick);
                     }
                     else
                         msg.Reply("Current nick is {0}.", irc.Nickname);
@@ -58,7 +59,7 @@ namespace MeidoBot
 
                     case "ch":
                     case "channels":
-                    var channels = string.Join(", ", irc.GetChannels());
+                    var channels = string.Join(" ", irc.GetChannels());
                     msg.Reply(channels);
                     return;
                 }
@@ -92,10 +93,10 @@ namespace MeidoBot
 
         public void AuthTrigger(ITriggerMsg msg)
         {
-            if (msg.MessageArray.Length > 1)
+            var passwd = msg.ArgString();
+            if (passwd.HasValue() && meidoComm.Auth(msg.Nick, passwd))
             {
-                if (meidoComm.Auth(msg.Nick, msg.MessageArray[1]))
-                    msg.Reply("You've successfully authenticated.");
+                msg.Reply("You've successfully authenticated.");
             }
 
             msg.Reply("Your current Authentication Level is " + meidoComm.AuthLevel(msg.Nick));

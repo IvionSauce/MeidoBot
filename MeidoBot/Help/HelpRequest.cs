@@ -1,5 +1,6 @@
 ﻿using System;
 using MeidoCommon;
+using MeidoCommon.Parsing;
 
 
 namespace MeidoBot
@@ -31,27 +32,26 @@ namespace MeidoBot
             // Leave everyting default.
         }
 
-        public HelpRequest(string helpQuery, string triggerPre)
+        HelpRequest(string[] query, string triggerPre)
         {
-            var split = helpQuery.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-            if (split.Length > 0)
+            if (query.Length > 0)
             {
                 // Read first element and check if it's a trigger. If it is, remove prefix and
                 // qualify that we're searching for trigger help.
-                First = split[0];
+                First = query[0];
                 if (First.StartsWith(triggerPre, StringComparison.Ordinal))
                 {
                     First = First.Substring(triggerPre.Length);
                     RestrictToTriggers = true;
                 }
                 // Read the remaining elements.
-                if (split.Length > 1)
+                if (query.Length > 1)
                 {
-                    Rest = new string[split.Length - 1];
-                    Array.Copy(split, 1, Rest, 0, Rest.Length);
+                    Rest = new string[query.Length - 1];
+                    Array.Copy(query, 1, Rest, 0, Rest.Length);
                 }
 
-                NormalizedQuery = string.Join(" ", split);
+                NormalizedQuery = string.Join(" ", query);
             }
             TriggerPrefix = triggerPre;
         }
@@ -75,13 +75,11 @@ namespace MeidoBot
         }
 
 
-        public static HelpRequest FromHelpTrigger(string[] ircMsg, string triggerPre)
+        public static HelpRequest FromHelpTrigger(ITriggerMsg msg, string triggerPre)
         {
-            if (ircMsg.Length > 1)
-            {
-                var query = string.Join(" ", ircMsg, 1, ircMsg.Length - 1);
-                return new HelpRequest(query, triggerPre);
-            }
+            var args = msg.ArgArray();
+            if (args.Length > 1)
+                return new HelpRequest(args, triggerPre);
 
             return new HelpRequest();
         }
