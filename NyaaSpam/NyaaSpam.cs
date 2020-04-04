@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MeidoCommon.Parsing;
 // Using directives for plugin use.
 using MeidoCommon;
 using System.ComponentModel.Composition;
@@ -130,57 +131,43 @@ public class NyaaSpam : IMeidoHook, IPluginTriggers
 
     public void Nyaa(ITriggerMsg e)
     {
-        // Some early return conditions.
         if (conf.Feed == null)
         {
             e.Reply(feedError);
             return;
         }
-        if (e.MessageArray.Length == 1)
-        {
-            e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
-                    conf.Feed, conf.Interval.Minutes);
 
-            return;
-        }
-
-        // The real deal.
         if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
         {
-            string command = e.MessageArray[1];
-            string input = string.Empty;
+            string command = null;
             int? assocPat = null;
+            string input = string.Empty;
 
-            // Command will be reassigned.
-            if (command == "ex" && e.MessageArray.Length > 2)
+            using (var argEnum = new ArgEnumerator(e) { ToLower = true })
             {
-                int assocPatInt;
-                // nyaa ex <assocPat> <add|del|show>
-                // Exclude Patterns associated with a pattern.
-                if (int.TryParse(e.MessageArray[2], out assocPatInt) && e.MessageArray.Length > 3)
+                if (argEnum.Next() == "ex")
                 {
-                    assocPat = assocPatInt;
-                    command = e.MessageArray[3];
-
-                    if (e.MessageArray.Length > 4)
-                        input = string.Join(" ", e.MessageArray, 4, e.MessageArray.Length - 4);
+                    // nyaa ex <assocPat> <add|del|show>
+                    // Exclude Patterns associated with a pattern.
+                    if (int.TryParse(argEnum.Next(), out int assocOut))
+                    {
+                        assocPat = assocOut;
+                        command = argEnum.Next();
+                    }
+                    // nyaa ex <add|del|show>
+                    // Global Exclude Patterns.
+                    else
+                    {
+                        assocPat = -1;
+                        command = argEnum.Current;
+                    }
                 }
-                // nyaa ex <add|del|show>
-                // Global Exclude Patterns.
-                else
-                {
-                    assocPat = -1;
-                    command = e.MessageArray[2];
+                // nyaa <add|del|show>
+                else if (argEnum.Current.HasValue())
+                    command = argEnum.Current;
 
-                    if (e.MessageArray.Length > 3)
-                        input = string.Join(" ", e.MessageArray, 3, e.MessageArray.Length - 3);
-                }
+                input = argEnum.GetRemaining().ToJoined();
             }
-            // nyaa <add|del|show>
-            // Command already set above.
-            else if (e.MessageArray.Length > 2)
-                input = string.Join(" ", e.MessageArray, 2, e.MessageArray.Length - 2);
-
 
             switch (command)
             {
@@ -194,6 +181,11 @@ public class NyaaSpam : IMeidoHook, IPluginTriggers
 
                 case "show":
                 ShowAll(e.Channel, e.Nick, assocPat);
+                return;
+
+                case null:
+                e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
+                        conf.Feed, conf.Interval.Minutes);
                 return;
             }
         }
