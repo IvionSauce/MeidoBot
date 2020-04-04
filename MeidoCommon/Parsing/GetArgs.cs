@@ -89,10 +89,7 @@ namespace MeidoCommon.Parsing
         public static string GetArg(this IIrcMsg msg, out List<string> rest)
         {
             var tmp = GetArgs(msg, 1, out rest);
-            if (tmp != null)
-                return tmp[0];
-            else
-                return string.Empty;
+            return tmp[0];
         }
 
         public static string[] GetArgs(this IIrcMsg msg, int count)
@@ -140,12 +137,11 @@ namespace MeidoCommon.Parsing
 
             using (var argEnum = new ArgEnumerator(argv))
             {
-                int idx = 0;
-
-                while (idx < arguments.Length && argEnum.MoveNext())
+                for (int i = 0; i < arguments.Length; i++)
                 {
                     // ArgEnumerator already does TryGetArg for us.
-                    arguments[idx] = argEnum.Current;
+                    // It will also populate the array with string.Empty for missing arguments.
+                    arguments[i] = argEnum.Next();
                 }
 
                 if (getRest)
