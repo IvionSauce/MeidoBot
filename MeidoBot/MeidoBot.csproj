@@ -60,6 +60,7 @@
     <Compile Include="Help\HelpRequest.cs" />
     <Compile Include="Help\HelpResult.cs" />
     <Compile Include="Help\Footer.cs" />
+    <Compile Include="Dispatch\TriggerMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MeidoCommon\MeidoCommon.csproj">

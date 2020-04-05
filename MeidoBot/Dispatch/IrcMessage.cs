@@ -35,6 +35,24 @@ namespace MeidoBot
         readonly ReceiveType type;
 
 
+        // Cloning constructor.
+        public IrcMsg(IrcMsg msg)
+        {
+            Irc = msg.Irc;
+            type = msg.type;
+
+            Message = msg.Message;
+            MessageParts = msg.MessageParts;
+
+            Channel = msg.Channel;
+            Nick = msg.Nick;
+            Ident = msg.Ident;
+            Host = msg.Host;
+
+            Trigger = msg.Trigger;
+            ReturnTo = msg.ReturnTo;
+        }
+
         public IrcMsg(IrcComm irc, ActionEventArgs e, string prefix) : this(irc, e.Data, prefix)
         {
             // SmartIrc4Net already chops off the control character for us,
