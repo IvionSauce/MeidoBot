@@ -77,7 +77,7 @@ public class IrcRandom : IMeidoHook, IPluginTriggers
 
     void Choose(ITriggerMsg e)
     {
-        string choice = RandomChoice.RndChoice(e.ArgArray());
+        string choice = RandomChoice.RndChoice(e.Arguments);
         if (choice != null)
             e.Reply(choice);
     }
@@ -161,14 +161,14 @@ static class RandomChoice
     }
 
 
-    public static string RndChoice(string[] args)
+    public static string RndChoice(IList<string> args)
     {
-        if (args.Length == 0)
+        if (args.Count == 0)
             return null;
         
         // If first and only argument is a number sequence in the form of X-Y return a random int between X and Y.
         Match numberSeq = Regex.Match(args[0], @"^(\d+)-(\d+)$");
-        if (numberSeq.Success && args.Length == 1)
+        if (numberSeq.Success && args.Count == 1)
         {
             int begin, end;
             try
@@ -202,7 +202,7 @@ static class RandomChoice
     }
 
 
-    static List<string> ConstructOptions(string[] args)
+    static List<string> ConstructOptions(IList<string> args)
     {
         var options = new List<string>();
         var tempOption = new List<string>();

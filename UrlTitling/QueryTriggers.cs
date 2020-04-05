@@ -25,7 +25,7 @@ class QueryTriggers
         else
             wIrc = config.ConstructWebToIrc("_all");
 
-        foreach (var arg in msg.ArgArray())
+        foreach (var arg in msg.Arguments)
         {
             var result = wIrc.WebInfo(arg);
 
@@ -45,7 +45,7 @@ class QueryTriggers
 
     public static void Dump(ITriggerMsg msg)
     {
-        foreach (var arg in msg.ArgArray())
+        foreach (var arg in msg.Arguments)
         {
             if ( Uri.TryCreate(arg, UriKind.Absolute, out Uri url) )
             {
