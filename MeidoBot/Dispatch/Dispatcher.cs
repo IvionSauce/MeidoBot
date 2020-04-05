@@ -68,7 +68,7 @@ namespace MeidoBot
 
         public void ChannelAction(object sender, ActionEventArgs e)
         {
-            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e, triggerPrefix);
             if (!Ignore.Contains(msg))
             {
                 DoHandlers<IChannelAction>(msg);
@@ -78,7 +78,7 @@ namespace MeidoBot
 
         public void QueryAction(object sender, ActionEventArgs e)
         {
-            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e, triggerPrefix);
             if (!Ignore.Contains(msg))
             {
                 DoHandlers<IQueryAction>(msg);

@@ -24,6 +24,14 @@ namespace MeidoBot
         readonly ReceiveType type;
 
 
+        public IrcMsg(IrcComm irc, ActionEventArgs e, string prefix) : this(irc, e.Data, prefix)
+        {
+            // SmartIrc4Net already chops off the control character for us,
+            // so use that.
+            Message = e.ActionMessage;
+            MessageArray = Message.Split(' ');
+        }
+
         public IrcMsg(IrcComm irc, IrcMessageData messageData, string prefix)
         {
             Irc = irc;
