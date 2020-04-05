@@ -9,34 +9,30 @@ namespace MeidoCommon.Parsing
     {
         // --- Straightforward and not flexible extension methods for getting arguments ---
 
-        public static string ArgString(this IIrcMsg msg)
+        public static string ArgString(this ITriggerMsg msg)
         {
-            return string.Join(" ", ArgArray(msg));
+            return string.Join(" ", msg.Arguments);
         }
 
-        public static string[] ArgArray(this IIrcMsg msg)
+        public static string[] ArgArray(this ITriggerMsg msg)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            string[] arguments = null;
-            var argv = msg.Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-
-            if (argv.Length > 1)
+            if (msg.Arguments.Count > 0)
             {
-                arguments = new string[argv.Length - 1];
-                Array.Copy(argv, 1, arguments, 0, arguments.Length);
+                var arguments = new string[msg.Arguments.Count];
+                msg.Arguments.CopyTo(arguments, 0);
+                return arguments;
             }
 
-            return arguments ?? new string[0];
+            return Array.Empty<string>();
         }
 
-        public static string MessageWithoutTrigger(this IIrcMsg msg)
+        public static string MessageWithoutTrigger(this ITriggerMsg msg)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
-            if (string.IsNullOrEmpty(msg.Trigger))
-                throw new ArgumentException("Message doesn't have a trigger.");
 
             return msg.Message.Substring(msg.MessageParts[0].Length + 1);
         }

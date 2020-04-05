@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 
+
 namespace MeidoCommon
 {
     public interface ITriggerMsg : IIrcMsg
-    {}
+    {
+        ReadOnlyCollection<string> Arguments {  get; }
+    }
 
     public interface IChannelAction : IIrcMsg
     {}
