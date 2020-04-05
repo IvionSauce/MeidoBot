@@ -44,7 +44,7 @@ namespace MeidoCommon.Parsing
 
         // --- LINQy extension methods for getting arguments ---
 
-        // Well, these two are not LINQy, but sometimes you only care about the arg.
+        // Well, these two are not very LINQy, but sometimes you only care about the arg.
         public static string GetArg(this IIrcMsg msg)
         {
             GetArg(msg, out string arg);
@@ -156,8 +156,8 @@ namespace MeidoCommon.Parsing
 
         public static bool Success(params string[] arguments)
         {
-            if (arguments == null)
-                throw new ArgumentNullException(nameof(arguments));
+            if (arguments == null || arguments.Length == 0)
+                return false;
 
             foreach (var arg in arguments)
             {
@@ -167,9 +167,9 @@ namespace MeidoCommon.Parsing
             return true;
         }
 
-        public static bool HasValue(this string arg)
+        public static bool HasValue(this string argument)
         {
-            return !string.IsNullOrWhiteSpace(arg);
+            return !string.IsNullOrWhiteSpace(argument);
         }
 
 
