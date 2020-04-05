@@ -92,12 +92,14 @@ namespace MeidoBot
         void DoTrigger(IrcMsg msg)
         {
             // Return early if there's nothing to do.
-            if (string.IsNullOrEmpty(msg.Trigger))
-                return;
-            
-            Trigger trigger;
+            if (!string.IsNullOrEmpty(msg.Trigger))
+                DoTrigger(new TriggerMsg(msg));
+        }
+
+        void DoTrigger(TriggerMsg msg)
+        {
             // Enqueue specific trigger call.
-            if (triggers.TryGet(msg.Trigger, out trigger))
+            if (triggers.TryGet(msg.Trigger, out Trigger trigger))
             {
                 ThreadingDispatch(
                     trigger.Threading,
