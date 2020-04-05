@@ -1,4 +1,7 @@
-﻿namespace MeidoCommon
+﻿using System;
+using System.Collections.ObjectModel;
+
+namespace MeidoCommon
 {
     public interface ITriggerMsg : IIrcMsg
     {}
@@ -18,7 +21,10 @@
         IIrcComm Irc { get; }
 
         string Message { get; }
+        [Obsolete("Use MessageParts or the MeidoCommon.Parsing extension methods instead")]
         string[] MessageArray { get; }
+        ReadOnlyCollection<string> MessageParts { get; }
+
         string Channel { get; }
         string Nick { get; }
         string Ident { get; }

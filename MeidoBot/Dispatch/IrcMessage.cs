@@ -12,6 +12,7 @@ namespace MeidoBot
         public IIrcComm Irc { get; private set; }
         // Parallel to the IrcMessageData properties.
         public string Message { get; private set; }
+        [Obsolete("Use MessageParts instead")]
         public string[] MessageArray
         {
             get
