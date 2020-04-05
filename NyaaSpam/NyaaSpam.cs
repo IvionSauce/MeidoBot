@@ -131,66 +131,73 @@ public class NyaaSpam : IMeidoHook, IPluginTriggers
 
     public void Nyaa(ITriggerMsg e)
     {
-        if (conf.Feed == null)
+        string command = null;
+        int? assocPat = null;
+        string input = string.Empty;
+
+        using (var argEnum = new ArgEnumerator(e) { ToLower = true })
         {
-            e.Reply(feedError);
-            return;
+            if (argEnum.Next() == "ex")
+            {
+                // nyaa ex <assocPat> <add|del|show>
+                // Exclude Patterns associated with a pattern.
+                if (int.TryParse(argEnum.Next(), out int assocOut))
+                {
+                    assocPat = assocOut;
+                    command = argEnum.Next();
+                }
+                // nyaa ex <add|del|show>
+                // Global Exclude Patterns.
+                else
+                {
+                    assocPat = -1;
+                    command = argEnum.Current;
+                }
+            }
+            // nyaa [add|del|show]
+            else if (argEnum.Current.HasValue())
+                command = argEnum.Current;
+
+            if (command.HasValue())
+                input = argEnum.GetRemaining().ToJoined();
         }
 
-        if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
+        switch (command)
         {
-            string command = null;
-            int? assocPat = null;
-            string input = string.Empty;
-
-            using (var argEnum = new ArgEnumerator(e) { ToLower = true })
-            {
-                if (argEnum.Next() == "ex")
-                {
-                    // nyaa ex <assocPat> <add|del|show>
-                    // Exclude Patterns associated with a pattern.
-                    if (int.TryParse(argEnum.Next(), out int assocOut))
-                    {
-                        assocPat = assocOut;
-                        command = argEnum.Next();
-                    }
-                    // nyaa ex <add|del|show>
-                    // Global Exclude Patterns.
-                    else
-                    {
-                        assocPat = -1;
-                        command = argEnum.Current;
-                    }
-                }
-                // nyaa <add|del|show>
-                else if (argEnum.Current.HasValue())
-                    command = argEnum.Current;
-
-                input = argEnum.GetRemaining().ToJoined();
-            }
-
-            switch (command)
-            {
-                case "add":
+            // Restrict access to add and del, but not show.
+            case "add":
+            if (Allowed(e))
                 Add(e.Channel, e.Nick, input, assocPat);
-                return;
+            return;
 
-                case "del":
+            case "del":
+            if (Allowed(e))
                 Del(e.Channel, e.Nick, input, assocPat);
-                return;
+            return;
 
-                case "show":
-                ShowAll(e.Channel, e.Nick, assocPat);
-                return;
+            case "show":
+            ShowAll(e.Channel, e.Nick, assocPat);
+            return;
 
-                case null:
+            case null:
+            if (conf.Feed != null)
+            {
                 e.Reply("Currently fetching {0} every {1} minutes. See nyaa add|del|show for usage.",
                         conf.Feed, conf.Interval.Minutes);
-                return;
             }
+            else
+                e.Reply(feedError);
+            return;
         }
-        else
-            e.Reply("Access denied, please contact my owner for information.");
+    }
+
+    bool Allowed(ITriggerMsg e)
+    {
+        if (conf.ActiveChannels.Contains(e.Channel) || meido.AuthLevel(e.Nick) >= 2)
+            return true;
+
+        e.Reply("Access denied, please contact my owner for information.");
+        return false;
     }
 
 
