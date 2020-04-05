@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 
 
@@ -33,8 +32,7 @@ namespace MeidoCommon.Parsing
                 throw new ArgumentNullException(nameof(msg));
 
             argNumerator =
-                msg.MessageArray
-                .Skip(1)
+                ParseArgs.SkipTrigger(msg)
                 .GetEnumerator();
         }
 

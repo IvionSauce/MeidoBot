@@ -38,7 +38,7 @@ namespace MeidoCommon.Parsing
             if (string.IsNullOrEmpty(msg.Trigger))
                 throw new ArgumentException("Message doesn't have a trigger.");
 
-            return msg.Message.Substring(msg.MessageArray[0].Length + 1);
+            return msg.Message.Substring(msg.MessageParts[0].Length + 1);
         }
 
 
@@ -50,18 +50,20 @@ namespace MeidoCommon.Parsing
             GetArg(msg, out string arg);
             return arg;
         }
+
         public static string GetArg(this IEnumerable<string> argv)
         {
             GetArg(argv, out string arg);
             return arg;
         }
 
+
         public static IEnumerable<string> GetArg(this IIrcMsg msg, out string argument)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return GetArg(msg.MessageArray.Skip(1), out argument);
+            return GetArg(SkipTrigger(msg), out argument);
         }
 
         public static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
@@ -92,12 +94,13 @@ namespace MeidoCommon.Parsing
             return tmp[0];
         }
 
+
         public static string[] GetArgs(this IIrcMsg msg, int count)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return GetArgs(msg.MessageArray.Skip(1), count);
+            return GetArgs(SkipTrigger(msg), count);
         }
 
         public static string[] GetArgs(this IEnumerable<string> argv, int count)
@@ -110,12 +113,13 @@ namespace MeidoCommon.Parsing
             return InternalGetArgs(argv, 0 - count, out List<string> rest);
         }
 
+
         public static string[] GetArgs(this IIrcMsg msg, int count, out List<string> rest)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return GetArgs(msg.MessageArray.Skip(1), count, out rest);
+            return GetArgs(SkipTrigger(msg), count, out rest);
         }
 
         public static string[] GetArgs(this IEnumerable<string> argv, int count, out List<string> rest)
@@ -127,6 +131,7 @@ namespace MeidoCommon.Parsing
 
             return InternalGetArgs(argv, count, out rest);
         }
+
 
         static string[] InternalGetArgs(IEnumerable<string> argv, int count, out List<string> rest)
         {
@@ -173,6 +178,8 @@ namespace MeidoCommon.Parsing
         }
 
 
+        // --- Helper functions or our own use ---
+
         // Common, internal helper function such that all argument getting methods get and
         // spit out arguments in the same fashion.
         internal static bool TryGetArg(string possibleArg, out string argument)
@@ -182,6 +189,14 @@ namespace MeidoCommon.Parsing
                 return true;
 
             return false;
+        }
+
+        internal static IEnumerable<string> SkipTrigger(IIrcMsg msg)
+        {
+            if (string.IsNullOrEmpty(msg.Trigger))
+                return msg.MessageParts;
+            else
+                return msg.MessageParts.Skip(1);
         }
     }
 }
