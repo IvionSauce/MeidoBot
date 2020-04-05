@@ -132,8 +132,8 @@ public class UrlTitler : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
 
     public void UrlHandler(IIrcMsg e)
     {
-        // Only process messages that aren't a trigger call.
-        if (e.Trigger == null)
+        // Only process messages that aren't a trigger call or a query message.
+        if (e.Trigger == null && e.Channel != null)
             manager.EnqueueMessage(e.Channel, e.Nick, e.Message);
     }
 
