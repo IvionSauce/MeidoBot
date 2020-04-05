@@ -3,6 +3,7 @@ using System.IO;
 using IvionWebSoft;
 using WebIrc;
 using MeidoCommon;
+using MeidoCommon.Parsing;
 
 
 class QueryTriggers
@@ -24,12 +25,9 @@ class QueryTriggers
         else
             wIrc = config.ConstructWebToIrc("_all");
 
-        for (int i = 1; i < msg.MessageArray.Length; i++)
+        foreach (var arg in msg.ArgArray())
         {
-            if (string.IsNullOrWhiteSpace(msg.MessageArray[i]))
-                continue;
-
-            var result = wIrc.WebInfo(msg.MessageArray[i]);
+            var result = wIrc.WebInfo(arg);
 
             if (debug)
             {
@@ -47,10 +45,9 @@ class QueryTriggers
 
     public static void Dump(ITriggerMsg msg)
     {
-        for (int i = 1; i < msg.MessageArray.Length; i++)
+        foreach (var arg in msg.ArgArray())
         {
-            Uri url;
-            if ( Uri.TryCreate(msg.MessageArray[i], UriKind.Absolute, out url) )
+            if ( Uri.TryCreate(arg, UriKind.Absolute, out Uri url) )
             {
                 msg.Reply(Dump(url));
             }
