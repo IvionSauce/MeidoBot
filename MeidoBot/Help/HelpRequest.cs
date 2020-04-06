@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using MeidoCommon;
-using MeidoCommon.Parsing;
+using MeidoCommon.ExtensionMethods;
 
 
 namespace MeidoBot
@@ -32,9 +33,9 @@ namespace MeidoBot
             // Leave everyting default.
         }
 
-        HelpRequest(string[] query, string triggerPre)
+        HelpRequest(IList<string> query, string triggerPre)
         {
-            if (query.Length > 0)
+            if (query.Count > 0)
             {
                 // Read first element and check if it's a trigger. If it is, remove prefix and
                 // qualify that we're searching for trigger help.
@@ -45,11 +46,8 @@ namespace MeidoBot
                     RestrictToTriggers = true;
                 }
                 // Read the remaining elements.
-                if (query.Length > 1)
-                {
-                    Rest = new string[query.Length - 1];
-                    Array.Copy(query, 1, Rest, 0, Rest.Length);
-                }
+                if (query.Count > 1)
+                    Rest = query.Subarray(1);
 
                 NormalizedQuery = string.Join(" ", query);
             }
@@ -77,9 +75,8 @@ namespace MeidoBot
 
         public static HelpRequest FromHelpTrigger(ITriggerMsg msg, string triggerPre)
         {
-            var args = msg.ArgArray();
-            if (args.Length > 1)
-                return new HelpRequest(args, triggerPre);
+            if (msg.Arguments.Count > 1)
+                return new HelpRequest(msg.Arguments, triggerPre);
 
             return new HelpRequest();
         }

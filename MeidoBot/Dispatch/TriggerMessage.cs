@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using MeidoCommon.ExtensionMethods;
 // Using directives for plugin use.
 using MeidoCommon;
 
@@ -20,12 +21,9 @@ namespace MeidoBot
                     // Includes the trigger at index 0.
                     var argv = Message.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
+                    // Copy such that we drop the trigger, it has its own propery.
                     if (argv.Length > 1)
-                    {
-                        // Copy such that we drop the trigger, it has its own propery.
-                        arguments = new string[argv.Length - 1];
-                        Array.Copy(argv, 1, arguments, 0, arguments.Length);
-                    }
+                        arguments = argv.Subarray(1);
 
                     _arguments = new ReadOnlyCollection<string>(arguments ?? Array.Empty<string>());
                 }
