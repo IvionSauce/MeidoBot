@@ -61,15 +61,19 @@ namespace MeidoCommon.Parsing
         }
 
 
-        public static IEnumerable<string> GetArg(this IIrcMsg msg, out string argument)
+        public static IEnumerable<string> GetArg(this IIrcMsg msg,
+                                                 out string argument,
+                                                 bool toLower = false)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return GetArg(SkipTrigger(msg), out argument);
+            return GetArg(SkipTrigger(msg), out argument, toLower);
         }
 
-        public static IEnumerable<string> GetArg(this IEnumerable<string> argv, out string argument)
+        public static IEnumerable<string> GetArg(this IEnumerable<string> argv,
+                                                 out string argument,
+                                                 bool toLower = false)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
@@ -81,22 +85,31 @@ namespace MeidoCommon.Parsing
             {
                 skipCount++;
                 if (TryGetArg(arg, out argument))
+                {
+                    if (toLower)
+                        argument = argument.ToLowerInvariant();
+
                     break;
+                }
             }
 
             return argv.Skip(skipCount);
         }
 
 
-        public static IEnumerable<string> GetEndArg(this IIrcMsg msg, out string argument)
+        public static IEnumerable<string> GetEndArg(this IIrcMsg msg,
+                                                    out string argument,
+                                                    bool toLower = false)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return GetEndArg(SkipTrigger(msg), out argument);
+            return GetEndArg(SkipTrigger(msg), out argument, toLower);
         }
 
-        public static IEnumerable<string> GetEndArg(this IEnumerable<string> argv, out string argument)
+        public static IEnumerable<string> GetEndArg(this IEnumerable<string> argv,
+                                                    out string argument,
+                                                    bool toLower = false)
         {
             if (argv == null)
                 throw new ArgumentNullException(nameof(argv));
@@ -105,7 +118,7 @@ namespace MeidoCommon.Parsing
             // sequences we're dealing with.
             return
                 argv.Reverse()
-                .GetArg(out argument)
+                .GetArg(out argument, toLower)
                 .Reverse();
         }
 
@@ -179,6 +192,18 @@ namespace MeidoCommon.Parsing
             }
 
             return arguments;
+        }
+
+
+        // --- Misc methods ---
+
+        // Method to easily lowercase an entire sequence (of arguments).
+        public static IEnumerable<string> ToLowerInvariant(this IEnumerable<string> seq)
+        {
+            if (seq == null)
+                throw new ArgumentNullException(nameof(seq));
+
+            return seq.Select(s => s?.ToLowerInvariant());
         }
 
 
