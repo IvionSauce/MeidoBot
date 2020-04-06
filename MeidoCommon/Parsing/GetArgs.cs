@@ -81,6 +81,28 @@ namespace MeidoCommon.Parsing
         }
 
 
+        public static IEnumerable<string> GetEndArg(this IIrcMsg msg, out string argument)
+        {
+            if (msg == null)
+                throw new ArgumentNullException(nameof(msg));
+
+            return GetEndArg(SkipTrigger(msg), out argument);
+        }
+
+        public static IEnumerable<string> GetEndArg(this IEnumerable<string> argv, out string argument)
+        {
+            if (argv == null)
+                throw new ArgumentNullException(nameof(argv));
+
+            // Quick and dirty, but I suppose this is good enough for the small
+            // sequences we're dealing with.
+            return
+                argv.Reverse()
+                .GetArg(out argument)
+                .Reverse();
+        }
+
+
         // --- Conventional (not LINQ) extensions methods for getting arguments ---
         // These use ArgEnumerator as backend.
 
