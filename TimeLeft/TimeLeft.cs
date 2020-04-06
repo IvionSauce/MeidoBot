@@ -32,7 +32,7 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     readonly object _locker = new object();
 
     readonly string loc;
-
+    const string dateFmt = "MMMM dd, yyyy";
 
     public void Stop()
     {
@@ -79,9 +79,7 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     
     public void HandleTrigger(ITriggerMsg e)
     {
-        string command =
-            e.GetArg(out List<string> rest)
-            .ToLowerInvariant();
+        var rest = e.GetArg(out string command, toLower: true);
 
         // timeleft
         if (!command.HasValue())
@@ -91,7 +89,7 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
         }
 
         // timeleft set Title 2104-01-01
-        if ( (command == "set" || command == "add") && rest.Count >= 2 )
+        if (command == "set" || command == "add")
         {
             Set(e.Nick, rest);
         }
@@ -99,35 +97,23 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
         // timeleft del Title
         else if (command == "del")
         {
-            Del(e.Nick, rest.ToJoined());
+            Del(e.Nick, rest.ToJoined(JoinedOptions.TrimRemove));
         }
 
         // timeleft Title
         else
-            Show(e.ReturnTo, e.MessageWithoutTrigger());
+            Show(e.ReturnTo, e.ArgString());
     }
 
 
-    void Set(string nick, IList<string> args)
+    void Set(string nick, IEnumerable<string> args)
     {
-        string[] dateArray = args[args.Count - 1].Split('-');
+        var name =
+            args.GetEndArg(out string dateStr)
+            .ToJoined(JoinedOptions.TrimRemove);
 
-        if (dateArray.Length == 3 &&
-            int.TryParse( dateArray[0], out int year ) &&
-            int.TryParse( dateArray[1], out int month ) &&
-            int.TryParse( dateArray[2], out int day ))
+        if (TryGetDate(dateStr, out DateTime date))
         {
-            DateTime date;
-            try
-            {
-                date = new DateTime(year, month, day);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return;
-            }
-            // Subtract 1 since we don't want the final argument - the date.
-            var name = string.Join(" ", args, 0, args.Count - 1);
             var unit = new TimeLeftUnit(name, date);
 
             lock (_locker)
@@ -135,8 +121,30 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
                 storage.Set(name, unit);
                 storage.Serialize(loc);
             }
-            irc.SendNotice( nick, "Set \"{0}\" :: {1}", name, date.ToString("MMMM dd, yyyy") );
+            irc.SendNotice(nick, "Set \"{0}\" :: {1}", name, date.ToString(dateFmt));
         }
+    }
+
+    bool TryGetDate(string arg, out DateTime date)
+    {
+        date = DateTime.MinValue;
+
+        string[] dateArray = arg.Split('-');
+        if (dateArray.Length == 3 &&
+            int.TryParse(dateArray[0], out int year) &&
+            int.TryParse(dateArray[1], out int month) &&
+            int.TryParse(dateArray[2], out int day))
+        {
+            try
+            {
+                date = new DateTime(year, month, day);
+                return true;
+            }
+            catch (ArgumentOutOfRangeException)
+            {}
+        }
+
+        return false;
     }
 
 
@@ -202,12 +210,12 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
         if (timeLeft.Days >= 2)
         {
             message = string.Format("Days: {0} :: {1} [{2}]",
-                                    timeLeft.Days, name, date.ToString("MMMM dd, yyyy"));
+                                    timeLeft.Days, name, date.ToString(dateFmt));
         }
         else
         {
             message = string.Format("Hours: {0:0.#} :: {1} [{2}]",
-                                    timeLeft.TotalHours, name, date.ToString("MMMM dd, yyyy"));
+                                    timeLeft.TotalHours, name, date.ToString(dateFmt));
         }
         
         irc.SendMessage(target, message);
