@@ -29,12 +29,19 @@ namespace MeidoCommon.Parsing
             return Array.Empty<string>();
         }
 
-        public static string MessageWithoutTrigger(this ITriggerMsg msg)
+        public static string MessageWithoutTrigger(this ITriggerMsg msg, bool trim = false)
         {
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            return msg.Message.Substring(msg.MessageParts[0].Length + 1);
+            var tmp =
+                msg.Message
+                .Substring(msg.MessageParts[0].Length + 1);
+
+            if (trim)
+                return tmp.Trim();
+            else
+                return tmp;
         }
 
 
