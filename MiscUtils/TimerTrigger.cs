@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using MeidoCommon;
 using MeidoCommon.Parsing;
 
@@ -12,9 +11,7 @@ class TimerTrigger
     public void Timer(ITriggerMsg e)
     {
         var timers = ircTimers.GetTimers(e.Nick);
-        var command =
-            e.GetArg(out List<string> rest)
-            .ToLowerInvariant();
+        var rest = e.GetArg(out string command, toLower: true);
 
         // timer
         if (!command.HasValue())

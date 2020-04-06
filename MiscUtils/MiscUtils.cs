@@ -68,17 +68,17 @@ public class MiscUtils : IMeidoHook, IPluginTriggers
 
     void Say(ITriggerMsg e)
     {
-        string channel = e.GetArg(out List<string> rest);
+        var rest = e.GetArg(out string channel);
         string message = null;
         // say [channel] <message>
         // Send message to specified channel.
-        if (channel.StartsWith("#", StringComparison.Ordinal) && rest.Count > 0)
+        if (channel.StartsWith("#", StringComparison.Ordinal))
         {
             message = rest.ToJoined();
         }
         // say <message>
         // Send message to current channel.
-        else
+        if (!message.HasValue())
         {
             channel = e.Channel;
             message = e.MessageWithoutTrigger();
