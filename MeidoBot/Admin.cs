@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Meebey.SmartIrc4net;
 using MeidoCommon;
 using MeidoCommon.Parsing;
@@ -26,7 +25,7 @@ namespace MeidoBot
         {
             if (meidoComm.AuthLevel(msg.Nick) >= 2)
             {
-                string trigger = msg.GetArg(out List<string> argv);
+                var argv = msg.GetArg(out string trigger, toLower: true);
 
                 // Admin triggers.
                 switch (trigger)
