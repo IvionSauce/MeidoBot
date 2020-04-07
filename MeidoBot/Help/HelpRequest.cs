@@ -75,7 +75,7 @@ namespace MeidoBot
 
         public static HelpRequest FromHelpTrigger(ITriggerMsg msg, string triggerPre)
         {
-            if (msg.Arguments.Count > 1)
+            if (msg.Arguments.Count > 0)
                 return new HelpRequest(msg.Arguments, triggerPre);
 
             return new HelpRequest();
