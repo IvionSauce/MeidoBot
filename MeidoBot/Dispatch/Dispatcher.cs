@@ -46,7 +46,7 @@ namespace MeidoBot
 
         public void ChannelMessage(object sender, IrcEventArgs e)
         {
-            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e, triggerPrefix);
             if (!Ignore.Contains(msg))
             {
                 DoTrigger(msg);
@@ -57,7 +57,7 @@ namespace MeidoBot
 
         public void QueryMessage(object sender, IrcEventArgs e)
         {
-            var msg = new IrcMsg(irc, e.Data, triggerPrefix);
+            var msg = new IrcMsg(irc, e, triggerPrefix);
             if (!Ignore.Contains(msg))
             {
                 DoTrigger(msg);

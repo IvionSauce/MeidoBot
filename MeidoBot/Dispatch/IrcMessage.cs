@@ -53,29 +53,30 @@ namespace MeidoBot
             ReturnTo = msg.ReturnTo;
         }
 
-        public IrcMsg(IrcComm irc, ActionEventArgs e, string prefix) : this(irc, e.Data, prefix)
-        {
-            // SmartIrc4Net already chops off the control character for us,
-            // so use that.
-            Message = e.ActionMessage;
-            DoParts(Message.Split(' '));
-        }
-
-        public IrcMsg(IrcComm irc, IrcMessageData messageData, string prefix)
+        public IrcMsg(IrcComm irc, IrcEventArgs msg, string triggerPrefix)
         {
             Irc = irc;
-            type = messageData.Type;
+            type = msg.Data.Type;
 
-            Message = messageData.Message;
-            DoParts(messageData.MessageArray);
+            Channel = msg.Data.Channel;
+            Nick = msg.Data.Nick;
+            Ident = msg.Data.Ident;
+            Host = msg.Data.Host;
 
-            Channel = messageData.Channel;
-            Nick = messageData.Nick;
-            Ident = messageData.Ident;
-            Host = messageData.Host;
-
-            Trigger = ParseTrigger(prefix);
             ReturnTo = Channel ?? Nick;
+
+            if (msg is ActionEventArgs e)
+            {
+                Message = e.ActionMessage;
+                DoParts(Message.Split(' '));
+                // Don't parse trigger if it's an action message.
+            }
+            else
+            {
+                Message = msg.Data.Message;
+                DoParts(msg.Data.MessageArray);
+                Trigger = ParseTrigger(triggerPrefix);
+            }
         }
 
         void DoParts(string[] backingArray)
@@ -90,10 +91,6 @@ namespace MeidoBot
         // In case of a query message it will contain the first word, even if it didn't start with the prefix.
         string ParseTrigger(string prefix)
         {
-            // Don't parse trigger if it's an action message.
-            if (type == ReceiveType.ChannelAction || type == ReceiveType.QueryAction)
-                return null;
-
             if (Message.StartsWith(prefix, StringComparison.Ordinal))
             {
                 string trigger = MessageParts[0].Substring(prefix.Length);
