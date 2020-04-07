@@ -13,7 +13,7 @@ public class IrcSed : IMeidoHook, IPluginIrcHandlers, IPluginHelp
     }
     public string Version
     {
-        get { return "0.12"; }
+        get { return "0.13"; }
     }
 
     public IEnumerable<IIrcHandler> IrcHandlers { get; private set; }

@@ -15,7 +15,7 @@ public class IrcTell : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     }
     public string Version
     {
-        get { return "0.15"; }
+        get { return "0.16"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

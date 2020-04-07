@@ -19,7 +19,7 @@ public class TimeLeft : IMeidoHook, IPluginTriggers
     }
     public string Version
     {
-        get { return "0.32"; }
+        get { return "0.34"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

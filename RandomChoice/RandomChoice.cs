@@ -18,7 +18,7 @@ public class IrcRandom : IMeidoHook, IPluginTriggers
     }
     public string Version
     {
-        get { return "1.25"; }
+        get { return "1.27"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

@@ -16,7 +16,7 @@ public class WebSearches : IMeidoHook, IPluginTriggers
     }
     public string Version
     {
-        get { return "0.33"; }
+        get { return "0.34"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

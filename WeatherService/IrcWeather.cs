@@ -18,7 +18,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
     }
     public string Version
     {
-        get { return "0.58"; }
+        get { return "0.60"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

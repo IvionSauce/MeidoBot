@@ -14,7 +14,7 @@ public class Calc : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     }
     public string Version
     {
-        get { return "2.0"; }
+        get { return "2.01"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

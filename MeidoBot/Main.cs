@@ -8,7 +8,7 @@ namespace MeidoBot
 {
     static class Program
     {
-        public static readonly string Version = "0.96.0";
+        public static readonly string Version = "0.96.5";
 
         const string miniHelp = "MeidoBot.exe <config.xml>";
 

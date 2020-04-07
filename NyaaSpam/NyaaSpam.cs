@@ -15,7 +15,7 @@ public class NyaaSpam : IMeidoHook, IPluginTriggers
     }
     public string Version
     {
-        get { return "0.86"; }
+        get { return "0.88"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }

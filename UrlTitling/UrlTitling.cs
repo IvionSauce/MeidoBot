@@ -15,7 +15,7 @@ public class UrlTitler : IMeidoHook, IPluginTriggers, IPluginIrcHandlers
     }
     public string Version
     {
-        get { return "1.20"; }
+        get { return "1.21"; }
     }
 
     public IEnumerable<Trigger> Triggers { get; private set; }
