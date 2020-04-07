@@ -148,7 +148,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
     string GetLocation(ITriggerMsg e)
     {
         // w <location>
-        var location = e.MessageWithoutTrigger();
+        var location = e.MessageWithoutTrigger(trim: true);
         if (!string.IsNullOrEmpty(location))
         {
             // w @<nick>
@@ -194,7 +194,7 @@ public class IrcWeather : IMeidoHook, IPluginTriggers
 
     void SetWeatherLocation(ITriggerMsg e)
     {
-        var location = e.MessageWithoutTrigger();
+        var location = e.MessageWithoutTrigger(trim: true);
         if (!string.IsNullOrEmpty(location))
         {
             defaultLocations.Set(e.Nick, location);
