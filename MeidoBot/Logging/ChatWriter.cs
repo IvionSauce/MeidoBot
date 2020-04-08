@@ -58,7 +58,7 @@ namespace MeidoBot
                     LogRotateSchedule.Daily : LogRotateSchedule.Yearly;
 
                 metaData = new ChatlogMetaData(
-                    ChatLogEntry.LogfilePath(chatlogDir, ircEntity),
+                    chatlogDir, ircEntity,
                     rotateSched, now
                 );
                 chatlogs[ircEntity] = metaData;

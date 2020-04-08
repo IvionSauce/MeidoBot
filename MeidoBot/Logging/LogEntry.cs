@@ -84,14 +84,5 @@ namespace MeidoBot
 
             return StandardFormat(msg, FormatParams);
         }
-
-
-        public static string LogfilePath(string basePath, string ircEntity)
-        {
-            // Sanitize name of irc entity so it's a valid filename. This will probably be expanded in the future.
-            string filename = ircEntity.Replace('/', '_');
-
-            return System.IO.Path.Combine(basePath, filename);
-        }
     }
 }

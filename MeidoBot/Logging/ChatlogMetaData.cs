@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 
 namespace MeidoBot
@@ -21,12 +22,21 @@ namespace MeidoBot
         readonly string barePath;
 
 
-        public ChatlogMetaData(string logfilePath, LogRotateSchedule schedule, DateTimeOffset now)
+        public ChatlogMetaData(
+            string basePath,
+            string ircEntity,
+            LogRotateSchedule schedule,
+            DateTimeOffset now)
         {
-            barePath = logfilePath;
+            barePath = Path.Combine(
+                basePath,
+                // Sanitize name of irc entity so it's a valid filename.
+                // This will probably be expanded in the future.
+                ircEntity.Replace('/', '_')
+            );
             Schedule = schedule;
 
-            LogfilePath = DatedFilepath(logfilePath, now, schedule);
+            LogfilePath = DatedFilepath(barePath, now, schedule);
             LastWrite = DateTimeOffset.MaxValue;
         }
 
@@ -62,6 +72,7 @@ namespace MeidoBot
         static string DatedFilepath(string path, DateTimeOffset date, LogRotateSchedule schedule)
         {
             const string seperator = " ";
+            const string extension = ".txt";
 
             string dateFmt = null;
             switch (schedule)
@@ -78,9 +89,9 @@ namespace MeidoBot
             }
 
             if (dateFmt != null)
-                return path + seperator + date.ToString(dateFmt);
+                return path + seperator + date.ToString(dateFmt) + extension;
             else
-                return path;
+                return path + extension;
         }
     }
 }
