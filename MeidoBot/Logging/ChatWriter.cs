@@ -15,7 +15,6 @@ namespace MeidoBot
         int logCount;
 
 
-
         public ChatWriter(LogWriter writer, string chatlogDir)
         {
             logWriter = writer;
@@ -25,14 +24,19 @@ namespace MeidoBot
 
         public void Log(string ircEntity, string logMsg, params object[] args)
         {
-            ChatlogMetaData metaData;
-            if (!chatlogs.TryGetValue(ircEntity, out metaData))
-            {
-                metaData = new ChatlogMetaData( ChatLogEntry.LogfilePath(chatlogDir, ircEntity) );
-                chatlogs[ircEntity] = metaData;
-            }
+            // We need the datetime for both the metadata and the logentry.
+            var now = DateTimeOffset.Now;
 
-            var entry = new ChatLogEntry(metaData.LogfilePath, logMsg, args);
+            var metaData = GetMetaData(ircEntity, now);
+            var entry = new ChatLogEntry(metaData.LogfilePath, now, logMsg, args);
+
+            if (metaData.LogRotate(now))
+            {
+                // Close old log file.
+                logWriter.Enqueue( LogEntry.Close(entry.Filepath, now) );
+                // Update entry to new path.
+                entry = new ChatLogEntry(entry, metaData.LogfilePath);
+            }
 
             LogIfDayChanged(metaData, entry);
             logWriter.Enqueue(entry);
@@ -41,22 +45,40 @@ namespace MeidoBot
             Cleaner();
         }
 
-        // Check if the day has changed since last write.
-        void LogIfDayChanged(ChatlogMetaData metaData, ChatLogEntry entry)
+        ChatlogMetaData GetMetaData(string ircEntity, DateTimeOffset now)
+        {
+            if (!chatlogs.TryGetValue(ircEntity, out ChatlogMetaData metaData))
+            {
+                // Rotate non-channel logs more leisurely.
+                var rotateSched = MessageTools.IsChannel(ircEntity) ?
+                    LogRotateSchedule.Daily : LogRotateSchedule.Yearly;
+
+                metaData = new ChatlogMetaData(
+                    ChatLogEntry.LogfilePath(chatlogDir, ircEntity),
+                    rotateSched, now
+                );
+                chatlogs[ircEntity] = metaData;
+            }
+
+            return metaData;
+        }
+
+        void LogIfDayChanged(ChatlogMetaData metaData, LogEntry entry)
         {
             if (metaData.LastWrite.Date != entry.Timestamp.Date)
             {
                 logWriter.Enqueue(
-                    new LogEntry(metaData.LogfilePath, entry.Timestamp,
-                                 "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp));
+                    new LogEntry(
+                        metaData.LogfilePath, entry.Timestamp,
+                        "--- Day has changed {0:ddd dd MMM yyyy}", entry.Timestamp)
+                );
             }
         }
 
 
         public void CloseLog(string ircEntity)
         {
-            ChatlogMetaData metaData;
-            if (chatlogs.TryGetValue(ircEntity, out metaData))
+            if (chatlogs.TryGetValue(ircEntity, out ChatlogMetaData metaData))
             {
                 logWriter.Enqueue( LogEntry.Close(metaData.LogfilePath) );
             }
@@ -88,7 +110,7 @@ namespace MeidoBot
                 if ( (now - lastWrite) >= timeLimit )
                 {
                     // When exceeding the timelimit, close the file so we regularly release filehandles.
-                    logWriter.Enqueue( LogEntry.Close(pair.Value.LogfilePath) );
+                    logWriter.Enqueue( LogEntry.Close(pair.Value.LogfilePath, now) );
                     // Keep the metadata for a while longer, only delete it when there's a change in date.
                     // This ensures that LogIfDayChanged always correctly logs day changes.
                     if (lastWrite.Date < now.Date)
