@@ -15,16 +15,16 @@ namespace MeidoBot
     class ChatlogMetaData
     {
         public string LogfilePath { get; private set; }
+        public readonly LogRotateSchedule Schedule;
         public DateTimeOffset LastWrite { get; set; }
 
         readonly string barePath;
-        readonly LogRotateSchedule schedule;
 
 
         public ChatlogMetaData(string logfilePath, LogRotateSchedule schedule, DateTimeOffset now)
         {
             barePath = logfilePath;
-            this.schedule = schedule;
+            Schedule = schedule;
 
             LogfilePath = DatedFilepath(logfilePath, now, schedule);
             LastWrite = DateTimeOffset.MaxValue;
@@ -37,7 +37,7 @@ namespace MeidoBot
 
             if (now.Date > LastWrite.Date)
             {
-                switch (schedule)
+                switch (Schedule)
                 {
                     case LogRotateSchedule.Daily:
                     rotate |= now.Day != LastWrite.Day;
@@ -54,7 +54,7 @@ namespace MeidoBot
             }
 
             if (rotate)
-                LogfilePath = DatedFilepath(barePath, now, schedule);
+                LogfilePath = DatedFilepath(barePath, now, Schedule);
 
             return rotate;
         }

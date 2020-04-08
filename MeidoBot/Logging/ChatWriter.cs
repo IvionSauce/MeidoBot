@@ -100,28 +100,33 @@ namespace MeidoBot
 
         void Clean()
         {
-            var timeLimit = TimeSpan.FromMinutes(10);
-
-            var toRemove = new List<string>();
             var now = DateTimeOffset.Now;
+            var toRemove = new List<string>();
+
             foreach (var pair in chatlogs)
-            {
-                var lastWrite = pair.Value.LastWrite;
-                if ( (now - lastWrite) >= timeLimit )
-                {
-                    // When exceeding the timelimit, close the file so we regularly release filehandles.
-                    logWriter.Enqueue( LogEntry.Close(pair.Value.LogfilePath, now) );
-                    // Keep the metadata for a while longer, only delete it when there's a change in date.
-                    // This ensures that LogIfDayChanged always correctly logs day changes.
-                    if (lastWrite.Date < now.Date)
-                    {
-                        toRemove.Add(pair.Key);
-                    }
-                } // if
-            } // foreach
+                Clean(pair, now, toRemove);
 
             foreach (var key in toRemove)
                 chatlogs.Remove(key);
         }
+
+        void Clean(KeyValuePair<string, ChatlogMetaData> pair, DateTimeOffset now, List<string> expired)
+        {
+            var chatlog = pair.Value;
+
+            // Regularly release filehandles by closing logs that don't rotate regularly themselves.
+            if ((now - chatlog.LastWrite) >= TimeSpan.FromMinutes(10) &&
+                chatlog.Schedule != LogRotateSchedule.Daily)
+            {
+                logWriter.Enqueue(LogEntry.Close(chatlog.LogfilePath, now));
+                // Keep the metadata for a while longer, this ensures that `LogIfDayChanged` always
+                // logs day changes correctly.
+                if (chatlog.LastWrite.Date < now.Date)
+                {
+                    expired.Add(pair.Key);
+                }
+            }
+        }
+
     }
 }
