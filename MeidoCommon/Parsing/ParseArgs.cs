@@ -34,14 +34,18 @@ namespace MeidoCommon.Parsing
             if (msg == null)
                 throw new ArgumentNullException(nameof(msg));
 
-            var tmp =
-                msg.Message
-                .Substring(msg.MessageParts[0].Length + 1);
+            var message = string.Empty;
+            if (msg.MessageParts.Count > 1)
+            {
+                message =
+                    msg.Message
+                    .Substring(msg.MessageParts[0].Length + 1);
+            }
 
             if (trim)
-                return tmp.Trim();
+                return message.Trim();
             else
-                return tmp;
+                return message;
         }
 
 
