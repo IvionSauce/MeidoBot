@@ -12,19 +12,23 @@ namespace MeidoBot
         readonly Dictionary<string, ChatlogMetaData> chatlogs =
             new Dictionary<string, ChatlogMetaData>(StringComparer.OrdinalIgnoreCase);
 
-        int logCount;
+        static TimeSpan cleanInterval = TimeSpan.FromHours(24);
+        static TimeSpan chatTimeout = TimeSpan.FromMinutes(10);
+
+        DateTimeOffset lastClean;
 
 
         public ChatWriter(LogWriter writer, string chatlogDir)
         {
             logWriter = writer;
             this.chatlogDir = chatlogDir;
+            lastClean = DateTimeOffset.Now;
         }
 
 
         public void Log(string ircEntity, string logMsg, params object[] args)
         {
-            // We need the datetime for both the metadata and the logentry.
+            // We need the datetime for the metadata, logentry and cleaning algorithm.
             var now = DateTimeOffset.Now;
 
             var metaData = GetMetaData(ircEntity, now);
@@ -42,7 +46,7 @@ namespace MeidoBot
             logWriter.Enqueue(entry);
             metaData.LastWrite = entry.Timestamp;
 
-            Cleaner();
+            Clean(now);
         }
 
         ChatlogMetaData GetMetaData(string ircEntity, DateTimeOffset now)
@@ -85,46 +89,42 @@ namespace MeidoBot
         }
 
 
-        void Cleaner()
+        void Clean(DateTimeOffset now)
         {
-            const int cleanInterval = 1000;
-
-            if (logCount < cleanInterval)
-                logCount++;
-            else
+            if ((now - lastClean) >= cleanInterval)
             {
-                logCount = 0;
-                Clean();
+                var toRemove = new List<string>();
+
+                foreach (var pair in chatlogs)
+                    Clean(pair, now, toRemove);
+
+                foreach (var key in toRemove)
+                    chatlogs.Remove(key);
             }
-        }
-
-        void Clean()
-        {
-            var now = DateTimeOffset.Now;
-            var toRemove = new List<string>();
-
-            foreach (var pair in chatlogs)
-                Clean(pair, now, toRemove);
-
-            foreach (var key in toRemove)
-                chatlogs.Remove(key);
         }
 
         void Clean(KeyValuePair<string, ChatlogMetaData> pair, DateTimeOffset now, List<string> expired)
         {
             var chatlog = pair.Value;
+            var delta = now - chatlog.LastWrite;
 
-            // Regularly release filehandles by closing logs that don't rotate regularly themselves.
-            if ((now - chatlog.LastWrite) >= TimeSpan.FromMinutes(10) &&
-                chatlog.Schedule != LogRotateSchedule.Daily)
+            if (chatlog.Schedule != LogRotateSchedule.Daily)
+            {
+                // Regularly release filehandles by closing logs that don't rotate regularly themselves.
+                if (delta >= chatTimeout)
+                {
+                    logWriter.Enqueue(LogEntry.Close(chatlog.LogfilePath, now));
+                    // Keep the metadata for a while longer, this ensures that `LogIfDayChanged` always
+                    // logs day changes correctly.
+                    if (chatlog.LastWrite.Date < now.Date)
+                        expired.Add(pair.Key);
+                }
+            }
+            // Always cleanup if the last write was too long ago.
+            else if (delta > cleanInterval)
             {
                 logWriter.Enqueue(LogEntry.Close(chatlog.LogfilePath, now));
-                // Keep the metadata for a while longer, this ensures that `LogIfDayChanged` always
-                // logs day changes correctly.
-                if (chatlog.LastWrite.Date < now.Date)
-                {
-                    expired.Add(pair.Key);
-                }
+                expired.Add(pair.Key);
             }
         }
 
